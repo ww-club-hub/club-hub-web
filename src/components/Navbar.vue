@@ -1,5 +1,18 @@
 <script setup>
 import NavbarLink from "./NavbarLink.vue";
+import { auth } from "../firebase";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { ref } from "vue";
+
+const loggedIn = ref(false);
+
+onAuthStateChanged(auth, currentUser => {
+  loggedIn.value = !!currentUser;
+});
+
+async function logOut() {
+  await signOut(auth);
+}
 </script>
 
 <template>
@@ -26,6 +39,10 @@ import NavbarLink from "./NavbarLink.vue";
           <NavbarLink url="/explore/" name="Explore Clubs" />
           <NavbarLink url="/my/" name="My Club" />
           <NavbarLink url="/dashboard/" name="Dashboard" />
+          <NavbarLink url="/login/" name="Log In" v-if="!loggedIn" />
+          <li v-else>
+            <button class="block py-2 px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-orange-700 md:p-0 dark:text-white md:dark:hover:text-orange-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent" type="button" @click="logOut">Log Out</button>
+          </li>
         </ul>
       </div>
     </div>
