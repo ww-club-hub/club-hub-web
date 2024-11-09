@@ -1,11 +1,21 @@
 <script setup lang="ts">
 import { auth } from "../firebase";
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "firebase/auth";
+import { useRouter } from "vue-router";
+
+const router = useRouter();
+
+onAuthStateChanged(auth, currentUser => {
+   if (currentUser) {
+       router.push("/account");
+   }                   
+});                      
 
 const provider = new GoogleAuthProvider();
 
 async function signInWithGoogle() {
-  const result = await signInWithPopup(auth, provider);
+  // TODO: surface errors to user
+  await signInWithPopup(auth, provider);
 }
 </script>
 
