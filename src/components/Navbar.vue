@@ -16,7 +16,7 @@ async function logOut() {
 </script>
 
 <template>
-  <nav class="bg-white border-gray-200 dark:bg-gray-900">
+  <nav class="bg-white border-gray-200 dark:bg-gray-900 sticky top-0">
     <div class="max-w-screen-2xl flex flex-wrap items-center justify-between mx-auto p-4">
       <a href="/" class="flex items-center space-x-3 rtl:space-x-reverse">
         <img src="/icon.png" class="h-8" alt="Club Hub Logo" />
