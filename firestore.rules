@@ -2,16 +2,25 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function student(schoolId) {
+      return request.auth.token.schoolId == schoolId;
+    }
     function stuco() {
       return request.auth.token.roles.hasAny(["stuco", "admin"]);
     }
-    match /clubs/{club_id} {
-      // stuco can create, edit, and delete
-      allow delete: if stuco();
-      allow create: if stuco() && request.resource.data.keys().hasAll(["name", "description", "officers", "members"]);
-      allow edit: if (stuco() || request.resource.officers.hasAll([request.auth.token.email])) &&
-        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(["name", "description", "officers", "members"]));
+    match /schools/{school_id} {
+      // schools can only be created/deleted from the admin API
+      allow read: if student(school_id)
+      allow update: if student(school_id) && stuco();
 
+      match /clubs/{club_id} {   
+        // stuco can create, edit, and delete
+        allow delete: if stuco() && student(school_id);
+        allow create: if stuco() && student(school_id) && request.resource.data.keys().hasAll(["name", "description", "officers", "members"]);
+        allow edit: if (stuco() || request.resource.officers.hasAll([request.auth.token.email])) &&
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(["name", "description", "officers", "members"]));
+        
+      }
     }
   }
 }
