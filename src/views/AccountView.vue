@@ -25,8 +25,8 @@ async function deleteAccount() {
 </script>
 
 <template>
-  <section class="bg-gray-50 dark:bg-gray-900 grow px-6 py-8 lg:py-0">
-    <div class="max-w-screen-2xl mx-auto">
+  <section class="bg-gray-50 dark:bg-gray-900 grow">
+    <div class="max-w-screen-2xl mx-auto p-4">
       <div class="flex items-center gap-3 pb-3 mb-3 border-b border-gray-300 dark:border-gray-700">
         <template v-if="user?.photoURL">
           <img :src="user.photoURL" class="align-self-stretch" />
