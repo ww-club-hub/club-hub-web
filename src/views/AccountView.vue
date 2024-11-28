@@ -11,7 +11,6 @@ const user = ref<User | null>(null);
 onAuthStateChanged(auth, currentUser => {
   if (currentUser) {
     user.value = currentUser;
-    console.log(user);
   } else {
     router.push("/login");
   }
