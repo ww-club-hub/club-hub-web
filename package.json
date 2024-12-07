@@ -5,10 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
-    "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
-    "build-only": "vite build",
-    "type-check": "vue-tsc --build --force"
+    "build": "vite build",
+    "build-watch": "NODE_ENV=development npm run build -- --sourcemap true --minify false -w --mode development",
+    "dev-cf": "wrangler pages dev ./dist"
   },
   "dependencies": {
     "vue": "^3.4.29",

@@ -12,6 +12,7 @@ const schoolName = ref("");
 const website = ref("");
 const domainRestriction = ref(false);
 const domains = ref<string[]>([]);
+const errorMessage = ref("");
 
 const userEmailDomain = computed(() => {
   if (user.value?.email) {
@@ -38,7 +39,9 @@ async function onFormSubmit() {
   const idToken = await user.value.getIdToken();
   
   // remove duplicates
-  const dr = domainRestriction.value ? [...new Set(domains.value)] : undefined;
+  const dr = domainRestriction.value ? [
+    ...new Set([...domains.value, userEmailDomain.value])
+  ] : undefined;
   const body = {
     name: schoolName.value,
     website: website.value,
@@ -52,6 +55,11 @@ async function onFormSubmit() {
       "Content-Type": "application/json"
     }
   }).then(r => r.json());
+  if (res.error) {
+    errorMessage.value = res.error;
+  } else {
+    errorMessage.value = "";
+  }
 }
 
 onAuthStateChanged(auth, currentUser => {
@@ -127,6 +135,8 @@ onAuthStateChanged(auth, currentUser => {
               </button>
             </div>
           </div>
+
+          <p v-if="errorMessage" class="mb-2 text-rose-600 dark:text-rose-400 italic">{{ errorMessage }}</p>
 
           <button type="submit" class="focus:outline-none text-white bg-emerald-700 hover:bg-emerald-800 focus:ring-4 focus:ring-emerald-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-emerald-600 dark:hover:bg-emerald-700 dark:focus:ring-emerald-800">Create</button>
         </form>

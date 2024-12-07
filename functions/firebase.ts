@@ -5,8 +5,23 @@ import { decodeJwt, jwtVerify, importX509, importPKCS8, SignJWT } from "jose";
 
 const googleTokenUrl = "https://www.googleapis.com/oauth2/v4/token";
 
+export const FIRESTORE_SCOPE = "https:///www.googleapis.com/auth/datastore";
+
+export function getFirestoreUrl(env: Env) {
+  if (env.USE_EMULATOR) {
+    return "http://localhost:8080/v1";
+  } else {
+    return "https://firestore.googleapis.com/v1";
+  }
+}
+
 // Get a bearer token for Google APIs from a service account key
 export async function makeServiceAccountToken(env: Env, scopes: string[]) {
+  if (env.USE_EMULATOR) {
+    // emulator token
+    return "owner";
+  }
+    
   // the key is stored with literal "\n"s to make it easier to enter
   const secretKey = await importPKCS8(env.SERVICE_ACCOUNT_KEY.replaceAll("\\n", "\n"), "RS256");
   // make the JWT for these scopes
@@ -73,10 +88,10 @@ async function verifyParseFirebaseAuthToken(token: string, env: Env, cfCache: Ca
   }
 }
 
-const authBearerRe = /Bearer: (.*)/;
+const authBearerRe = /Bearer (.*)/;
 
 export const getUserFromReq = async (env: Env, cfCache: Cache, req: Request)  => {
-  const header = req.headers.get("Authorization");
+  const header = req.headers.get("authorization");
   if (!header) return null;
   const token = header.match(authBearerRe)?.[1];
   if (!token) return null;
