@@ -1,17 +1,27 @@
-import { Env } from "./types";
-import { decodeJwt, jwtVerify, importX509, importPKCS8, SignJWT } from "jose";
+import { Env, FirestoreRestDocument, UserJwtPayload } from "./types";
+import { decodeJwt, jwtVerify, importX509, importPKCS8, SignJWT, JWTPayload } from "jose";
+import { authedJsonRequest } from "./utils";
 
 // NOTE: I would use the firebase-admin SDK here, but it's massive (probably over the 1MB cf workers limit) and uses unsupported node APIs
 
 const googleTokenUrl = "https://www.googleapis.com/oauth2/v4/token";
 
 export const FIRESTORE_SCOPE = "https:///www.googleapis.com/auth/datastore";
+export const AUTH_SCOPE = "https://www.googleapis.com/auth/identitytoolkit";
 
 export function getFirestoreUrl(env: Env) {
   if (env.USE_EMULATOR) {
     return "http://localhost:8080/v1";
   } else {
     return "https://firestore.googleapis.com/v1";
+  }
+}
+
+export function getIdentityToolkitUrl(env: Env) {
+  if (env.USE_EMULATOR) {
+    return "http://localhost:9099/identitytoolkit.googleapis.com/v1";
+  } else {
+    return "https://identitytoolkit.googleapis.com/v1";
   }
 }
 
@@ -76,7 +86,7 @@ async function verifyParseFirebaseAuthToken(token: string, env: Env, cfCache: Ca
     // just make sure it's not expired for emulator tokens
     const claims = decodeJwt(token);
     if (claims.exp < Date.now() / 1000) throw new Error("expired token");
-    return claims;
+    return claims as JWTPayload & UserJwtPayload;
   } else {
     // full verify
     const result = await jwtVerify(token, async (header, _token) => {
@@ -84,7 +94,11 @@ async function verifyParseFirebaseAuthToken(token: string, env: Env, cfCache: Ca
       const firebasePubkeys = await getFirebaseAuthJwks(cfCache);
       return firebasePubkeys[header.kid];
     });
-    return result.payload;
+    // verify project id
+    if (result.payload.iss !== "https://securetoken.google.com/ww-club-hub") {
+      throw new Error("invalid jwt issuer");
+    }
+    return result.payload as JWTPayload & UserJwtPayload;
   }
 }
 
@@ -96,4 +110,17 @@ export const getUserFromReq = async (env: Env, cfCache: Cache, req: Request)  =>
   const token = header.match(authBearerRe)?.[1];
   if (!token) return null;
   return await verifyParseFirebaseAuthToken(token, env, cfCache);
+}
+
+/// update Identity Toolkit customAttributes
+export async function updateUserRoles(env: Env, token: string, userId: string, roles: any) {
+  await authedJsonRequest({
+    localId: userId,
+    customAttributes: JSON.stringify(roles)
+  }, token, `${getIdentityToolkitUrl(env)}/projects/club-hub-web/accounts:update`);
+}
+
+export function getFirestoreDocId(doc: FirestoreRestDocument) {
+  const parts = doc.name.split("/");
+  return parts[parts.length - 1];
 }

@@ -26,4 +26,38 @@ export type FirestoreField = null | number | boolean | string | Date | Firestore
 
 export type FirestoreFieldObject = { [key: string]: FirestoreField };
 
-export type FirestoreRestDocument = { name: string, fields: RawFirestoreFieldObject };
+export interface FirestoreRestDocument {
+  name: string;
+  fields: RawFirestoreFieldObject;
+  createTime: string;
+  updateTime: string;
+}
+
+export interface AggregationQueryResponseItem {
+  result: {
+    aggregateFields: Record<string, RawFirestoreField>
+  }
+}
+
+export type AggregationQueryResponse = [AggregationQueryResponseItem];
+
+export interface QueryResponseItem {
+  document?: FirestoreRestDocument,
+  done: boolean
+}
+
+export type QueryResponse = QueryResponseItem[];
+
+export interface UserJwtPayload {
+  name: string;
+  email: string;
+  email_verified: boolean;
+  auth_time: number;
+  user_id: string;
+  firebase: {
+    sign_in_provider: string;
+    identities: {
+      // TODO
+    }
+  };
+}

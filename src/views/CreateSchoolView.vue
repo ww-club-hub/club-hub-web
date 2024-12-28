@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { auth } from "../firebase";
-import { onAuthStateChanged, type User } from "firebase/auth";
+import { onAuthStateChanged, type User, getIdToken } from "firebase/auth";
 import { computed } from "vue";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
@@ -35,7 +35,7 @@ function removeDomain(i: number) {
  */
 async function onFormSubmit() {
   if (!user.value) return;
-
+  
   const idToken = await user.value.getIdToken();
   
   // remove duplicates
@@ -47,18 +47,24 @@ async function onFormSubmit() {
     website: website.value,
     domainRestriction : dr
   };
-  const res = await fetch("/api/school", {
+  // create school
+  const res = await fetch("/api/school/create", {
     method: "POST",
     body: JSON.stringify(body),
     headers: {
       Authorization: `Bearer ${idToken}`,
       "Content-Type": "application/json"
     }
-  }).then(r => r.json());
+  }).then(r => r.json()) as { error?: string; schoolId?: string };
+
+  // propagate error message
   if (res.error) {
     errorMessage.value = res.error;
   } else {
     errorMessage.value = "";
+
+    // refresh user token
+    await getIdToken(user.value, true);
   }
 }
 
