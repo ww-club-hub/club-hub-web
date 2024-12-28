@@ -2,7 +2,27 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { auth } from "../firebase";
 import HomeView from '../views/HomeView.vue';
 import LoginView from '../views/LoginView.vue';
-import { onAuthStateChanged } from 'firebase/auth';
+import { getIdTokenResult, onAuthStateChanged } from 'firebase/auth';
+
+// promise that gets fired on the first onAuthStateChanged event
+const firebaseAuthReady = new Promise<void>(resolve => {
+  onAuthStateChanged(auth, user => {
+    resolve();
+    
+    const route = router.currentRoute.value;
+    // apply auth guards when the user signs in/out
+    if (route?.meta.authRequired && !user) {
+      router.push({ name: "login", query: { next: route.fullPath } });
+    } else if (route?.meta.authProhibited && user) {
+      // redirect to the next query param or 'account'
+      if (route.query.next) {
+        return router.push(route.query.next as string);
+      } else {
+        return router.push({ name: "account" });
+      }
+    }
+  });
+});
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -56,6 +76,8 @@ const router = createRouter({
 })
 
 router.beforeEach(async to => {
+  await firebaseAuthReady;
+  
   if (to.meta.authRequired && !auth.currentUser) {
     // redirect to login page
     return { name: "login", query: { next: to.fullPath } };
@@ -65,23 +87,10 @@ router.beforeEach(async to => {
 
   // if they are on an auth-only page (that is not part of the onboarding flow), and they have not onboarded, redirect to onboarding
   if (to.meta.authRequired && auth.currentUser && !to.meta.onboarding) {
-    return { name: "onboard" };
-  }
-});
-
-onAuthStateChanged(auth, user => {
-  const route = router.currentRoute.value;
-  console.log(route, user);
-  // apply auth guards when the user signs in/out
-  if (route?.meta.authRequired && !user) {
-    router.push({ name: "login", query: { next: route.fullPath } });
-  } else if (route?.meta.authProhibited && user) {
-    // redirect to the next query param or 'account'
-    if (route.query.next) {
-      return router.push(route.query.next as string);
-    } else {
-      return router.push({ name: "account" });
-    }
+    // check if they need to onboard
+    const claims = (await getIdTokenResult(auth.currentUser)).claims;
+    if (!(auth.currentUser.emailVerified && claims.school && claims.prefs))
+      return { name: "onboard" };
   }
 });
 
