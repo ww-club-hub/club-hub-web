@@ -15,7 +15,8 @@ export async function authedJsonRequest(body: any, token: string, url: string, m
   return await fetch(url, {
     method,
     headers: {
-      "Authorization": `Bearer ${token}`
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json"
     },
     body: JSON.stringify(body)
   }).then(r => r.json());

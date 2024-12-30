@@ -114,10 +114,10 @@ export const getUserFromReq = async (env: Env, cfCache: Cache, req: Request)  =>
 
 /// update Identity Toolkit customAttributes
 export async function updateUserRoles(env: Env, token: string, userId: string, roles: any) {
-  await authedJsonRequest({
+  return await authedJsonRequest({
     localId: userId,
     customAttributes: JSON.stringify(roles)
-  }, token, `${getIdentityToolkitUrl(env)}/projects/club-hub-web/accounts:update`);
+  }, token, `${getIdentityToolkitUrl(env)}/projects/ww-club-hub/accounts:update`);
 }
 
 export function getFirestoreDocId(doc: FirestoreRestDocument) {

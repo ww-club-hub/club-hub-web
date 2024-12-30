@@ -85,8 +85,8 @@ router.beforeEach(async to => {
     return { name: "account" };
   }
 
-  // if they are on an auth-only page (that is not part of the onboarding flow), and they have not onboarded, redirect to onboarding
-  if (to.meta.authRequired && auth.currentUser && !to.meta.onboarding) {
+  // if the user has not onboarded, redirect to onboarding
+  if (auth.currentUser && !to.meta.onboarding) {
     // check if they need to onboard
     const claims = (await getIdTokenResult(auth.currentUser)).claims;
     if (!(auth.currentUser.emailVerified && claims.school && claims.prefs))
