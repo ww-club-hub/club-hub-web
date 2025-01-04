@@ -22,96 +22,97 @@ export const onRequestPost: PagesFunction<Env> = async ctx => {
       // validate request body
     const body = await ctx.request.json();
     const parsed = SearchReq.safeParse(body);
-    if (parsed.success) {
-      const firestoreToken = await makeServiceAccountToken(ctx.env, [FIRESTORE_SCOPE]);
 
-      const query = parsed.data.query.toLowerCase();
-      // search
-      const queryResponse = await authedJsonRequest(
-        {
-          structuredQuery: {
-            select: {
-              fields: [
-                {
-                  fieldPath: "name"
-                },
-                {
-                  fieldPath: "domainRestriction"
-                },
-                {
-                  fieldPath: "website"
-                },
-                {
-                  fieldPath: "__name__"
-                }
-              ]
-            },
-            from: [{
-              collectionId: "schools"
-            }],
-            // prefix searching
-            // https://stackoverflow.com/a/56815787
-            where: {
-              compositeFilter: {
-                op: "AND",
-                filters: [
-                  {
-                    fieldFilter: {
-                      field: {
-                        fieldPath: "nameLowercase",
-                      },
-                      op: "GREATER_THAN_OR_EQUAL",
-                      value: {
-                        stringValue: query
-                      }
-                    }
-                  },
-                  {
-                    fieldFilter: {
-                      field: {
-                        fieldPath: "nameLowercase",
-                      },
-                      op: "LESS_THAN_OR_EQUAL",
-                      value: {
-                        stringValue: query + "\uf8ff"
-                      }
-                    }
-                  }
-                ]
-              }
-            }
-          }
-        },
-        firestoreToken,
-        `${getFirestoreUrl(ctx.env)}/projects/ww-club-hub/databases/(default)/documents:runQuery`
-      ) as QueryResponse;
-
-      // parse docsg
-      const docs = queryResponse
-        .map(doc => doc.document)
-        .filter((doc): doc is FirestoreRestDocument => !!doc)
-        .map(doc => ({
-          id: getFirestoreDocId(doc),
-          ...parseFirestoreObject(doc.fields)
-        }))
-      // filter by domain restriction
-        .filter(doc => {
-          if (doc.domainRestriction) {
-            return doc.domainRestriction.includes(userEmailDomain);
-          } else {
-            return true;
-          }
-        });
-      
-      return jsonResponse(200, {
-        success: true,
-        schools: docs
-      })
-    } else {
+    if (parsed.error) {
       return jsonResponse(400, {
         error: parsed.error.message
       });
     }
+    
+    const firestoreToken = await makeServiceAccountToken(ctx.env, [FIRESTORE_SCOPE]);
+
+    const query = parsed.data.query.toLowerCase();
+    // search
+    const queryResponse = await authedJsonRequest(
+      {
+        structuredQuery: {
+          select: {
+            fields: [
+              {
+                fieldPath: "name"
+              },
+              {
+                fieldPath: "domainRestriction"
+              },
+              {
+                fieldPath: "website"
+              },
+              {
+                fieldPath: "__name__"
+              }
+            ]
+          },
+          from: [{
+            collectionId: "schools"
+          }],
+          // prefix searching
+          // https://stackoverflow.com/a/56815787
+          where: {
+            compositeFilter: {
+              op: "AND",
+              filters: [
+                {
+                  fieldFilter: {
+                    field: {
+                      fieldPath: "nameLowercase",
+                    },
+                    op: "GREATER_THAN_OR_EQUAL",
+                    value: {
+                      stringValue: query
+                    }
+                  }
+                },
+                {
+                  fieldFilter: {
+                    field: {
+                      fieldPath: "nameLowercase",
+                    },
+                    op: "LESS_THAN_OR_EQUAL",
+                    value: {
+                      stringValue: query + "\uf8ff"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      firestoreToken,
+      `${getFirestoreUrl(ctx.env)}/projects/ww-club-hub/databases/(default)/documents:runQuery`
+    ) as QueryResponse;
+
+    // parse docsg
+    const docs = queryResponse
+      .map(doc => doc.document)
+      .filter((doc): doc is FirestoreRestDocument => !!doc)
+      .map(doc => ({
+        id: getFirestoreDocId(doc),
+        ...parseFirestoreObject(doc.fields)
+      }))
+      // filter by domain restriction
+      .filter(doc => {
+        if (doc.domainRestriction) {
+          return doc.domainRestriction.includes(userEmailDomain);
+        } else {
+          return true;
+        }
+      });
+
+    return jsonResponse(200, {
+      success: true,
+      schools: docs
+    })
   } catch (err) {
     return jsonResponse(403, {
       error: err.message

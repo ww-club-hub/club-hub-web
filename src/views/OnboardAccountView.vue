@@ -1,15 +1,20 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { auth } from "../firebase";
+import { topics } from "../assets/club-topics.json";
 import { type ParsedToken, getIdTokenResult, onAuthStateChanged, type User, sendEmailVerification, getIdToken } from "firebase/auth";
 import { computed } from "vue";
 import OnboardingStep from "../components/OnboardingStep.vue";
+import { useRouter } from "vue-router";
 
 const user = ref<User | null>(null);
 const claims = ref<ParsedToken | null>(null);
 const message = ref("");
 const searchQuery = ref("");
-const foundSchools = ref<School[]>(null);
+const foundSchools = ref<School[]>([]);
+const interests = ref(new Set<number>());
+
+const router = useRouter();
 
 onAuthStateChanged(auth, async currentUser => {
   if (currentUser) {
@@ -36,6 +41,9 @@ const currentStep = computed(() => {
   if (!user.value?.emailVerified) return OnboardingStepType.VerifyEmail;
   if (!claims.value?.school) return OnboardingStepType.JoinSchool;
   if (!claims.value?.prefs) return OnboardingStepType.SetInterests;
+
+  // go to school page
+  router.push({ name: "school-detail" });
   return OnboardingStepType.Done;
 });
 
@@ -63,6 +71,7 @@ async function search() {
   if ("error" in res) {
     message.value = res.error;
   } else {
+    message.value = "";
     foundSchools.value = res.schools;
   }
 }
@@ -70,6 +79,50 @@ async function search() {
 async function joinSchool(id: string) {
   if (!user.value) return;
   const idToken = await getIdToken(user.value);
+  const res = await fetch("/api/school/join", {
+    method: "POST",
+    body: JSON.stringify({
+      schoolId: id
+    }),
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+      "Content-Type": "application/json"
+    }
+  }).then(r => r.json()) as { error: string } | { success: true };
+
+  if ("error" in res) {
+    message.value = res.error;
+  } else {
+    message.value = "";
+    // refresh id token
+
+    await getIdToken(user.value, true);
+  }
+}
+
+async function setInterests() {
+  if (!user.value) return;
+
+  const idToken = await getIdToken(user.value);
+  const res = await fetch("/api/user/interests", {
+    method: "POST",
+    body: JSON.stringify({
+      interests: [...interests.value]
+    }),
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+      "Content-Type": "application/json"
+    }
+  }).then(r => r.json()) as { error: string } | { success: true };
+
+  if ("error" in res) {
+    message.value = res.error;
+  } else {
+    message.value = "";
+    // refresh id token
+
+    await getIdToken(user.value, true);
+  }
 }
 </script>
 
@@ -130,8 +183,24 @@ async function joinSchool(id: string) {
                 class="font-medium text-orange-600 hover:underline dark:text-orange-500">create a school</router-link>.
             </p>
           </OnboardingStep>
-          <OnboardingStep :active="currentStep == OnboardingStepType.SetInterests" name="Set your interests"
-            :done="currentStep > OnboardingStepType.SetInterests" />
+          <OnboardingStep
+            :active="currentStep == OnboardingStepType.SetInterests"
+            name="Set your interests"
+            :done="currentStep > OnboardingStepType.SetInterests">
+            <p class="mb-3">This step is optional, but setting interests helps you find new clubs to join.</p>
+
+            <!-- interests list -->
+            <div>
+              <div class="flex items-center mb-4" v-for="topic, i in topics" :key="i">
+                <input :id="`check-interests-${i}`" type="checkbox" :value="i" name="check-interests" v-model="interests" class="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 dark:focus:ring-orange-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                <label :for="`check-interests-${i}`" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">{{ topic }}</label>
+              </div>
+            </div>
+
+            <button type="button"
+              class="w-full text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-none focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800"
+              @click="setInterests">Done</button>
+          </OnboardingStep>
         </ul>
 
         <!-- TODO: make this something like a toast -->

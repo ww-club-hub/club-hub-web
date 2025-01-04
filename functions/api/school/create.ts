@@ -74,7 +74,8 @@ export const onRequestPost: PagesFunction<Env> = async ctx => {
               domainRestriction: parsed.data.domainRestriction,
               website: canonUrl,
               owner: user.email as string,
-              admins: []
+              admins: [],
+              members: []
             }).mapValue,
             firestoreToken,
             `${getFirestoreUrl(ctx.env)}/projects/ww-club-hub/databases/(default)/documents/schools`

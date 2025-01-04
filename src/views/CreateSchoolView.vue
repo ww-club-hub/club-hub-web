@@ -3,7 +3,6 @@ import { auth } from "../firebase";
 import { onAuthStateChanged, type User, getIdToken } from "firebase/auth";
 import { computed } from "vue";
 import { ref } from "vue";
-import { useRouter } from "vue-router";
 
 const user = ref<User | null>(null);
 const schoolName = ref("");
