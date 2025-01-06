@@ -7,5 +7,18 @@ import Navbar from "./components/Navbar.vue";
 <template>
   <Navbar />
   
-  <RouterView />
+  <RouterView v-slot="{ Component }">
+    <template v-if="Component">
+      <Transition mode="out-in" name="fade">
+        <Suspense>
+          <component :is="Component"></component>
+
+          <!-- TODO: fancy loading screen -->
+          <template #fallback>
+            Loading...
+          </template>
+        </Suspense>
+      </Transition>
+    </template>
+  </RouterView>
 </template>

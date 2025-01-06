@@ -10,3 +10,15 @@ html, body, #app {
   display: flex;
   flex-direction: column;
 }
+
+
+/* vue transitions */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.1s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
