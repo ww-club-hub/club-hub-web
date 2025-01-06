@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { auth } from "../firebase";
-import { onAuthStateChanged, type User, getIdToken } from "firebase/auth";
+import { onAuthStateChanged, type User, getIdToken, getIdTokenResult } from "firebase/auth";
 import { computed } from "vue";
 import { ref } from "vue";
+import { useRouter } from "vue-router";
 
 const user = ref<User | null>(null);
 const schoolName = ref("");
@@ -10,6 +11,8 @@ const website = ref("");
 const domainRestriction = ref(false);
 const domains = ref<string[]>([]);
 const errorMessage = ref("");
+
+const router = useRouter();
 
 const userEmailDomain = computed(() => {
   if (user.value?.email) {
@@ -62,12 +65,16 @@ async function onFormSubmit() {
 
     // refresh user token
     await getIdToken(user.value, true);
+    router.push({ name: "onboard" });
   }
 }
 
-onAuthStateChanged(auth, currentUser => {
+onAuthStateChanged(auth, async currentUser => {
   if (currentUser) {
     user.value = currentUser;
+    const idToken = await getIdTokenResult(currentUser);
+    // if they are already a part of a school, go back to onboarding
+    if (idToken.claims.school) router.push({ name: "onboard" });
   }
 });
 </script>

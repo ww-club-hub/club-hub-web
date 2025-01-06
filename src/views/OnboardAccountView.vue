@@ -40,7 +40,7 @@ interface School {
 const currentStep = computed(() => {
   if (!user.value?.emailVerified) return OnboardingStepType.VerifyEmail;
   if (!claims.value?.school) return OnboardingStepType.JoinSchool;
-  if (!claims.value?.prefs) return OnboardingStepType.SetInterests;
+  if (!claims.value?.interests) return OnboardingStepType.SetInterests;
 
   // go to school page
   router.push({ name: "school-detail" });
@@ -96,7 +96,7 @@ async function joinSchool(id: string) {
     message.value = "";
     // refresh id token
 
-    await getIdToken(user.value, true);
+    claims.value = (await getIdTokenResult(user.value, true)).claims;
   }
 }
 
@@ -121,7 +121,7 @@ async function setInterests() {
     message.value = "";
     // refresh id token
 
-    await getIdToken(user.value, true);
+    claims.value = (await getIdTokenResult(user.value, true)).claims;
   }
 }
 </script>

@@ -39,7 +39,8 @@ export const onRequestPost: PagesFunction<Env> = async ctx => {
     const queryResponse = await authedJsonRequest(
       null,
       firebaseToken,
-      `${getFirestoreUrl(ctx.env)}/projects/ww-club-hub/databases/(default)/documents/schools/${parsed.data.schoolId}`
+      `${getFirestoreUrl(ctx.env)}/projects/ww-club-hub/databases/(default)/documents/schools/${parsed.data.schoolId}`,
+      "GET"
     ) as FirestoreRestDocument;
 
     const doc = parseFirestoreObject(queryResponse.fields);
@@ -54,14 +55,11 @@ export const onRequestPost: PagesFunction<Env> = async ctx => {
     await authedJsonRequest(
       {
         writes: [{
-          updateMask: {
-            fieldPaths: ["members"]
-          },
           transform: {
             document: `projects/ww-club-hub/databases/(default)/documents/schools/${parsed.data.schoolId}`,
             fieldTransforms: [{
               fieldPath: "members",
-              appendMissingElements: makeFirestoreField([user.email])
+              appendMissingElements: makeFirestoreField([user.email]).arrayValue
             }]
           }
         }]
@@ -78,6 +76,7 @@ export const onRequestPost: PagesFunction<Env> = async ctx => {
       success: true
     });
   } catch (err) {
+    console.error(err);
     return jsonResponse(403, {
       error: err.message
     });

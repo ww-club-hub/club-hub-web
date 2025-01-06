@@ -31,6 +31,8 @@ export const onRequestPost: PagesFunction<Env> = async ctx => {
 
     const firebaseToken = await makeServiceAccountToken(ctx.env, [AUTH_SCOPE]);
 
+    console.log(user);
+
     await updateUserRoles(ctx.env, firebaseToken, user.user_id, {
       interests: parsed.data.interests,
       // keep existing attrs

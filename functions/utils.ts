@@ -18,7 +18,7 @@ export async function authedJsonRequest(body: any, token: string, url: string, m
       "Authorization": `Bearer ${token}`,
       "Content-Type": "application/json"
     },
-    body: JSON.stringify(body)
+    body: method === "GET" ? undefined : JSON.stringify(body)
   }).then(r => r.json());
 }
 
