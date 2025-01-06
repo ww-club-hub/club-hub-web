@@ -3,22 +3,26 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function student(schoolId) {
-      return request.auth.email_verified && request.auth.token.schoolId == schoolId;
+      return request.auth.token.email_verified && request.auth.token.school == schoolId;
     }
-    function stuco() {
-      return request.auth.token.roles.hasAny(["stuco", "admin"]);
+    function admin() {
+      return request.auth.token.roles.hasAny(["owner", "admin"]);
+    }
+    function onlyChanged(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys.hasOnly(keys);
     }
     match /schools/{school_id} {
       // schools can only be created/deleted from the admin API
       allow read: if student(school_id);
-      allow update: if student(school_id) && stuco();
+      // Members/admins/owner updates can only be done through the admin API (requires changing roles)
+      allow update: if student(school_id) && admin() && onlyChanged(["name", "website", "domainRestriction"]);
 
       match /clubs/{club_id} {   
         // stuco can create, edit, and delete
         allow delete: if stuco() && student(school_id);
         allow create: if stuco() && student(school_id) && request.resource.data.keys().hasAll(["name", "description", "officers", "members"]);
         allow update: if (stuco() || request.resource.officers.hasAll([request.auth.token.email])) &&
-          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(["name", "description", "officers", "members"]));
+          onlyChanged(["name", "description", "officers", "members"]);
         
       }
     }

@@ -71,7 +71,16 @@ const router = createRouter({
         // this is part of the onboarding flow
         onboarding: true
       }
-    }
+    },
+    {
+      path: '/school/',
+      name: 'school-detail',
+      component: () => import("../views/SchoolDetailView.vue"),
+      meta: {
+        authRequired: true,
+        title: "School Info"
+      }
+    },
   ]
 })
 
@@ -89,7 +98,7 @@ router.beforeEach(async to => {
   if (auth.currentUser && !to.meta.onboarding) {
     // check if they need to onboard
     const claims = (await getIdTokenResult(auth.currentUser)).claims;
-    if (!(auth.currentUser.emailVerified && claims.school && claims.prefs))
+    if (!(auth.currentUser.emailVerified && claims.school && claims.interests))
       return { name: "onboard" };
   }
 });

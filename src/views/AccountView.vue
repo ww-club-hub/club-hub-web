@@ -10,7 +10,7 @@ async function deleteAccount() {
 </script>
 
 <template>
-  <section class="bg-gray-50 dark:bg-gray-900 grow">
+  <section class="bg-gray-50 dark:bg-gray-800 grow">
     <div class="max-w-screen-2xl mx-auto p-4">
       <div class="flex items-center gap-3 pb-3 mb-3 border-b border-gray-300 dark:border-gray-700">
         <template v-if="auth.currentUser?.photoURL">
