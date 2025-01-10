@@ -73,12 +73,21 @@ const router = createRouter({
       }
     },
     {
-      path: '/school/',
+      path: '/school',
       name: 'school-detail',
       component: () => import("../views/SchoolDetailView.vue"),
       meta: {
         authRequired: true,
         title: "School Info"
+      }
+    },
+    {
+      path: '/school/clubs',
+      name: 'club-list',
+      component: () => import("../views/ClubListView.vue"),
+      meta: {
+        authRequired: true,
+        title: "Explore Clubs"
       }
     },
   ]
