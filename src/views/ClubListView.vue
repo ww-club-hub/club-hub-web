@@ -1,10 +1,24 @@
 <script setup lang="ts">
 import { getIdTokenResult } from "firebase/auth";
 import { auth, db, tryGetDocFromCache } from "../firebase";
-import { doc } from "firebase/firestore";
+import { DocumentSnapshot, collection, doc, query } from "firebase/firestore";
+import { ref } from "vue";
 
 const { claims } = await getIdTokenResult(auth.currentUser!);
 const school = await tryGetDocFromCache(doc(db, "schools", claims.school as string));
+
+const clubs = ref<number[]>([]);
+let lastClub: DocumentSnapshot | null = null;
+let currentQuery = null;
+
+function buildSearchQuery() {
+  currentQuery = 
+}
+
+async function fetchNextPage() {
+  query(
+  collection(db, "clubs")
+}
 </script>
 
 <template>
@@ -13,7 +27,6 @@ const school = await tryGetDocFromCache(doc(db, "schools", claims.school as stri
       <div class="pb-3 mb-3 border-b border-gray-300 dark:border-gray-700">
         <h1 class="text-2xl text-black dark:text-white font-semibold mb-2">{{ school.get("name") }}: Clubs</h1>
       </div>
-
       
       <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
         <div class="flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0 md:space-x-4 p-4">
