@@ -6,10 +6,13 @@ service cloud.firestore {
       return request.auth.token.email_verified && request.auth.token.school == schoolId;
     }
     function admin() {
-      return request.auth.token.roles.hasAny(["owner", "admin"]);
+      return request.auth.token.role == "owner" || request.auth.token.role == "admin";
+    }
+    function officer() {
+      return request.auth.token.email in resource.data.officers;
     }
     function onlyChanged(keys) {
-      return request.resource.data.diff(resource.data).affectedKeys.hasOnly(keys);
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
     }
     match /schools/{school_id} {
       // schools can only be created/deleted from the admin API
@@ -19,11 +22,23 @@ service cloud.firestore {
 
       match /clubs/{club_id} {   
         // stuco can create, edit, and delete
-        allow delete: if stuco() && student(school_id);
-        allow create: if stuco() && student(school_id) && request.resource.data.keys().hasAll(["name", "description", "officers", "members"]);
-        allow update: if (stuco() || request.resource.officers.hasAll([request.auth.token.email])) &&
-          onlyChanged(["name", "description", "officers", "members"]);
-        
+        allow delete: if admin() && student(school_id);
+        allow create: if debug(admin()) && debug(student(school_id)) &&
+          request.resource.data.keys().toSet() == ["name", "description", "officers", "contact"].toSet();
+        allow update: if student(school_id) && (admin() || officer()) &&
+          onlyChanged(["name", "description", "officers", ]);
+        allow read: if student(school_id);
+
+        match /messages/{message_id} {
+          // todo: fix these
+          allow create: if student(school_id) && officer() && request.resource.data.keys.hasOnly(["timestamp", "message", "sender"]);
+          allow read: if student(school_id);
+        }
+      }
+
+      match /clubs_private/{club_id} {
+        allow read: if student(school_id) && officer();
+        allow write: if student(school_id) && officer() && request.resource.data.keys().hasOnly(["members"]);
       }
     }
   }

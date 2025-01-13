@@ -1,0 +1,73 @@
+import type { ParsedToken } from "firebase/auth";
+
+export type ClubMeetingTime = ClubMeetingDayTime | ClubMeetingFlex;
+
+export interface ClubMeetingDayTime {
+  type: "time",
+  // [0, 7)
+  day: number,
+  // minutes since 12:00 AM
+  start: number,
+  end: number,
+  // room number
+  room: string
+}
+
+export interface ClubMeetingFlex {
+  type: "flex",
+  session: string
+}
+
+export type Officers = Record<string, { name: string, role: string }>;
+
+export interface Club {
+  id: string,
+  name: string,
+  description: string,
+  topics: number[],
+  // usual meeting time(s)
+  meetings: ClubMeetingTime[],
+  // map of email to name, role
+  // this is the best way to do security rules queries
+  officers: Officers,
+  contact: {
+    // Contact email
+    email: string,
+    sponsor: string
+  }
+}
+
+// only availble to officers
+export interface ClubPrivate {
+  // emails
+  members: string[]
+}
+
+export interface UserClaims extends ParsedToken {
+  school: string,
+  role: string
+}
+
+export const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+function minutesToTimeString(minutes: number) {
+  return new Date((minutes + new Date().getTimezoneOffset()) * 60 * 1000).toLocaleTimeString();
+}
+
+export function clubMeetingTimesToString(meetings: ClubMeetingTime[]) {
+  return meetings?.map(m => {
+    if (m.type === "time") return `${days[m.day]} ${minutesToTimeString(m.start)} - ${minutesToTimeString(m.end)}`;
+    else if (m.type === "flex") return `Flex (${m.session})`;
+  }).join(", ") ?? "Unknown";
+}
+
+/**
+ * Get the name of the club president
+ */
+export function getClubPresident(officers: Officers) {
+  // if they have an item called president, return it
+  return Object.entries(officers)
+    .find(el => el[1].role.toLowerCase() === "president")?.[1].name ??
+    // otherwise, return the first item
+    Object.values(officers)[0].name;
+}

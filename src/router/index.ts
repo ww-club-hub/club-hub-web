@@ -82,12 +82,41 @@ const router = createRouter({
       }
     },
     {
-      path: '/school/clubs',
+      path: '/clubs',
       name: 'club-list',
       component: () => import("../views/ClubListView.vue"),
       meta: {
         authRequired: true,
         title: "Explore Clubs"
+      }
+    },
+    {
+      path: '/clubs/create',
+      name: 'club-create',
+      component: () => import("../views/ClubCreateView.vue"),
+      meta: {
+        authRequired: true,
+        title: "Create a Club"
+      }
+    },
+    // public-facing view
+    {
+      path: '/clubs/:clubId',
+      name: 'club-detail',
+      component: () => import("../views/ClubListView.vue"),
+      meta: {
+        authRequired: true,
+        title: "Club Detail"
+      }
+    },
+    // view for members/officers
+    {
+      path: '/clubs/:clubId/dashboard',
+      name: 'club-dashboard',
+      component: () => import("../views/ClubListView.vue"),
+      meta: {
+        authRequired: true,
+        title: "Club Detail"
       }
     },
   ]
