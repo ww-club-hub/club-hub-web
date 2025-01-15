@@ -89,7 +89,7 @@ export const onRequestPost: PagesFunction<Env> = async ctx => {
         }
       },
       firestoreToken,
-      `${getFirestoreUrl(ctx.env)}/projects/ww-club-hub/databases/(default)/documents:runQuery`
+      `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents:runQuery`
     ) as QueryResponse;
 
     // parse docsg

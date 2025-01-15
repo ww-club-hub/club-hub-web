@@ -39,7 +39,7 @@ export const onRequestPost: PagesFunction<Env> = async ctx => {
     const queryResponse = await authedJsonRequest(
       null,
       firebaseToken,
-      `${getFirestoreUrl(ctx.env)}/projects/ww-club-hub/databases/(default)/documents/schools/${parsed.data.schoolId}`,
+      `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents/schools/${parsed.data.schoolId}`,
       "GET"
     ) as FirestoreRestDocument;
 
@@ -56,7 +56,7 @@ export const onRequestPost: PagesFunction<Env> = async ctx => {
       {
         writes: [{
           transform: {
-            document: `projects/ww-club-hub/databases/(default)/documents/schools/${parsed.data.schoolId}`,
+            document: `projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents/schools/${parsed.data.schoolId}`,
             fieldTransforms: [{
               fieldPath: "members",
               appendMissingElements: makeFirestoreField([user.email]).arrayValue
@@ -65,7 +65,7 @@ export const onRequestPost: PagesFunction<Env> = async ctx => {
         }]
       },
       firebaseToken,
-      `${getFirestoreUrl(ctx.env)}/projects/ww-club-hub/databases/(default)/documents:batchWrite`
+      `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents:batchWrite`
     );
 
     await updateUserRoles(ctx.env, firebaseToken, user.user_id, user, {

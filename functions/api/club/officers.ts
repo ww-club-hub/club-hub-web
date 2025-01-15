@@ -49,7 +49,7 @@ export const onRequestPost: PagesFunction<Env> = async ctx => {
     const queryResponse = await authedJsonRequest(
       null,
       token,
-      `${getFirestoreUrl(ctx.env)}/projects/ww-club-hub/databases/(default)/documents/schools/${user.school}/clubs/${parsed.data.clubId}?fieldMask=officers`,
+      `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents/schools/${user.school}/clubs/${parsed.data.clubId}?fieldMask=officers`,
       "GET"
     ) as FirestoreRestDocument;
 
@@ -67,7 +67,7 @@ export const onRequestPost: PagesFunction<Env> = async ctx => {
       }[]
     }>({
       email: allOfficerEmails
-    }, token, `${getIdentityToolkitUrl(ctx.env)}/projects/ww-club-hub/accounts:lookup`);
+    }, token, `${getIdentityToolkitUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/accounts:lookup`);
     
     await Promise.all(allOfficerEmails.map(async email => {
       const userDetails = officerUsers.users.find(u => u.email === email);
@@ -100,7 +100,7 @@ export const onRequestPost: PagesFunction<Env> = async ctx => {
         officers: parsed.data.officers
       }).mapValue,
       token,
-      `${getFirestoreUrl(ctx.env)}/projects/ww-club-hub/databases/(default)/documents/schools/${user.school}/clubs/${parsed.data.clubId}?updateMask=officers`,
+      `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents/schools/${user.school}/clubs/${parsed.data.clubId}?updateMask=officers`,
       "PATCH"
     );
     

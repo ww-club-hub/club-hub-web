@@ -54,7 +54,7 @@ export const onRequestPost: PagesFunction<Env> = async ctx => {
         }[]
       }>({
         email: parsed.data.memberEmail
-      }, token, `${getIdentityToolkitUrl(ctx.env)}/projects/ww-club-hub/accounts:lookup`);
+      }, token, `${getIdentityToolkitUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/accounts:lookup`);
 
       const userDetails = memberDetails.users[0];
       // make sure the user exists and they are part of this school
@@ -71,7 +71,7 @@ export const onRequestPost: PagesFunction<Env> = async ctx => {
       const queryResponse = await authedJsonRequest(
         null,
         token,
-        `${getFirestoreUrl(ctx.env)}/projects/ww-club-hub/databases/(default)/documents/schools/${user.school}/clubs/${parsed.data.clubId}?fieldMask=signup`,
+        `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents/schools/${user.school}/clubs/${parsed.data.clubId}?fieldMask=signup`,
         "GET"
       ) as FirestoreRestDocument;
 
@@ -107,7 +107,7 @@ export const onRequestPost: PagesFunction<Env> = async ctx => {
       {
         writes: [{
           transform: {
-            document: `projects/ww-club-hub/databases/(default)/documents/schools/${user.school}/clubs_private/${parsed.data.clubId}`,
+            document: `projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents/schools/${user.school}/clubs_private/${parsed.data.clubId}`,
             fieldTransforms: [{
               fieldPath: "members",
               appendMissingElements: makeFirestoreField([userEmail]).arrayValue
@@ -116,7 +116,7 @@ export const onRequestPost: PagesFunction<Env> = async ctx => {
         }]
       },
       token,
-      `${getFirestoreUrl(ctx.env)}/projects/ww-club-hub/databases/(default)/documents:batchWrite`
+      `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents:batchWrite`
     );
     
     return jsonResponse(200, {

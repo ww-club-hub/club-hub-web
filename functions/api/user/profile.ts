@@ -26,7 +26,7 @@ export const onRequestGet: PagesFunction<Env> = async ctx => {
     }[]
   }>({
     email: [email]
-  }, token, `${getIdentityToolkitUrl(ctx.env)}/projects/ww-club-hub/accounts:lookup`);
+  }, token, `${getIdentityToolkitUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/accounts:lookup`);
 
   const user = userRes.users[0];
 

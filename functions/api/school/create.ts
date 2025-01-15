@@ -57,7 +57,7 @@ export const onRequestPost: PagesFunction<Env> = async ctx => {
               }
             },
             firestoreToken,
-            `${getFirestoreUrl(ctx.env)}/projects/ww-club-hub/databases/(default)/documents:runAggregationQuery`
+            `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents:runAggregationQuery`
           ) as AggregationQueryResponse;
           if (parseInt(queryResponse[0].result.aggregateFields.count.integerValue) > 0) {
             // this school already exists
@@ -78,7 +78,7 @@ export const onRequestPost: PagesFunction<Env> = async ctx => {
               members: []
             }).mapValue,
             firestoreToken,
-            `${getFirestoreUrl(ctx.env)}/projects/ww-club-hub/databases/(default)/documents/schools`
+            `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents/schools`
           ) as FirestoreRestDocument;
 
           const schoolId = getFirestoreDocId(doc);
