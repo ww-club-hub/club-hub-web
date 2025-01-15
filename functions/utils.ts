@@ -2,16 +2,16 @@ import { FirestoreFieldObject } from "./types";
 import { FirestoreField } from "./types";
 import { RawFirestoreField, RawFirestoreFieldObject } from "./types";
 
-export async function jsonResponse(status: number, response: Record<string, any>) {
+export async function jsonResponse(status: number, response: Record<string, any>, headers?: Record<string, string>) {
   return new Response(JSON.stringify(response), {
     status,
-    headers: {
+    headers: headers ?? {
       "Content-Type": "application/json"
     }
   });
 }
 
-export async function authedJsonRequest(body: any, token: string, url: string, method = "POST") {
+export async function authedJsonRequest<T = unknown>(body: any, token: string, url: string, method = "POST") {
   return await fetch(url, {
     method,
     headers: {
@@ -19,7 +19,7 @@ export async function authedJsonRequest(body: any, token: string, url: string, m
       "Content-Type": "application/json"
     },
     body: method === "GET" ? undefined : JSON.stringify(body)
-  }).then(r => r.json());
+  }).then(r => r.json<T>());
 }
 
 export function parseFirestoreField(field: RawFirestoreField): FirestoreField {
