@@ -5,6 +5,7 @@ import { ref } from "vue";
 import { type Club, type UserClaims } from "@/utils";
 import { useRouter } from "vue-router";
 import { addDoc, collection } from "firebase/firestore";
+import FormInput from "@/components/FormInput.vue";
 
 const claims = (await getIdTokenResult(auth.currentUser!)).claims as UserClaims;
 const stuco = claims.role == "owner" || claims.role == "admin";
@@ -64,25 +65,10 @@ async function onFormSubmit() {
       </div>
 
       <form @submit.prevent="onFormSubmit" class="space-y-4 md:space-y-6">
-        <div>
-          <label for="input-name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Name:</label>
-          <input type="text" v-model="name" id="input-name" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-orange-500 dark:focus:border-orange-500" required />
-        </div>
-
-        <div>
-          <label for="input-description" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Description:</label>
-          <input type="text" v-model="description" id="input-description" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-orange-500 dark:focus:border-orange-500" required />
-        </div>
-
-        <div>
-          <label for="input-president" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">President's Student Email:</label>
-          <input type="email" v-model="president" id="input-president" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-orange-500 dark:focus:border-orange-500" required />
-        </div>
-
-        <div>
-          <label for="input-sponsor" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Sponsor:</label>
-          <input type="text" v-model="sponsor" id="input-sponsor" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-orange-500 dark:focus:border-orange-500" required />
-        </div>
+        <FormInput label="Name:" type="text" required v-model="name" />
+        <FormInput label="Description:" type="text" required v-model="description" />
+        <FormInput label="President's Student Email:" type="email" required v-model="president" />
+        <FormInput label="Sponsor:" type="text" required v-model="sponsor" />
 
         <p v-if="errorMessage" class="mb-2 text-rose-600 dark:text-rose-400 italic">{{ errorMessage }}</p>
 
