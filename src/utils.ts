@@ -39,7 +39,7 @@ export interface Club {
   officers: Officers,
   contact: {
     // Contact email
-    email: string,
+    email?: string,
     sponsor: string
   },
   signup: {

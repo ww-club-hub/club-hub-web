@@ -1,7 +1,7 @@
 <script setup lang="ts">
 defineProps<{
   label: string,
-  type: "text" | "email",
+  type: "text" | "email" | "url",
   required: boolean
 }>();
 

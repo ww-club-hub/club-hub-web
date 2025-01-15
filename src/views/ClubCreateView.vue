@@ -21,7 +21,7 @@ const name = ref("");
 const description = ref("");
 // email - we will fetch their name
 const president = ref("");
-const contactEmail = ref("");
+//const contactEmail = ref("");
 const sponsor = ref("");
 const errorMessage = ref("");
 
@@ -46,7 +46,6 @@ async function onFormSubmit() {
       }
     },
     contact: {
-      email: contactEmail.value,
       sponsor: sponsor.value
     }
   };

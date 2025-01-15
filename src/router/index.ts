@@ -109,6 +109,15 @@ const router = createRouter({
         title: "Club Detail"
       }
     },
+    {
+      path: '/clubs/:clubId/edit',
+      name: 'club-edit',
+      component: () => import("../views/ClubEditView.vue"),
+      meta: {
+        authRequired: true,
+        title: "Club Settings"
+      }
+    },
     // view for members/officers
     {
       path: '/clubs/:clubId/dashboard',
