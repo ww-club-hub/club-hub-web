@@ -23,11 +23,13 @@ service cloud.firestore {
       match /clubs/{club_id} {   
         // stuco can create, edit, and delete
         allow delete: if admin() && student(school_id);
-        allow create: if debug(admin()) && debug(student(school_id)) &&
+        allow create: if admin() && student(school_id) &&
           request.resource.data.keys().toSet() == ["name", "description", "officers", "contact"].toSet();
+        // officers can edit fields
+        // TODO: better checking for updating "officers" field
         allow update: if student(school_id) && (admin() || officer()) &&
-          onlyChanged(["name", "description", "officers", ]);
-        allow read: if student(school_id);
+          onlyChanged(["name", "description", "officers", "contact", "logoUrl", "topics", "meetings", "signup"]);
+        allow read: if student(school_id) && (resource.data.public || resource.data.;
 
         match /messages/{message_id} {
           // todo: fix these

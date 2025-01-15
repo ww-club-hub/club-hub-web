@@ -20,11 +20,18 @@ export interface ClubMeetingFlex {
 
 export type Officers = Record<string, { name: string, role: string }>;
 
+export enum ClubSignupType {
+  // open to anyone
+  Open,
+  ApplicationRequired
+}
+
 export interface Club {
   id: string,
   name: string,
   description: string,
   topics: number[],
+  logoUrl: string,
   // usual meeting time(s)
   meetings: ClubMeetingTime[],
   // map of email to name, role
@@ -34,7 +41,16 @@ export interface Club {
     // Contact email
     email: string,
     sponsor: string
+  },
+  signup: {
+    type: ClubSignupType.Open,
+  } | {
+    type: ClubSignupType.ApplicationRequired,
+    formUrl: string
   }
+
+  // visible in search results
+  public: boolean
 }
 
 // only availble to officers
