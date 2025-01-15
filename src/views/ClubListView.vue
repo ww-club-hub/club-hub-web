@@ -122,7 +122,7 @@ onUnmounted(() => {
                         <router-link :to="`/clubs/${club.id}`" class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Details</router-link>
                       </li>
                       <li v-if="stuco || auth.currentUser!.email! in club.officers">
-                        <router-link :to="/clubs/${club.id}/edit`" class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Edit</router-link>
+                        <router-link :to="`/clubs/${club.id}/edit`" class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Edit</router-link>
                       </li>
                     </ul>
                     
