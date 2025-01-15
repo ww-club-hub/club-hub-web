@@ -18,7 +18,11 @@ export interface ClubMeetingFlex {
   session: string
 }
 
-export type Officers = Record<string, { name: string, role: string }>;
+export type Officers = Record<string, {
+  name: string,
+  role: string,
+  adminAccess: boolean
+}>;
 
 export enum ClubSignupType {
   // open to anyone

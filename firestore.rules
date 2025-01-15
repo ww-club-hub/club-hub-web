@@ -29,7 +29,7 @@ service cloud.firestore {
         // TODO: better checking for updating "officers" field
         allow update: if student(school_id) && (admin() || officer()) &&
           onlyChanged(["name", "description", "officers", "contact", "logoUrl", "topics", "meetings", "signup"]);
-        allow read: if student(school_id) && (resource.data.public || resource.data.;
+        allow read: if student(school_id) && (resource.data.public || officer() || admin());
 
         match /messages/{message_id} {
           // todo: fix these
