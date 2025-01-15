@@ -22,15 +22,25 @@ const description = ref("");
 const president = ref("");
 const contactEmail = ref("");
 const sponsor = ref("");
+const errorMessage = ref("");
 
 async function onFormSubmit() {
-  // TODO: fetch president name
+  errorMessage.value = "";
+
+  // fetch president name
+  const presidentInfo = await fetch(`/api/user/profile?email=${president.value}`);
+  if (presidentInfo.status === 404) {
+    // show error
+    errorMessage.value = `The president email ${president.value} is not associated with any ClubHub account.`;
+    return
+  }
+  const { displayName } = await presidentInfo.json();
   const club: Partial<Club> = {
     name: name.value,
     description: description.value,
     officers: {
       [president.value]: {
-        name: "me",
+        name: displayName,
         role: "President"
       }
     },
@@ -73,6 +83,8 @@ async function onFormSubmit() {
           <label for="input-sponsor" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Sponsor:</label>
           <input type="text" v-model="sponsor" id="input-sponsor" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-orange-500 dark:focus:border-orange-500" required />
         </div>
+
+        <p v-if="errorMessage" class="mb-2 text-rose-600 dark:text-rose-400 italic">{{ errorMessage }}</p>
 
         <button type="submit" class="w-full text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-none focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800">Create</button>
       </form>
