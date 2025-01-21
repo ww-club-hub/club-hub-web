@@ -8,7 +8,8 @@
     "preview": "vite preview",
     "build": "vite build",
     "build-watch": "NODE_ENV=development npm run build -- --sourcemap true --minify false -w --mode development",
-    "dev-cf": "wrangler pages dev ./dist"
+    "dev-cf": "wrangler pages dev ./dist",
+    "firebase": "firebase emulators:start --import .firebase-emulator-data --export-on-exit"
   },
   "dependencies": {
     "vue": "^3.4.29",

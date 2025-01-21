@@ -29,3 +29,5 @@ coverage
 
 *.tsbuildinfo
 .wrangler/
+
+.firebase-emulator-data/

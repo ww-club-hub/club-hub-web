@@ -6,7 +6,7 @@
 
    `npm install -g firebase`
    
-   `firebase emulators:start`
+   `npm run firebase`
    
 3. Choose a development option:
 
