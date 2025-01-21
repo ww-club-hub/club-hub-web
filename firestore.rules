@@ -11,6 +11,13 @@ service cloud.firestore {
     function officer() {
       return request.auth.token.email in resource.data.officers;
     }
+    // same as officer() but fetches the officer data
+    function officerIndirect() {
+      return request.auth.token.email in get(/databases/$(database)/documents/schools/$(school_id)/clubs/$(club_id)).data.officers;
+    }
+    function memberIndirect() {
+      return request.auth.token.email in get(/databases/$(database)/documents/schools/$(school_id)/clubs_private/$(club_id)).data.members;
+    }
     function onlyChanged(keys) {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
     }
@@ -24,11 +31,10 @@ service cloud.firestore {
         // stuco can create, edit, and delete
         allow delete: if admin() && student(school_id);
         allow create: if admin() && student(school_id) &&
-          request.resource.data.keys().toSet() == ["name", "description", "officers", "contact"].toSet();
+          request.resource.data.keys().toSet() == ["name", "description", "contact"].toSet();
         // officers can edit fields
-        // TODO: better checking for updating "officers" field
         allow update: if student(school_id) && (admin() || officer()) &&
-          onlyChanged(["name", "description", "officers", "contact", "logoUrl", "topics", "meetings", "signup"]);
+          onlyChanged(["name", "description", "contact", "logoUrl", "topics", "meetings", "signup"]);
         allow read: if student(school_id) && (resource.data.public || officer() || admin());
 
         match /messages/{message_id} {
@@ -40,7 +46,7 @@ service cloud.firestore {
 
       match /clubs_private/{club_id} {
         allow read: if student(school_id) && officer();
-        allow write: if student(school_id) && officer() && request.resource.data.keys().hasOnly(["members"]);
+        // can only be written by backend
       }
     }
   }

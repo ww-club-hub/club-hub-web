@@ -68,7 +68,7 @@ export const onRequestPost: PagesFunction<Env> = async ctx => {
       `${getFirestoreUrl(ctx.env)}/projects/ww-club-hub/databases/(default)/documents:batchWrite`
     );
 
-    await updateUserRoles(ctx.env, firebaseToken, user.user_id, {
+    await updateUserRoles(ctx.env, firebaseToken, user.user_id, user, {
       school: parsed.data.schoolId,
     });
     

@@ -83,7 +83,7 @@ export const onRequestPost: PagesFunction<Env> = async ctx => {
 
           const schoolId = getFirestoreDocId(doc);
 
-          await updateUserRoles(ctx.env, firestoreToken, user.user_id, {
+          await updateUserRoles(ctx.env, firestoreToken, user.user_id, user, {
             school: schoolId,
             role: "owner"
           });

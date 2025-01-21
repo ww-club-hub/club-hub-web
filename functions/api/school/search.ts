@@ -1,6 +1,6 @@
-import { getUserFromReq, makeServiceAccountToken, FIRESTORE_SCOPE, getFirestoreUrl, updateUserRoles, getFirestoreDocId } from "../../firebase";
+import { getUserFromReq, makeServiceAccountToken, FIRESTORE_SCOPE, getFirestoreUrl, getFirestoreDocId } from "../../firebase";
 import { Env, FirestoreRestDocument, QueryResponse } from "../../types";
-import { authedJsonRequest, jsonResponse, makeFirestoreField, parseFirestoreObject } from "../../utils";
+import { authedJsonRequest, jsonResponse, parseFirestoreObject } from "../../utils";
 import { z } from "zod";
 
 const SearchReq = z.object({
@@ -99,7 +99,7 @@ export const onRequestPost: PagesFunction<Env> = async ctx => {
       .map(doc => ({
         id: getFirestoreDocId(doc),
         ...parseFirestoreObject(doc.fields)
-      }))
+      } as { id: string, domainRestriction: string[] }))
       // filter by domain restriction
       .filter(doc => {
         if (doc.domainRestriction) {

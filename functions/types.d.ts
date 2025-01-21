@@ -48,6 +48,21 @@ export interface QueryResponseItem {
 
 export type QueryResponse = QueryResponseItem[];
 
+export enum OfficerPermission {
+  Officers = 1,
+  Members = 2,
+  Meetings = 4,
+  Messages = 8,
+  Forms = 16,
+  ClubDetails = 32
+}
+
+export enum ClubSignupType {
+  // open to anyone
+  Open,
+  ApplicationRequired
+}
+
 export interface UserJwtPayload {
   name: string;
   email: string;
@@ -60,4 +75,11 @@ export interface UserJwtPayload {
       // TODO
     }
   };
+  school?: string;
+  interests?: number[];
+  // school-wide role
+  role?: string;
+  // map of club id to permission bitmask
+  officerOf: Record<string, OfficerPermission>
+  memberOf?: string[];
 }

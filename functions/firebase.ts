@@ -113,10 +113,18 @@ export const getUserFromReq = async (env: Env, cfCache: Cache, req: Request)  =>
 }
 
 /// update Identity Toolkit customAttributes
-export async function updateUserRoles(env: Env, token: string, userId: string, roles: any) {
+export async function updateUserRoles(env: Env, token: string, userId: string, oldAttrs: UserJwtPayload, roles: any) {
   return await authedJsonRequest({
     localId: userId,
-    customAttributes: JSON.stringify(roles)
+    customAttributes: JSON.stringify({
+      // merge
+      school: oldAttrs.school,
+      role: oldAttrs.role,
+      interests: oldAttrs.interests,
+      officerOf: oldAttrs.officerOf,
+      memberOf: oldAttrs.memberOf,
+      ...roles
+    })
   }, token, `${getIdentityToolkitUrl(env)}/projects/ww-club-hub/accounts:update`);
 }
 
