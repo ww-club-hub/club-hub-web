@@ -8,15 +8,11 @@ service cloud.firestore {
     function admin() {
       return request.auth.token.role == "owner" || request.auth.token.role == "admin";
     }
-    function officer() {
-      return request.auth.token.email in resource.data.officers;
+    function officer(clubId) {
+      return clubId in request.auth.token.officerOf;
     }
-    // same as officer() but fetches the officer data
-    function officerIndirect() {
-      return request.auth.token.email in get(/databases/$(database)/documents/schools/$(school_id)/clubs/$(club_id)).data.officers;
-    }
-    function memberIndirect() {
-      return request.auth.token.email in get(/databases/$(database)/documents/schools/$(school_id)/clubs_private/$(club_id)).data.members;
+    function member(clubId) {
+      return clubId in request.auth.token.memberOf;
     }
     function onlyChanged(keys) {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
@@ -33,19 +29,19 @@ service cloud.firestore {
         allow create: if admin() && student(school_id) &&
           request.resource.data.keys().toSet() == ["name", "description", "contact"].toSet();
         // officers can edit fields
-        allow update: if student(school_id) && (admin() || officer()) &&
+        allow update: if student(school_id) && (admin() || officer(club_id)) &&
           onlyChanged(["name", "description", "contact", "logoUrl", "topics", "meetings", "signup"]);
-        allow read: if student(school_id) && (resource.data.public || officer() || admin());
+        allow read: if student(school_id) && (resource.data.public || officer(club_id) || admin());
 
         match /messages/{message_id} {
-          // todo: fix these
-          allow create: if student(school_id) && officer() && request.resource.data.keys.hasOnly(["timestamp", "message", "sender"]);
-          allow read: if student(school_id);
+          // todo: implement fine grained officer permissions
+          allow create: if student(school_id) && officer(club_id) && request.resource.data.keys.hasOnly(["timestamp", "message", "sender"]);
+          allow read: if student(school_id) && member(club_id);
         }
       }
 
       match /clubs_private/{club_id} {
-        allow read: if student(school_id) && officer();
+        allow read: if student(school_id) && officer(club_id);
         // can only be written by backend
       }
     }
