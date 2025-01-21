@@ -21,7 +21,7 @@ export interface ClubMeetingFlex {
 export type Officers = Record<string, {
   name: string,
   role: string,
-  adminAccess: boolean
+  permissions: OfficerPermission
 }>;
 
 export enum ClubSignupType {
@@ -63,9 +63,22 @@ export interface ClubPrivate {
   members: string[]
 }
 
+export enum OfficerPermission {
+  Officers = 1,
+  Members = 2,
+  Meetings = 4,
+  Messages = 8,
+  Forms = 16,
+  ClubDetails = 32
+}
+
 export interface UserClaims extends ParsedToken {
   school: string,
-  role: string
+  role: string,
+  interests?: number[],
+  memberOf: string[],
+  // map of club id to permission bitmask
+  officerOf: Record<string, OfficerPermission>
 }
 
 export const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];

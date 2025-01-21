@@ -2,23 +2,22 @@
 import { getIdTokenResult } from "firebase/auth";
 import { auth, db } from "../firebase";
 import { ref } from "vue";
-import { type Club, type UserClaims } from "@/utils";
+import { OfficerPermission, type Club, type UserClaims } from "@/utils";
 import { useRoute, useRouter } from "vue-router";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { onMounted } from "vue";
-
-const claims = (await getIdTokenResult(auth.currentUser!)).claims as UserClaims;
-const stuco = claims.role == "owner" || claims.role == "admin";
 
 const router = useRouter();
 const route = useRoute();
 
 const clubId = route.params.clubId as string;
 
-// only stuco can create clubs directly
-if (!stuco) {
+const claims = (await getIdTokenResult(auth.currentUser!)).claims as UserClaims;
+const stuco = claims.role == "owner" || claims.role == "admin";
+const officer = clubId in claims.officerOf && (claims.officerOf[clubId] & OfficerPermission.ClubDetails);
+
+if (!stuco && !officer)
   router.push({ name: "club-list" });
-}
 
 const club = ref<Club | null>(null);
 
@@ -30,7 +29,8 @@ async function onFormSubmit() {
 
 onMounted(async () => {
   // fetch club
-  const club = await getDoc(doc(db, "schools", claims.school, "clubs", clubId));
+  const clubDoc = await getDoc(doc(db, "schools", claims.school, "clubs", clubId));
+  club.value = clubDoc.data() as Club;
 });
 
 </script>

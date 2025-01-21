@@ -101,9 +101,9 @@ const router = createRouter({
     },
     // public-facing view
     {
-      path: '/clubs/:clubId',
+      path: '/clubs/:clubId/info',
       name: 'club-detail',
-      component: () => import("../views/ClubListView.vue"),
+      component: () => import("../views/ClubDetailView.vue"),
       meta: {
         authRequired: true,
         title: "Club Detail"
@@ -118,15 +118,39 @@ const router = createRouter({
         title: "Club Settings"
       }
     },
-    // view for members/officers
+    // views for members/officers
     {
-      path: '/clubs/:clubId/dashboard',
-      name: 'club-dashboard',
-      component: () => import("../views/ClubListView.vue"),
-      meta: {
-        authRequired: true,
-        title: "Club Detail"
-      }
+      path: '/clubs/:clubId',
+      component: () => import("../views/club/BaseView.vue"),
+      children: [
+        {
+          name: 'club-dashboard',
+          path: '',
+          component: import("../views/club/DashboardView.vue"),
+          meta: {
+            authRequired: true,
+            title: "Club Dashboard"
+          }
+        },
+        {
+          name: 'club-settings',
+          path: 'settings',
+          component: import("../views/club/SettingsView.vue"),
+          meta: {
+            authRequired: true,
+            title: "Club Settings"
+          }
+        },
+        {
+          name: 'club-attendance',
+          path: 'attendance',
+          component: import("../views/club/AttendanceView.vue"),
+          meta: {
+            authRequired: true,
+            title: "Club Attendance"
+          }
+        }
+      ]
     },
   ]
 })
