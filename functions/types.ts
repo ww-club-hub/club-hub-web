@@ -1,3 +1,6 @@
+import { JWTPayload } from "jose";
+import { Club, ClubSignupType, OfficerPermission, UserClaims } from "../src/utils";
+export { Club, ClubSignupType, UserClaims, OfficerPermission };
 export interface Env {
   SERVICE_ACCOUNT_EMAIL: string;
   SERVICE_ACCOUNT_KEY: string;
@@ -48,24 +51,7 @@ export interface QueryResponseItem {
 
 export type QueryResponse = QueryResponseItem[];
 
-export enum OfficerPermission {
-  Officers = 1,
-  Members = 2,
-  Meetings = 4,
-  Messages = 8,
-  Forms = 16,
-  ClubDetails = 32
-}
-
-export enum ClubSignupType {
-  // club is not public yet
-  Private,
-  // open to anyone
-  Open,
-  ApplicationRequired
-}
-
-export interface UserJwtPayload {
+export interface FirebaseJwtPayload {
   name: string;
   email: string;
   email_verified: boolean;
@@ -77,11 +63,11 @@ export interface UserJwtPayload {
       // TODO
     }
   };
-  school?: string;
-  interests?: number[];
-  // school-wide role
-  role?: string;
-  // map of club id to permission bitmask
-  officerOf: Record<string, OfficerPermission>
-  memberOf?: string[];
+}
+
+export interface Context {
+  req: Request<unknown, CfProperties<unknown>>,
+  resHeaders: Headers,
+  env: Env,
+  user: JWTPayload & FirebaseJwtPayload & UserClaims
 }
