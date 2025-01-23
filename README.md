@@ -1,33 +1,18 @@
 # club-hub-web
 
-This template should help get you started developing with Vue 3 in Vite.
+The web interface for Club Hub, a consolidated club management platform for schools.
 
-## Recommended IDE Setup
+Club Hub aims to simplify the administrative tasks involved with managing clubs at schools, for both club officers and school administrators. It also makes it easier for students to find and manage their own clubs.
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+**Online demo:**
 
-## Type Support for `.vue` Imports in TS
+https://club-hub.org
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vitejs.dev/config/).
-
-## Project Setup
+## Development quick-start
 
 ```sh
 npm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
 npm run dev
 ```
 
-### Type-Check, Compile and Minify for Production
-
-```sh
-npm run build
-```
+See [DEVELOPMENT.md](DEVELOPMENT.md) for more information

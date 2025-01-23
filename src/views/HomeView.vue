@@ -37,10 +37,7 @@ import type { RouterLink } from 'vue-router';
             <br />made simple.
           </p>
 
-          <p class="mb-4">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean scelerisque lorem accumsan
-            sapien molestie,
-            non convallis ante fringilla. Cras mauris justo, lacinia eu congue a, laoreet ac justo. Suspendisse risus
-            lacus, suscipit vitae justo ac, pellentesque ultricies dolor.</p>
+          <p class="mb-4">Club Hub aims to simplify the administrative tasks involved with managing clubs at schools, for both club officers and school administrators. It also makes it easier for students to find and manage their own clubs.</p>
 
           <div class="flex items-center gap-3 md:mb-16">
             <RouterLink to="/login"
