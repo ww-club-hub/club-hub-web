@@ -25,6 +25,8 @@ export type Officers = Record<string, {
 }>;
 
 export enum ClubSignupType {
+  // club is not public yet
+  Private,
   // open to anyone
   Open,
   ApplicationRequired
@@ -47,14 +49,13 @@ export interface Club {
     sponsor: string
   },
   signup: {
+    type: ClubSignupType.Private
+  } | {
     type: ClubSignupType.Open,
   } | {
     type: ClubSignupType.ApplicationRequired,
     formUrl: string
   }
-
-  // visible in search results
-  public: boolean
 }
 
 // only availble to officers
@@ -69,7 +70,8 @@ export enum OfficerPermission {
   Meetings = 4,
   Messages = 8,
   Forms = 16,
-  ClubDetails = 32
+  ClubDetails = 32,
+  All = ~(~0 << 6)
 }
 
 export interface UserClaims extends ParsedToken {

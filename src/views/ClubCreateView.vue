@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { getIdTokenResult } from "firebase/auth";
+import { getIdToken, getIdTokenResult } from "firebase/auth";
 import { auth, db } from "../firebase";
 import { ref } from "vue";
-import { type Club, type UserClaims } from "@/utils";
+import { ClubSignupType, OfficerPermission, type Club, type UserClaims } from "@/utils";
 import { useRouter } from "vue-router";
 import { addDoc, collection } from "firebase/firestore";
 import FormInput from "@/components/FormInput.vue";
@@ -36,21 +36,43 @@ async function onFormSubmit() {
     return
   }
   const { displayName } = await presidentInfo.json();
+  const officers = {
+        [president.value]: {
+          name: displayName as string,
+          role: "President",
+          permissions: OfficerPermission.All
+        }
+  };
   const club: Partial<Club> = {
     name: name.value,
     description: description.value,
-    officers: {
-      [president.value]: {
-        name: displayName,
-        role: "President"
-      }
-    },
     contact: {
       sponsor: sponsor.value
+    },
+    signup: {
+      type: ClubSignupType.Private
     }
   };
 
-  await addDoc(collection(db, "schools", claims.school, "clubs"), club);
+  const doc = await addDoc(collection(db, "schools", claims.school, "clubs"), club);
+
+  const idToken = await getIdToken(auth.currentUser!);
+
+  // update officers
+  const res = await fetch("/api/club/officers", {
+    method: "POST",
+    body: JSON.stringify({
+      clubId: doc.id,
+      officers
+    }),
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+      "Content-Type": "application/json"
+    }
+  }).then(r => r.json()) as { error: string } | { success: true };
+
+  if ("error" in res && res.error) errorMessage.value = res.error;
+  else errorMessage.value = "";
 
   router.push({ name: "club-list" });
 }

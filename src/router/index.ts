@@ -119,7 +119,7 @@ const router = createRouter({
       }
     },
     // views for members/officers
-    {
+    /*{
       path: '/clubs/:clubId',
       component: () => import("../views/club/BaseView.vue"),
       children: [
@@ -151,7 +151,7 @@ const router = createRouter({
           }
         }
       ]
-    },
+    },*/ 
   ]
 })
 

@@ -43,7 +43,7 @@ onUnmounted(() => {
   <section class="bg-white dark:bg-gray-900 grow">
     <div class="max-w-screen-2xl mx-auto p-4">
       <div class="pb-3 mb-3 border-b border-gray-300 dark:border-gray-700">
-        <h1 class="text-2xl text-black dark:text-white font-semibold mb-2">Your Clubs</h1>
+        <h1 class="text-2xl text-black dark:text-white font-semibold mb-2">Clubs at your school</h1>
       </div>
       
       <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg">

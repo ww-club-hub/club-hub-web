@@ -2,7 +2,7 @@
 import { getIdTokenResult } from "firebase/auth";
 import { auth, db } from "../firebase";
 import { ref } from "vue";
-import { OfficerPermission, type Club, type UserClaims } from "@/utils";
+import { ClubSignupType, OfficerPermission, type Club, type UserClaims } from "@/utils";
 import { useRoute, useRouter } from "vue-router";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { onMounted } from "vue";
@@ -50,6 +50,17 @@ onMounted(async () => {
         <FormInput label="Sponsor:" type="text" required v-model="club.contact.sponsor" />
         <FormInput label="Logo URL:" type="url" v-model="club.logoUrl" />
 
+        
+        <div class="max-w-sm mx-auto">
+          <label for="countries" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Signup mode</label>
+          <select required id="signup-modes" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-orange-500 dark:focus:border-orange-500" v-model="club.signup.type">
+            <option selected>Choose a signup type</option>
+            <option :value="ClubSignupType.Private">Private</option>
+            <option :value="ClubSignupType.Open">Open to anyone</option>
+            <option :value="ClubSignupType.ApplicationRequired">Application required</option>
+          </select>
+        </div>
+        
         <!-- TODO: meeting time/place selection -->
         <!-- TODO: topic list -->
 

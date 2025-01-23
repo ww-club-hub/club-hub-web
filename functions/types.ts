@@ -58,6 +58,8 @@ export enum OfficerPermission {
 }
 
 export enum ClubSignupType {
+  // club is not public yet
+  Private,
   // open to anyone
   Open,
   ApplicationRequired

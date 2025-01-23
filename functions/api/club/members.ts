@@ -50,15 +50,16 @@ export const onRequestPost: PagesFunction<Env> = async ctx => {
       const memberDetails = await authedJsonRequest<{
         users: {
           localId: string,
-          customAttributes: UserJwtPayload,
+          customAttributes: string,
         }[]
       }>({
         email: parsed.data.memberEmail
       }, token, `${getIdentityToolkitUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/accounts:lookup`);
 
       const userDetails = memberDetails.users[0];
+      const attrs = JSON.parse(userDetails?.customAttributes) ?? null;
       // make sure the user exists and they are part of this school
-      if (!userDetails || userDetails.customAttributes.school !== user.school) {
+      if (attrs?.school !== user.school) {
         return jsonResponse(400, {
           error: "This user does not exist"
         });
@@ -66,7 +67,7 @@ export const onRequestPost: PagesFunction<Env> = async ctx => {
 
       userId = userDetails.localId;
       userEmail = parsed.data.memberEmail;
-      userAttrs = userDetails.customAttributes;
+      userAttrs = attrs;
     } else {
       const queryResponse = await authedJsonRequest(
         null,

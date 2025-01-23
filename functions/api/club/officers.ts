@@ -38,7 +38,7 @@ export const onRequestPost: PagesFunction<Env> = async ctx => {
     }
 
     // ensure they have permissions to modify officers
-    if (!(user.officerOf[parsed.data.clubId] & OfficerPermission.Officers)) {
+    if (!((user.officerOf?.[parsed.data.clubId] & OfficerPermission.Officers) || user.role == 'owner' || user.role == 'admin')) {
       return jsonResponse(401, {
         error: "You do not have permissions to manage this club's officers"
       });
@@ -53,44 +53,49 @@ export const onRequestPost: PagesFunction<Env> = async ctx => {
       "GET"
     ) as FirestoreRestDocument;
 
+    console.log(queryResponse);
+
     const doc = parseFirestoreObject(queryResponse.fields);
 
     // get a list of all officers
-    const allOfficerEmails = [...Object.keys(doc.officers), ...Object.keys(parsed.data.officers)];
+    const allOfficerEmails = [...Object.keys(doc.officers || {}), ...Object.keys(parsed.data.officers || {})];
 
     // fetch all officer details
     const officerUsers = await authedJsonRequest<{
       users: {
         localId: string,
         email: string,
-        customAttributes: UserJwtPayload,
+        customAttributes: string,
       }[]
     }>({
       email: allOfficerEmails
     }, token, `${getIdentityToolkitUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/accounts:lookup`);
+
+    console.log(allOfficerEmails, officerUsers);
     
     await Promise.all(allOfficerEmails.map(async email => {
       const userDetails = officerUsers.users.find(u => u.email === email);
       // if the user doesn't exist, or if they're int he wrong school, remove from officer list
-      if (!userDetails || userDetails.customAttributes.school !== user.school) {
+      const attrs = JSON.parse(userDetails?.customAttributes) ?? null;
+      if (attrs?.school !== user.school) {
         delete parsed.data.officers[email];
         return;
       }
       if (email in parsed.data.officers) {
-        if (!userDetails.customAttributes.officerOf)
-          userDetails.customAttributes.officerOf = {};
+        if (!attrs.officerOf)
+          attrs.officerOf = {};
 
         // set permissions
-        userDetails.customAttributes.officerOf[parsed.data.clubId] = parsed.data.officers[email].permissions;
+        attrs.officerOf[parsed.data.clubId] = parsed.data.officers[email].permissions;
       } else {
         // remove officer permissions
-        if (userDetails.customAttributes.officerOf) {
-          delete userDetails.customAttributes.officerOf[parsed.data.clubId];
+        if (attrs.officerOf) {
+          delete attrs.officerOf[parsed.data.clubId];
         }
       }
       // update roles
-      await updateUserRoles(ctx.env, token, userDetails.localId, userDetails.customAttributes, {
-        officerOf: userDetails.customAttributes.officerOf
+      await updateUserRoles(ctx.env, token, userDetails.localId, attrs, {
+        officerOf: attrs.officerOf
       });
     }));
 

@@ -38,7 +38,7 @@ export function parseFirestoreField(field: RawFirestoreField): FirestoreField {
   } else if ("timestampValue" in field && typeof field.timestampValue === "string") {
     return new Date(Date.parse(field.timestampValue));
   } else if ("mapValue" in field) {
-    return parseFirestoreObject(field.mapValue.fields);
+    return parseFirestoreObject(field.mapValue.fields || {});
   } else if ("arrayValue" in field && Array.isArray(field.arrayValue.values)) {
     return field.arrayValue.values.map(parseFirestoreField);
   }

@@ -28,7 +28,7 @@ export const onRequestGet: PagesFunction<Env> = async ctx => {
     email: [email]
   }, token, `${getIdentityToolkitUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/accounts:lookup`);
 
-  const user = userRes.users[0];
+  const user = userRes.users?.[0];
 
   if (user) {
     return jsonResponse(200, {

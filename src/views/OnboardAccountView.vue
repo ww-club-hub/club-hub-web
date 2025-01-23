@@ -55,7 +55,7 @@ async function verifyEmail() {
 
 async function search() {
   if (!user.value) return;
-  const idToken = await getIdToken(user.value);
+  const idToken = await getIdToken(user.value, true);// need to refresh to register email verification
   // fetch schools starting with searchQuery
   const res = await fetch("/api/school/search", {
     method: "POST",

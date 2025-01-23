@@ -27,11 +27,12 @@ service cloud.firestore {
         // stuco can create, edit, and delete
         allow delete: if admin() && student(school_id);
         allow create: if admin() && student(school_id) &&
-          request.resource.data.keys().toSet() == ["name", "description", "contact"].toSet();
+          request.resource.data.keys().toSet() == ["name", "description", "contact", "signup"].toSet();
         // officers can edit fields
         allow update: if student(school_id) && (admin() || officer(club_id)) &&
           onlyChanged(["name", "description", "contact", "logoUrl", "topics", "meetings", "signup"]);
-        allow read: if student(school_id) && (resource.data.public || officer(club_id) || admin());
+        // signup.type == 0 indicates private
+        allow read: if student(school_id) && (resource.data.signup.type != 0 || officer(club_id) || admin());
 
         match /messages/{message_id} {
           // todo: implement fine grained officer permissions
