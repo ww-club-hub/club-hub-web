@@ -1,7 +1,8 @@
 import { z } from "zod";
-import { AUTH_SCOPE, FIRESTORE_SCOPE, getFirestoreUrl, getIdentityToolkitUrl, getUserFromReq, makeServiceAccountToken, parseFirestoreObject, makeFirestoreField, updateUserRoles } from "../../firebase";
-import { ClubSignupType, Env, FirestoreFieldObject, FirestoreRestDocument, OfficerPermission, UserClaims } from "../../types";
-import { authedJsonRequest, jsonResponse } from "../../utils";
+import { AUTH_SCOPE, FIRESTORE_SCOPE, getFirestoreUrl, getIdentityToolkitUrl, makeServiceAccountToken, parseFirestoreObject, makeFirestoreField, updateUserRoles } from "../../firebase";
+import { ClubSignupType, FirestoreFieldObject, FirestoreRestDocument, OfficerPermission, UserClaims } from "../../types";
+import { authedJsonRequest, authedProcedure, checkOfficerPermission } from "../../utils";
+import { TRPCError } from "@trpc/server";
 
 const AddRemoveMemberReq = z.object({
   clubId: z.string(),
@@ -9,93 +10,81 @@ const AddRemoveMemberReq = z.object({
   memberEmail: z.optional(z.string().email())
 });
 
-export const onRequestPost: PagesFunction<Env> = async ctx => {
-  try {
-    const user = await getUserFromReq(ctx.env, caches.default, ctx.request);
-
-    if (!user.email_verified) {
-      return jsonResponse(403, {
-        error: "Email not verified"
-      });
-    }
-
-    // validate request body
-    const body = await ctx.request.json();
-    const parsed = AddRemoveMemberReq.safeParse(body);
-
-    // validate request body
-    if (parsed.error) {
-      return jsonResponse(400, {
-        error: parsed.error.message
-      });
-    }
-
+export default authedProcedure
+  .input(AddRemoveMemberReq)
+  .mutation(async ({ ctx, input }) => {
     const token = await makeServiceAccountToken(ctx.env, [FIRESTORE_SCOPE, AUTH_SCOPE]);
 
     let userId: string;
     let userEmail: string;
     let userAttrs: UserClaims;
 
-    if (parsed.data.memberEmail) {
+    // officer adding a member to their club
+    if (input.memberEmail) {
       // ensure they have permissions to modify members
-      if (!(user.officerOf[parsed.data.clubId] & OfficerPermission.Members)) {
-        return jsonResponse(401, {
-          error: "You do not have permissions to manage this club's members"
+      if (!checkOfficerPermission(ctx.user, input.clubId, OfficerPermission.Members)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have permissions to manage this club's members"
         });
       }
 
+      // fetch more info about this user
       const memberDetails = await authedJsonRequest<{
         users: {
           localId: string,
           customAttributes: string,
         }[]
       }>({
-        email: parsed.data.memberEmail
+        email: input.memberEmail
       }, token, `${getIdentityToolkitUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/accounts:lookup`);
 
       const userDetails = memberDetails.users[0];
       const attrs = JSON.parse(userDetails?.customAttributes) ?? null;
       // make sure the user exists and they are part of this school
-      if (attrs?.school !== user.school) {
-        return jsonResponse(400, {
-          error: "This user does not exist"
+      if (attrs?.school !== ctx.user.school) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "This user does not exist"
         });
       }
 
       userId = userDetails.localId;
-      userEmail = parsed.data.memberEmail;
+      userEmail = input.memberEmail;
       userAttrs = attrs;
     } else {
+      // member adding themselves to a club
       const queryResponse = await authedJsonRequest(
         null,
         token,
-        `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents/schools/${user.school}/clubs/${parsed.data.clubId}?fieldMask=signup`,
+        `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents/schools/${ctx.user.school}/clubs/${input.clubId}?fieldMask=signup`,
         "GET"
       ) as FirestoreRestDocument;
 
       const doc = parseFirestoreObject(queryResponse.fields);
       // make sure signup is open
       if ((doc.signup as FirestoreFieldObject).type !== ClubSignupType.Open) {
-        return jsonResponse(401, {
-          error: "You must apply to join this club"
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You must apply to join this club"
         });
       }
 
-      userId = user.user_id;
-      userAttrs = user;
-      userEmail = user.email;
+      userId = ctx.user.user_id;
+      userAttrs = ctx.user;
+      userEmail = ctx.user.email;
     }
 
     // don't re-add existing members
-    if (userAttrs.memberOf?.includes(parsed.data.clubId)) {
-      return jsonResponse(400, {
-        error: "User is already a member of this club"
+    if (userAttrs.memberOf?.includes(input.clubId)) {
+      throw new TRPCError({
+        code: "CONFLICT",
+        message: "User is already a member of this club"
       });
     }
+    // update user roles
     if (!userAttrs.memberOf) userAttrs.memberOf = [];
-    userAttrs.memberOf.push(parsed.data.clubId);
-
-    // update roles
+    userAttrs.memberOf.push(input.clubId);
     await updateUserRoles(ctx.env, token, userId, userAttrs, {
       memberOf: userAttrs.memberOf
     });
@@ -105,7 +94,7 @@ export const onRequestPost: PagesFunction<Env> = async ctx => {
       {
         writes: [{
           transform: {
-            document: `projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents/schools/${user.school}/clubs_private/${parsed.data.clubId}`,
+            document: `projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents/schools/${ctx.user.school}/clubs_private/${input.clubId}`,
             fieldTransforms: [{
               fieldPath: "members",
               appendMissingElements: makeFirestoreField([userEmail]).arrayValue
@@ -116,14 +105,8 @@ export const onRequestPost: PagesFunction<Env> = async ctx => {
       token,
       `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents:batchWrite`
     );
-    
-    return jsonResponse(200, {
+
+    return {
       success: true
-    });
-  } catch (err) {
-    console.error(err);
-    return jsonResponse(403, {
-      error: err.message
-    });
-  }
-};
+    };
+  });

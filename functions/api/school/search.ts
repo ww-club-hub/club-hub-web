@@ -1,37 +1,20 @@
-import { getUserFromReq, makeServiceAccountToken, FIRESTORE_SCOPE, getFirestoreUrl, getFirestoreDocId, parseFirestoreObject } from "../../firebase";
-import { Env, FirestoreRestDocument, QueryResponse } from "../../types";
-import { authedJsonRequest, jsonResponse } from "../../utils";
+import {  makeServiceAccountToken, FIRESTORE_SCOPE, getFirestoreUrl, getFirestoreDocId, parseFirestoreObject } from "../../firebase";
+import { FirestoreRestDocument, QueryResponse } from "../../types";
+import { authedJsonRequest, authedProcedure } from "../../utils";
 import { z } from "zod";
 
 const SearchReq = z.object({
   query: z.string()
 });
 
-export const onRequestPost: PagesFunction<Env> = async ctx => {
-  try {
-    const user = await getUserFromReq(ctx.env, caches.default, ctx.request);
+export default authedProcedure
+  .input(SearchReq)
+  .query(async ({ ctx, input }) => {
+    const userEmailDomain = ctx.user.email.split("@")[1];
 
-    if (!user.email_verified) {
-      return jsonResponse(403, {
-        error: "Email not verified"
-      });
-    }
-
-    const userEmailDomain = user.email.split("@")[1];
-
-      // validate request body
-    const body = await ctx.request.json();
-    const parsed = SearchReq.safeParse(body);
-
-    if (parsed.error) {
-      return jsonResponse(400, {
-        error: parsed.error.message
-      });
-    }
-    
     const firestoreToken = await makeServiceAccountToken(ctx.env, [FIRESTORE_SCOPE]);
 
-    const query = parsed.data.query.toLowerCase();
+    const query = input.query.toLowerCase();
     // search
     const queryResponse = await authedJsonRequest(
       {
@@ -109,13 +92,8 @@ export const onRequestPost: PagesFunction<Env> = async ctx => {
         }
       });
 
-    return jsonResponse(200, {
+    return {
       success: true,
       schools: docs
-    })
-  } catch (err) {
-    return jsonResponse(403, {
-      error: err.message
-    });
-  }
-};
+    };
+  });
