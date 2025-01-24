@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { getIdTokenResult } from "firebase/auth";
 import { auth, db } from "../firebase";
-import { type Club, type UserClaims } from "@/utils";
+import { type UserClaims } from "@/utils";
+import { type Club } from "@/schema";
 import { useRoute, useRouter } from "vue-router";
 import { doc, getDoc } from "firebase/firestore";
 

@@ -1,6 +1,6 @@
-import { getUserFromReq, makeServiceAccountToken, FIRESTORE_SCOPE, getFirestoreUrl, updateUserRoles, AUTH_SCOPE, getFirestoreDocId } from "../../firebase";
+import { getUserFromReq, makeServiceAccountToken, FIRESTORE_SCOPE, getFirestoreUrl, updateUserRoles, AUTH_SCOPE, getFirestoreDocId, makeFirestoreField } from "../../firebase";
 import { AggregationQueryResponse, Env, FirestoreRestDocument } from "../../types";
-import { authedJsonRequest, jsonResponse, makeFirestoreField } from "../../utils";
+import { authedJsonRequest, jsonResponse } from "../../utils";
 import { z } from "zod";
 
 const CreateSchoolReq = z.object({

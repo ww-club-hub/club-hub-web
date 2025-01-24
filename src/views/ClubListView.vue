@@ -3,7 +3,8 @@ import { getIdTokenResult } from "firebase/auth";
 import { auth, db } from "../firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { ref } from "vue";
-import { clubMeetingTimesToString, getClubPresident, type Club, type UserClaims } from "@/utils";
+import { clubMeetingTimesToString, getClubPresident, type UserClaims } from "@/utils";
+import { type Club } from "@/schema";
 import { onMounted } from "vue";
 import { onUnmounted } from "vue";
 
@@ -26,6 +27,7 @@ function onDocumentClick() {
 
 onMounted(async () => {
   const docs = await getDocs(collection(db, "schools", claims.school, "clubs"))
+  // TODO: filter for officers/stuco visibility
   clubs.value = docs.docs.map(s => ({
     id: s.id,
     ...s.data()

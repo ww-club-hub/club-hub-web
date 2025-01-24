@@ -1,10 +1,8 @@
 import { z } from "zod";
-import { AUTH_SCOPE, FIRESTORE_SCOPE, getFirestoreUrl, getUserFromReq, makeServiceAccountToken } from "../../firebase";
+import { AUTH_SCOPE, FIRESTORE_SCOPE, getFirestoreUrl, getUserFromReq, makeServiceAccountToken, parseFirestoreObject, makeFirestoreField } from "../../firebase";
 import { Env, FirestoreRestDocument } from "../../types";
 import { authedJsonRequest, jsonResponse } from "../../utils";
-import { parseFirestoreObject } from "../../utils";
 import { updateUserRoles } from "../../firebase";
-import { makeFirestoreField } from "../../utils";
 
 const JoinReq = z.object({
   schoolId: z.string()

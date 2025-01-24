@@ -1,8 +1,7 @@
 import { z } from "zod";
-import { AUTH_SCOPE, getUserFromReq, makeServiceAccountToken } from "../../firebase";
+import { AUTH_SCOPE, getUserFromReq, makeServiceAccountToken, updateUserRoles } from "../../firebase";
 import { Env } from "../../types";
 import { jsonResponse } from "../../utils";
-import { updateUserRoles } from "../../firebase";
 
 const SetInterestsReq = z.object({
   interests: z.array(z.number())

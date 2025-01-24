@@ -1,4 +1,4 @@
-import { AUTH_SCOPE, getIdentityToolkitUrl, getUserFromReq, makeServiceAccountToken } from "../../firebase";
+import { AUTH_SCOPE, getIdentityToolkitUrl,  makeServiceAccountToken } from "../../firebase";
 import { Env } from "../../types";
 import { authedJsonRequest, jsonResponse } from "../../utils";
 

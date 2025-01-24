@@ -1,10 +1,7 @@
 import { z } from "zod";
-import { AUTH_SCOPE, FIRESTORE_SCOPE, getFirestoreUrl, getIdentityToolkitUrl, getUserFromReq, makeServiceAccountToken } from "../../firebase";
-import { Env, FirestoreRestDocument, OfficerPermission, UserJwtPayload } from "../../types";
+import { AUTH_SCOPE, FIRESTORE_SCOPE, getFirestoreUrl, getIdentityToolkitUrl, getUserFromReq, makeServiceAccountToken, updateUserRoles, parseFirestoreObject, makeFirestoreField } from "../../firebase";
+import { Env, FirestoreRestDocument, OfficerPermission } from "../../types";
 import { authedJsonRequest, jsonResponse } from "../../utils";
-import { parseFirestoreObject } from "../../utils";
-import { updateUserRoles } from "../../firebase";
-import { makeFirestoreField } from "../../utils";
 
 const UpdateOfficersReq = z.object({
   clubId: z.string(),
@@ -53,8 +50,6 @@ export const onRequestPost: PagesFunction<Env> = async ctx => {
       "GET"
     ) as FirestoreRestDocument;
 
-    console.log(queryResponse);
-
     const doc = parseFirestoreObject(queryResponse.fields);
 
     // get a list of all officers
@@ -70,8 +65,6 @@ export const onRequestPost: PagesFunction<Env> = async ctx => {
     }>({
       email: allOfficerEmails
     }, token, `${getIdentityToolkitUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/accounts:lookup`);
-
-    console.log(allOfficerEmails, officerUsers);
     
     await Promise.all(allOfficerEmails.map(async email => {
       const userDetails = officerUsers.users.find(u => u.email === email);

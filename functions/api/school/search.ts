@@ -1,6 +1,6 @@
-import { getUserFromReq, makeServiceAccountToken, FIRESTORE_SCOPE, getFirestoreUrl, getFirestoreDocId } from "../../firebase";
+import { getUserFromReq, makeServiceAccountToken, FIRESTORE_SCOPE, getFirestoreUrl, getFirestoreDocId, parseFirestoreObject } from "../../firebase";
 import { Env, FirestoreRestDocument, QueryResponse } from "../../types";
-import { authedJsonRequest, jsonResponse, parseFirestoreObject } from "../../utils";
+import { authedJsonRequest, jsonResponse } from "../../utils";
 import { z } from "zod";
 
 const SearchReq = z.object({

@@ -1,5 +1,5 @@
-import { Env, FirestoreRestDocument, UserJwtPayload } from "./types";
-import { decodeJwt, jwtVerify, importX509, importPKCS8, SignJWT, JWTPayload } from "jose";
+import type { Env, FirestoreRestDocument, FirestoreField, FirestoreFieldObject, RawFirestoreField, RawFirestoreFieldObject, FirestoreUser, UserClaims } from "./types";
+import { decodeJwt, jwtVerify, importX509, importPKCS8, SignJWT } from "jose";
 import { authedJsonRequest } from "./utils";
 
 // NOTE: I would use the firebase-admin SDK here, but it's massive (probably over the 1MB cf workers limit) and uses unsupported node APIs
@@ -86,7 +86,7 @@ async function verifyParseFirebaseAuthToken(token: string, env: Env, cfCache: Ca
     // just make sure it's not expired for emulator tokens
     const claims = decodeJwt(token);
     if (claims.exp < Date.now() / 1000) throw new Error("expired token");
-    return claims as JWTPayload & UserJwtPayload;
+    return claims as FirestoreUser;
   } else {
     // full verify
     const result = await jwtVerify(token, async (header, _token) => {
@@ -98,7 +98,7 @@ async function verifyParseFirebaseAuthToken(token: string, env: Env, cfCache: Ca
     if (result.payload.iss !== "https://securetoken.google.com/ww-club-hub") {
       throw new Error("invalid jwt issuer");
     }
-    return result.payload as JWTPayload & UserJwtPayload;
+    return result.payload as FirestoreUser;
   }
 }
 
@@ -113,7 +113,7 @@ export const getUserFromReq = async (env: Env, cfCache: Cache, req: Request)  =>
 }
 
 /// update Identity Toolkit customAttributes
-export async function updateUserRoles(env: Env, token: string, userId: string, oldAttrs: UserJwtPayload, roles: any) {
+export async function updateUserRoles(env: Env, token: string, userId: string, oldAttrs: UserClaims, roles: any) {
   return await authedJsonRequest({
     localId: userId,
     customAttributes: JSON.stringify({
@@ -131,4 +131,60 @@ export async function updateUserRoles(env: Env, token: string, userId: string, o
 export function getFirestoreDocId(doc: FirestoreRestDocument) {
   const parts = doc.name.split("/");
   return parts[parts.length - 1];
+}
+
+
+/// FIRESTORE PARSING STUFF
+export function parseFirestoreField(field: RawFirestoreField): FirestoreField {
+  if ("stringValue" in field && typeof field.stringValue === "string") {
+    return field.stringValue;
+  } else if ("integerValue" in field) {
+    return Number(field.integerValue);
+  } else if ("doubleValue" in field) {
+    return Number(field.doubleValue);
+  } else if ("booleanValue" in field && typeof field.booleanValue === "boolean") {
+    return field.booleanValue;
+  } else if ("referenceValue" in field && typeof field.referenceValue === "string") {
+    return field.referenceValue;
+  } else if ("nullValue" in field) {
+    return null;
+  } else if ("timestampValue" in field && typeof field.timestampValue === "string") {
+    return new Date(Date.parse(field.timestampValue));
+  } else if ("mapValue" in field) {
+    return parseFirestoreObject(field.mapValue.fields || {});
+  } else if ("arrayValue" in field && Array.isArray(field.arrayValue.values)) {
+    return field.arrayValue.values.map(parseFirestoreField);
+  }
+  return null;
+}
+
+export function parseFirestoreObject(object: RawFirestoreFieldObject): FirestoreFieldObject {
+  return Object.fromEntries(Object.entries(object).map(([k, v]) => [k, parseFirestoreField(v)]));
+}
+
+export function makeFirestoreField(field: FirestoreField): RawFirestoreField {
+  switch (typeof field) {
+    case "number":
+      return { [Number.isInteger(field) ? "integerValue" : "doubleValue"]: field.toString() } as { "integerValue": string } | { "doubleValue": string };
+    case "string":
+      return { stringValue: field };
+    case "boolean":
+      return { booleanValue: field };
+    case "object":
+      if (field instanceof Date) return { timestampValue: field.toISOString() };
+      else if (Array.isArray(field)) return {
+        arrayValue: {
+          values: field.map(makeFirestoreField)
+        }
+      }; else if (field === null) return { nullValue: null };
+      else {
+        // parse as object
+        return {
+          mapValue: {
+            // exclude undefined values
+            fields: Object.fromEntries(Object.entries(field).filter(s => s[1] !== undefined).map(([k, v]) => [k, makeFirestoreField(v)]))
+          }
+        }
+      }
+  }
 }

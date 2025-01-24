@@ -1,5 +1,7 @@
 import { JWTPayload } from "jose";
-import { Club, ClubSignupType, OfficerPermission, UserClaims } from "../src/utils";
+// imports from frontend
+import type { UserClaims } from "../src/utils";
+import { type Club, ClubSignupType, OfficerPermission } from "../src/schema";
 export { Club, ClubSignupType, UserClaims, OfficerPermission };
 export interface Env {
   SERVICE_ACCOUNT_EMAIL: string;
@@ -65,9 +67,11 @@ export interface FirebaseJwtPayload {
   };
 }
 
+export type FirestoreUser = JWTPayload & FirebaseJwtPayload & UserClaims;
+
 export interface Context {
   req: Request<unknown, CfProperties<unknown>>,
   resHeaders: Headers,
   env: Env,
-  user: JWTPayload & FirebaseJwtPayload & UserClaims
+  user: FirestoreUser
 }

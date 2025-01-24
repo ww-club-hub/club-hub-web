@@ -1,10 +1,7 @@
 import { z } from "zod";
-import { AUTH_SCOPE, FIRESTORE_SCOPE, getFirestoreUrl, getIdentityToolkitUrl, getUserFromReq, makeServiceAccountToken } from "../../firebase";
-import { ClubSignupType, Env, FirestoreFieldObject, FirestoreRestDocument, OfficerPermission, UserJwtPayload } from "../../types";
+import { AUTH_SCOPE, FIRESTORE_SCOPE, getFirestoreUrl, getIdentityToolkitUrl, getUserFromReq, makeServiceAccountToken, parseFirestoreObject, makeFirestoreField, updateUserRoles } from "../../firebase";
+import { ClubSignupType, Env, FirestoreFieldObject, FirestoreRestDocument, OfficerPermission, UserClaims } from "../../types";
 import { authedJsonRequest, jsonResponse } from "../../utils";
-import { parseFirestoreObject } from "../../utils";
-import { updateUserRoles } from "../../firebase";
-import { makeFirestoreField } from "../../utils";
 
 const AddRemoveMemberReq = z.object({
   clubId: z.string(),
@@ -37,7 +34,7 @@ export const onRequestPost: PagesFunction<Env> = async ctx => {
 
     let userId: string;
     let userEmail: string;
-    let userAttrs: UserJwtPayload;
+    let userAttrs: UserClaims;
 
     if (parsed.data.memberEmail) {
       // ensure they have permissions to modify members

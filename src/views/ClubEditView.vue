@@ -2,7 +2,8 @@
 import { getIdTokenResult } from "firebase/auth";
 import { auth, db } from "../firebase";
 import { ref } from "vue";
-import { ClubSignupType, OfficerPermission, type Club, type UserClaims } from "@/utils";
+import type { UserClaims } from "@/utils";
+import { ClubSignupType, OfficerPermission, type Club } from "@/schema";
 import { useRoute, useRouter } from "vue-router";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { onMounted } from "vue";
