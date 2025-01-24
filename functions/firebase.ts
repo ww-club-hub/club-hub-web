@@ -85,14 +85,14 @@ async function verifyParseFirebaseAuthToken(token: string, env: Env, cfCache: Ca
   if (env.USE_EMULATOR) {
     // just make sure it's not expired for emulator tokens
     const claims = decodeJwt(token);
-    if (claims.exp < Date.now() / 1000) throw new Error("expired token");
+    if (!claims.exp || claims.exp < Date.now() / 1000) throw new Error("expired token");
     return claims as FirestoreUser;
   } else {
     // full verify
     const result = await jwtVerify(token, async (header, _token) => {
       // return correct jwk
       const firebasePubkeys = await getFirebaseAuthJwks(cfCache);
-      return firebasePubkeys[header.kid];
+      return firebasePubkeys[header.kid!];
     });
     // verify project id
     if (result.payload.iss !== "https://securetoken.google.com/ww-club-hub") {
@@ -150,9 +150,9 @@ export function parseFirestoreField(field: RawFirestoreField): FirestoreField {
     return null;
   } else if ("timestampValue" in field && typeof field.timestampValue === "string") {
     return new Date(Date.parse(field.timestampValue));
-  } else if ("mapValue" in field) {
+  } else if ("mapValue" in field && field.mapValue) {
     return parseFirestoreObject(field.mapValue.fields || {});
-  } else if ("arrayValue" in field && Array.isArray(field.arrayValue.values)) {
+  } else if ("arrayValue" in field && field.arrayValue && Array.isArray(field.arrayValue.values)) {
     return field.arrayValue.values.map(parseFirestoreField);
   }
   return null;

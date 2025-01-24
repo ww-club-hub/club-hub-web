@@ -37,8 +37,6 @@ function removeDomain(i: number) {
 async function onFormSubmit() {
   if (!user.value) return;
   
-  const idToken = await getIdToken(user.value);
-  
   // remove duplicates
   const dr = domainRestriction.value ? [
     ...new Set([...domains.value, userEmailDomain.value!])

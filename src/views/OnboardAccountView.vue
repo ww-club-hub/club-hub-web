@@ -6,6 +6,7 @@ import { type ParsedToken, getIdTokenResult, onAuthStateChanged, type User, send
 import { computed } from "vue";
 import OnboardingStep from "../components/OnboardingStep.vue";
 import { useRouter } from "vue-router";
+import { api, isTRPCClientError } from "@/api";
 
 const user = ref<User | null>(null);
 const claims = ref<ParsedToken | null>(null);
@@ -55,73 +56,58 @@ async function verifyEmail() {
 
 async function search() {
   if (!user.value) return;
-  const idToken = await getIdToken(user.value, true);// need to refresh to register email verification
-  // fetch schools starting with searchQuery
-  const res = await fetch("/api/school/search", {
-    method: "POST",
-    body: JSON.stringify({
-      query: searchQuery.value.trim().toLowerCase()
-    }),
-    headers: {
-      Authorization: `Bearer ${idToken}`,
-      "Content-Type": "application/json"
-    }
-  }).then(r => r.json()) as { error: string } | { schools: School[] };
 
-  if ("error" in res) {
-    message.value = res.error;
-  } else {
+  // need to refresh to register email verification
+  await getIdToken(user.value, true);
+  // fetch schools starting with searchQuery
+  try {
+    const { schools } = await api.school.search.query({
+      query: searchQuery.value.trim().toLowerCase()
+    });
+    foundSchools.value = schools;
     message.value = "";
-    foundSchools.value = res.schools;
+  } catch (err) {
+    if (isTRPCClientError(err)) {
+      message.value = err.message;
+    }
   }
 }
 
 async function joinSchool(id: string) {
   if (!user.value) return;
-  const idToken = await getIdToken(user.value);
-  const res = await fetch("/api/school/join", {
-    method: "POST",
-    body: JSON.stringify({
-      schoolId: id
-    }),
-    headers: {
-      Authorization: `Bearer ${idToken}`,
-      "Content-Type": "application/json"
-    }
-  }).then(r => r.json()) as { error: string } | { success: true };
 
-  if ("error" in res) {
-    message.value = res.error;
-  } else {
+  try {
+    await api.school.join.mutate({
+      schoolId: id
+    });
     message.value = "";
+
     // refresh id token
 
     claims.value = (await getIdTokenResult(user.value, true)).claims;
+  } catch (err) {
+    if (isTRPCClientError(err)) {
+      message.value = err.message;
+    }
   }
 }
 
 async function setInterests() {
   if (!user.value) return;
 
-  const idToken = await getIdToken(user.value);
-  const res = await fetch("/api/user/interests", {
-    method: "POST",
-    body: JSON.stringify({
+  try {
+    await api.user.interests.mutate({
       interests: [...interests.value]
-    }),
-    headers: {
-      Authorization: `Bearer ${idToken}`,
-      "Content-Type": "application/json"
-    }
-  }).then(r => r.json()) as { error: string } | { success: true };
-
-  if ("error" in res) {
-    message.value = res.error;
-  } else {
+    });
     message.value = "";
+
     // refresh id token
 
     claims.value = (await getIdTokenResult(user.value, true)).claims;
+  } catch (err) {
+    if (isTRPCClientError(err)) {
+      message.value = err.message;
+    }
   }
 }
 </script>

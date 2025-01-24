@@ -82,7 +82,7 @@ export default authedProcedure
       .map(doc => ({
         id: getFirestoreDocId(doc),
         ...parseFirestoreObject(doc.fields)
-      } as { id: string, domainRestriction: string[] }))
+      } as { id: string, domainRestriction: string[], website: string, name: string }))
       // filter by domain restriction
       .filter(doc => {
         if (doc.domainRestriction) {
