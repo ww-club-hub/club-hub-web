@@ -36,7 +36,7 @@ onUnmounted(() => {
   <nav class="bg-white border-gray-200 dark:bg-gray-900">
     <div class="max-w-screen-2xl flex flex-wrap items-center mx-auto p-4 relative" @click.stop>
       <router-link to="/" class="flex items-center space-x-3 rtl:space-x-reverse">
-        <img src="/icon.png" class="h-8" alt="Club Hub Logo" />
+        <img src="/icons/icon.svg" class="h-8" alt="Club Hub Logo" />
         <span class="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">Club Hub</span>
       </router-link>
       <button data-collapse-toggle="navbar-default" type="button"
@@ -50,7 +50,7 @@ onUnmounted(() => {
       </button>
       <button type="button" class="flex text-sm md:order-2 ms-3 md:ms-6 bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600" id="user-menu-button" aria-expanded="false" v-if="!!currentUser" @click="accountMenuExpanded = !accountMenuExpanded">
         <span class="sr-only">Open user menu</span>
-        <img class="w-8 h-8 rounded-full" :src="currentUser?.photoURL ?? '/icon.png'" alt="user photo">
+        <img class="w-8 h-8 rounded-full" :src="currentUser?.photoURL ?? '/icons/icon.svg'" alt="user photo">
       </button>
       <div :class="{ 'hidden': !navbarExpanded }" class="md:ms-auto me-0 w-full md:block md:w-auto" id="navbar-default">
         <ul
