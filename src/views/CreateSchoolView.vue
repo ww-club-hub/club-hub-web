@@ -4,6 +4,7 @@ import { onAuthStateChanged, type User, getIdToken, getIdTokenResult } from "fir
 import { computed } from "vue";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
+import { api, isTRPCClientError } from "@/api";
 
 const user = ref<User | null>(null);
 const schoolName = ref("");
@@ -40,32 +41,25 @@ async function onFormSubmit() {
   
   // remove duplicates
   const dr = domainRestriction.value ? [
-    ...new Set([...domains.value, userEmailDomain.value])
+    ...new Set([...domains.value, userEmailDomain.value!])
   ] : undefined;
   const body = {
     name: schoolName.value,
     website: website.value,
     domainRestriction : dr
   };
-  // create school
-  const res = await fetch("/api/school/create", {
-    method: "POST",
-    body: JSON.stringify(body),
-    headers: {
-      Authorization: `Bearer ${idToken}`,
-      "Content-Type": "application/json"
-    }
-  }).then(r => r.json()) as { error?: string; schoolId?: string };
-
-  // propagate error message
-  if (res.error) {
-    errorMessage.value = res.error;
-  } else {
+  
+  try {
+    // create school
+    await api.school.create.mutate(body);
     errorMessage.value = "";
 
     // refresh user token
     await getIdToken(user.value, true);
     router.push({ name: "onboard" });
+  } catch (err) {
+    if (isTRPCClientError(err))
+      errorMessage.value = err.message;
   }
 }
 

@@ -35,6 +35,22 @@ export default {
       createContext: async ({ req, resHeaders }: FetchCreateContextFnOptions) => {
         const user = await getUserFromReq(env, caches.default, req);
         return { req, resHeaders, env, user };
+      },
+      responseMeta({ ctx }) {
+        // in dev mode, allow cors to vite server
+        if (env.USE_EMULATOR) {
+          const origin = ctx?.req.headers.get("Origin");
+          if (origin === "http://localhost:5173") {
+            return {
+              headers: new Headers([
+                ["Access-Control-Allow-Origin", origin]
+              ])
+            };
+          }
+        }
+
+        // typescript being annoying
+        return {} as {};
       }
     });
   }
