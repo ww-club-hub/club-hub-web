@@ -12,7 +12,7 @@ const clubId = route.params.clubId as string;
 
 const claims = (await getIdTokenResult(auth.currentUser!)).claims as UserClaims;
 const stuco = claims.role == "owner" || claims.role == "admin";
-const officerOrMember = clubId in claims.officerOf || claims.memberOf.includes(clubId);
+const officerOrMember = (claims.officerOf && clubId in claims.officerOf) || claims.memberOf?.includes(clubId);
 
 const showDashboardLink = stuco || officerOrMember;
 

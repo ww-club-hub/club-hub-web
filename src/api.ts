@@ -2,18 +2,20 @@ import { TRPCClientError, createTRPCProxyClient, httpBatchLink } from "@trpc/cli
 // import our backend types
 import type { AppRouter } from "../functions/worker";
 import { auth } from "./firebase";
-import { getIdTokenResult } from "firebase/auth";
+import { getIdToken } from "firebase/auth";
+
+const apiOrigin = import.meta.env.DEV ? "http://localhost:8788" : location.origin;
 
 export const api = createTRPCProxyClient<AppRouter>({
   links: [
     httpBatchLink({
       // use miniflare when in development
-      url: import.meta.env.DEV ? "http://localhost:8788" : location.origin,
+      url: `${apiOrigin}/api`,
 
       async headers() {
         if (!auth.currentUser) return {};
         // add firebase id token
-        const idToken = await getIdTokenResult(auth.currentUser, false);
+        const idToken = await getIdToken(auth.currentUser, false);
         return {
           Authorization: `Bearer ${idToken}`
         };

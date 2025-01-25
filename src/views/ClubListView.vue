@@ -121,7 +121,7 @@ onUnmounted(() => {
                   <div :hidden="clubDetailsDropdown !== club.id" class="z-10 w-44 bg-white rounded divide-y divide-gray-100 shadow dark:bg-gray-700 dark:divide-gray-600 absolute left-0 top-9" @click.stop>
                     <ul class="py-1 text-sm text-gray-700 dark:text-gray-200">
                       <li>
-                        <router-link :to="`/clubs/${club.id}`" class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Details</router-link>
+                        <router-link :to="`/clubs/${club.id}/info`" class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Details</router-link>
                       </li>
                       <li v-if="stuco || auth.currentUser!.email! in club.officers">
                         <router-link :to="`/clubs/${club.id}/edit`" class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Edit</router-link>

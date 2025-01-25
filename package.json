@@ -7,9 +7,9 @@
     "dev": "vite --host",
     "preview": "vite preview",
     "build": "vite build",
-    "build-watch": "NODE_ENV=development npm run build -- --sourcemap true --minify false -w --mode development",
-    "dev-cf": "wrangler pages dev ./dist",
-    "firebase": "firebase emulators:start --import .firebase-emulator-data --export-on-exit"
+    "build:cf": "esbuild functions/worker.ts --bundle --minify --platform=browser --target=es2022 --format=esm --outfile=dist/_worker.js", 
+    "dev:cf": "wrangler pages dev ./dist",
+    "dev:firebase": "firebase emulators:start --import .firebase-emulator-data --export-on-exit"
   },
   "dependencies": {
     "vue": "^3.4.29",
@@ -28,7 +28,6 @@
     "esbuild": "^0.24.2",
     "firebase": "^11.0.1",
     "jose": "^5.9.6",
-    "npm-run-all2": "^6.2.0",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14",
     "typescript": "~5.4.0",
