@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { getIdToken, getIdTokenResult } from "firebase/auth";
+import {  getIdTokenResult } from "firebase/auth";
 import { auth, db } from "../firebase";
 import { ref } from "vue";
 import { type UserClaims } from "@/utils";
 import { ClubSignupType, OfficerPermission, type Club } from "@/schema";
 import { useRouter } from "vue-router";
 import { addDoc, collection } from "firebase/firestore";
+import { api, isTRPCClientError } from "@/api";
 import FormInput from "@/components/FormInput.vue";
 
 const claims = (await getIdTokenResult(auth.currentUser!)).claims as UserClaims;
@@ -15,7 +16,7 @@ const router = useRouter();
 
 // only stuco can create clubs directly
 if (!stuco) {
-  router.push({ name: "club-list" });
+    router.push({ name: "club-list" });
 }
 
 const name = ref("");
@@ -28,54 +29,43 @@ const errorMessage = ref("");
 
 async function onFormSubmit() {
   errorMessage.value = "";
+  
+  try {
+    // fetch president name
+    const { displayName } = await api.user.profile.query({ email: president.value });
+    const officers = {
+      [president.value]: {
+        name: displayName as string,
+        role: "President",
+        permissions: OfficerPermission.All
+      }
+    };
+    const club: Partial<Club> = {
+      name: name.value,
+      description: description.value,
+      contact: {
+        sponsor: sponsor.value
+      },
+      signup: {
+        type: ClubSignupType.Private
+      }
+    };
+    
+    const doc = await addDoc(collection(db, "schools", claims.school, "clubs"), club);
 
-  // fetch president name
-  const presidentInfo = await fetch(`/api/user/profile?email=${president.value}`);
-  if (presidentInfo.status === 404) {
-    // show error
-    errorMessage.value = `The president email ${president.value} is not associated with any ClubHub account.`;
-    return
+    // update officers
+    await api.club.officers.mutate({ clubId: doc.id, officers });
+    
+    router.push({ name: "club-list" });
+  } catch (err) {
+    if (isTRPCClientError(err)) {
+      if (err.data?.code === "NOT_FOUND")
+        errorMessage.value = `The president email ${president.value} is not associated with any ClubHub account.`;
+      
+      // else, generic error
+      else errorMessage.value = err.message;
+    }
   }
-  const { displayName } = await presidentInfo.json();
-  const officers = {
-        [president.value]: {
-          name: displayName as string,
-          role: "President",
-          permissions: OfficerPermission.All
-        }
-  };
-  const club: Partial<Club> = {
-    name: name.value,
-    description: description.value,
-    contact: {
-      sponsor: sponsor.value
-    },
-    signup: {
-      type: ClubSignupType.Private
-    }
-  };
-
-  const doc = await addDoc(collection(db, "schools", claims.school, "clubs"), club);
-
-  const idToken = await getIdToken(auth.currentUser!);
-
-  // update officers
-  const res = await fetch("/api/club/officers", {
-    method: "POST",
-    body: JSON.stringify({
-      clubId: doc.id,
-      officers
-    }),
-    headers: {
-      Authorization: `Bearer ${idToken}`,
-      "Content-Type": "application/json"
-    }
-  }).then(r => r.json()) as { error: string } | { success: true };
-
-  if ("error" in res && res.error) errorMessage.value = res.error;
-  else errorMessage.value = "";
-
-  router.push({ name: "club-list" });
 }
 </script>
 

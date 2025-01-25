@@ -20,7 +20,7 @@ const appRouter = router({
     search: searchSchools,
     join: joinSchool
   }),
-  members: router({
+  club: router({
     members: clubMembers,
     officers: clubOfficers
   })
