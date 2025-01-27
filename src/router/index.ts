@@ -119,7 +119,7 @@ const router = createRouter({
       }
     },
     // views for members/officers
-    /*{
+    {
       path: '/clubs/:clubId',
       component: () => import("../views/club/BaseView.vue"),
       children: [
@@ -141,7 +141,7 @@ const router = createRouter({
             title: "Club Settings"
           }
         },
-        {
+        /*{
           name: 'club-attendance',
           path: 'attendance',
           component: import("../views/club/AttendanceView.vue"),
@@ -149,9 +149,9 @@ const router = createRouter({
             authRequired: true,
             title: "Club Attendance"
           }
-        }
+        }*/
       ]
-    },*/ 
+    },
   ]
 })
 

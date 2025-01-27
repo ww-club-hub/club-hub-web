@@ -10,7 +10,7 @@ const route = useRoute();
 
 const clubId = route.params.clubId as string;
 
-const claims = (await getIdTokenResult(auth.currentUser!)).claims as UserClaims;
+const claims = (await getIdTokenResult(auth.currentUser!, false)).claims as UserClaims;
 const stuco = claims.role == "owner" || claims.role == "admin";
 const officer = (claims.officerOf && clubId in claims.officerOf);
 const member = claims.memberOf?.includes(clubId);
