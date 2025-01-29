@@ -71,7 +71,7 @@ async function onFormSubmit() {
 
 <template>
   <section class="bg-white dark:bg-gray-900 grow">
-    <div class="max-w-screen-2xl mx-auto p-4">
+    <div class="max-w-(--breakpoint-2xl) mx-auto p-4">
       <div class="pb-3 mb-3 border-b border-gray-300 dark:border-gray-700">
         <h1 class="text-2xl text-black dark:text-white font-semibold mb-2">Create a Club</h1>
       </div>
@@ -84,7 +84,7 @@ async function onFormSubmit() {
 
         <p v-if="errorMessage" class="mb-2 text-rose-600 dark:text-rose-400 italic">{{ errorMessage }}</p>
 
-        <button type="submit" class="w-full text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-none focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800">Create</button>
+        <button type="submit" class="w-full text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800">Create</button>
       </form>
     </div>
   </section>

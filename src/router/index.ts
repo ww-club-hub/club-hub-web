@@ -123,7 +123,7 @@ const router = createRouter({
       path: '/clubs/:clubId',
       component: () => import("../views/club/BaseView.vue"),
       children: [
-        {
+        /*{
           name: 'club-dashboard',
           path: '',
           component: import("../views/club/DashboardView.vue"),
@@ -140,7 +140,7 @@ const router = createRouter({
             authRequired: true,
             title: "Club Settings"
           }
-        },
+        },*/
         /*{
           name: 'club-attendance',
           path: 'attendance',

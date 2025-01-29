@@ -118,7 +118,7 @@ async function setInterests() {
       Account setup:
     </h1>
     <div
-      class="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
+      class="w-full bg-white rounded-lg shadow-sm dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
       <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
         <ul class="max-w-md space-y-2 list-inside">
           <OnboardingStep :active="currentStep == OnboardingStepType.VerifyEmail" name="Verify your email address"
@@ -126,7 +126,7 @@ async function setInterests() {
             <p class="mb-3">You'll need to verify your email before you can use this site</p>
 
             <button type="button"
-              class="w-full text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-none focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800"
+              class="w-full text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800"
               @click="verifyEmail">Send verification email</button>
           </OnboardingStep>
           <OnboardingStep :active="currentStep == OnboardingStepType.JoinSchool" name="Join a school"
@@ -144,18 +144,18 @@ async function setInterests() {
                 class="block w-full p-4 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-orange-500 dark:focus:border-orange-500"
                 placeholder="Search for your school..." required />
               <button type="button" @click="search"
-                class="text-white absolute end-2.5 bottom-2.5 bg-orange-700 hover:bg-orange-800 focus:ring-4 focus:outline-none focus:ring-orange-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800">Search</button>
+                class="text-white absolute end-2.5 bottom-2.5 bg-orange-700 hover:bg-orange-800 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800">Search</button>
             </div>
 
             <div class="mb-3">
-              <div class="max-w-sm p-3 bg-gray-50 border border-gray-200 rounded-lg shadow dark:bg-gray-900 dark:border-gray-700 flex items-start gap-3 justify-between" v-for="school in foundSchools" :key="school.id">
+              <div class="max-w-sm p-3 bg-gray-50 border border-gray-200 rounded-lg shadow-sm dark:bg-gray-900 dark:border-gray-700 flex items-start gap-3 justify-between" v-for="school in foundSchools" :key="school.id">
                 <div>
                   <a :href="school.website" target="_blank" rel="noreferrer">
                     <h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{{ school.name }}</h5>
                   </a>
                   <p class="font-normal text-gray-700 dark:text-gray-400">{{ school.website }}</p>
                 </div>
-                <button type="button" class="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-orange-700 hover:text-white border-2 border-orange-700 hover:bg-orange-800 focus:ring-4 focus:outline-none focus:ring-orange-300 font-medium rounded-lg dark:border-orange-500 dark:text-orange-300 dark:hover:text-white dark:hover:bg-orange-500 dark:focus:ring-orange-800" @click="joinSchool(school.id)">
+                <button type="button" class="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-orange-700 hover:text-white border-2 border-orange-700 hover:bg-orange-800 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg dark:border-orange-500 dark:text-orange-300 dark:hover:text-white dark:hover:bg-orange-500 dark:focus:ring-orange-800" @click="joinSchool(school.id)">
                   Join
                   <svg class="rtl:rotate-180 w-3.5 h-3.5 ms-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 5h12m0 0L9 1m4 4L9 9"/>
@@ -178,13 +178,13 @@ async function setInterests() {
             <!-- interests list -->
             <div>
               <div class="flex items-center mb-4" v-for="topic, i in topics" :key="i">
-                <input :id="`check-interests-${i}`" type="checkbox" :value="i" name="check-interests" v-model="interests" class="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 dark:focus:ring-orange-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                <input :id="`check-interests-${i}`" type="checkbox" :value="i" name="check-interests" v-model="interests" class="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-orange-500 dark:focus:ring-orange-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
                 <label :for="`check-interests-${i}`" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">{{ topic }}</label>
               </div>
             </div>
 
             <button type="button"
-              class="w-full text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-none focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800"
+              class="w-full text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800"
               @click="setInterests">Done</button>
           </OnboardingStep>
         </ul>

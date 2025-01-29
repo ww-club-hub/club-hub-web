@@ -76,7 +76,7 @@ onAuthStateChanged(auth, async currentUser => {
     <h1 class="flex items-center mb-6 text-2xl font-semibold text-gray-900 dark:text-white">
       Create a school:
     </h1>
-    <div class="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
+    <div class="w-full bg-white rounded-lg shadow-sm dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
       <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
         <form class="space-y-4 md:space-y-6" @submit.prevent="onFormSubmit">
           <!-- school name -->
@@ -92,7 +92,7 @@ onAuthStateChanged(auth, async currentUser => {
           <!-- domain restriction -->
           <div class="flex">
             <div class="flex items-center h-5">
-              <input id="check-domain-restriction" type="checkbox" v-model="domainRestriction" class="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 dark:focus:ring-orange-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+              <input id="check-domain-restriction" type="checkbox" v-model="domainRestriction" class="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-orange-500 dark:focus:ring-orange-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
             </div>
             <div class="ms-2 text-sm">
               <label for="check-domain-restriction" class="font-medium text-gray-900 dark:text-gray-300">User email domain restriction</label>
@@ -134,7 +134,7 @@ onAuthStateChanged(auth, async currentUser => {
 
           <p v-if="errorMessage" class="mb-2 text-rose-600 dark:text-rose-400 italic">{{ errorMessage }}</p>
 
-          <button type="submit" class="focus:outline-none text-white bg-emerald-700 hover:bg-emerald-800 focus:ring-4 focus:ring-emerald-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-emerald-600 dark:hover:bg-emerald-700 dark:focus:ring-emerald-800">Create</button>
+          <button type="submit" class="focus:outline-hidden text-white bg-emerald-700 hover:bg-emerald-800 focus:ring-4 focus:ring-emerald-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-emerald-600 dark:hover:bg-emerald-700 dark:focus:ring-emerald-800">Create</button>
         </form>
       </div>
     </div>

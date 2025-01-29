@@ -1,6 +1,8 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@plugin '@tailwindcss/forms';
+
+@layer base {  button:not(:disabled),  [role="button"]:not(:disabled) {    cursor: pointer;  }}
 
 html, body, #app {
   min-height: 100vh;

@@ -9,7 +9,7 @@ const school = await tryGetDocFromCache(doc(db, "schools", claims.school as stri
 
 <template>
   <section class="bg-white dark:bg-gray-900 grow">
-    <div class="max-w-screen-2xl mx-auto p-4">
+    <div class="max-w-(--breakpoint-2xl) mx-auto p-4">
       <div class="pb-3 mb-3 border-b border-gray-300 dark:border-gray-700">
         <h1 class="text-2xl text-black dark:text-white font-semibold mb-2">{{ school.get("name") }}</h1>
         <p class="text-lg">
@@ -22,7 +22,7 @@ const school = await tryGetDocFromCache(doc(db, "schools", claims.school as stri
 
       <div class="flex flex-wrap gap-3">
         <!-- admins -->
-        <div class="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded grow">
+        <div class="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-sm grow">
           <h2 class="text-xl text-black dark:text-white font-bold mb-3">
             Your admins:
           </h2>
@@ -31,7 +31,7 @@ const school = await tryGetDocFromCache(doc(db, "schools", claims.school as stri
           <p class="text-gray-800 dark:text-gray-200 mb-1" v-for="admin in school.get('admin')">{{ admin }}</p>
         </div>
         <!-- members -->
-        <div class="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded grow">
+        <div class="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-sm grow">
           <h2 class="text-xl text-black dark:text-white font-bold mb-3">
             Members:
           </h2>
