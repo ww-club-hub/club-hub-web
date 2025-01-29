@@ -1,8 +1,8 @@
 <script setup lang="ts">
 defineProps<{
   label: string,
-  type: "text" | "email" | "url",
-  required: boolean
+  type: "text" | "email" | "url" | "time",
+  required?: boolean
 }>();
 
 const model = defineModel();
