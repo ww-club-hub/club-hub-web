@@ -34,7 +34,7 @@ onUnmounted(() => {
 
 <template>
   <nav class="bg-white border-gray-200 dark:bg-gray-900 border-b dark:border-gray-700">
-    <div class="max-w-(--breakpoint-2xl) flex flex-wrap items-center mx-auto p-4 relative" @click.stop>
+    <div class="max-w-screen-2xl flex flex-wrap items-center mx-auto p-4 relative" @click.stop>
       <router-link to="/" class="flex items-center space-x-3 rtl:space-x-reverse">
         <img src="/icons/icon.svg" class="h-8" alt="Club Hub Logo" />
         <span class="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">Club Hub</span>

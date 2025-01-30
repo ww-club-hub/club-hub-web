@@ -48,10 +48,6 @@ onMounted(async () => {
 <template>
   <section class="bg-white dark:bg-gray-900 grow">
     <div class="max-w-(--breakpoint-2xl) mx-auto p-4">
-      <div class="pb-3 mb-3 border-b border-gray-300 dark:border-gray-700">
-        <h1 class="text-2xl text-black dark:text-white font-semibold mb-2">Club Settings: {{ club?.name }}</h1>
-      </div>
-
       <form @submit.prevent="onFormSubmit" class="space-y-4 md:space-y-6" v-if="club">
         <!-- TODO: better typography + form grid layout -->
         <FormInput label="Name:" type="text" required v-model="club.name"/>

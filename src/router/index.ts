@@ -117,7 +117,7 @@ const router = createRouter({
         {
           name: 'club-dashboard',
           path: '',
-          component: import("../views/club/BaseView.vue"),
+          component: import("../views/club/Dashboard.vue"),
           meta: {
             authRequired: true,
             title: "Club Dashboard"
