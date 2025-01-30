@@ -2,7 +2,7 @@
 import { getIdTokenResult } from "firebase/auth";
 import { auth, db } from "@/firebase";
 import { type UserClaims } from "@/utils";
-import { type Club } from "@/schema";
+import { type Club, type ClubRole } from "@/schema";
 import { useRoute, useRouter } from "vue-router";
 import { doc, getDoc } from "firebase/firestore";
 import ClubTabLink from "@/components/ClubTabLink.vue";
@@ -12,9 +12,13 @@ const route = useRoute();
 const clubId = route.params.clubId as string;
 
 const claims = (await getIdTokenResult(auth.currentUser!, false)).claims as UserClaims;
-const stuco = claims.role == "owner" || claims.role == "admin";
-const officer = (claims.officerOf && clubId in claims.officerOf);
-const member = claims.memberOf?.includes(clubId);
+
+const role: ClubRole = {
+  stuco: claims.role == "owner" || claims.role == "admin",
+  // officer permission
+  officer: claims.officerOf?.[clubId] ?? 0,
+  member: claims.memberOf?.includes(clubId) ?? false
+};
 
 const club = (await getDoc(doc(db, "schools", claims.school, "clubs", clubId))).data() as Club;
 
@@ -56,7 +60,7 @@ const club = (await getDoc(doc(db, "schools", claims.school, "clubs", clubId))).
             </ClubTabLink>
 
             <!-- officer-only links -->
-            <template v-if="officer">
+            <template v-if="role.officer">
               <ClubTabLink :active="false" class="ms-auto" name="Officer Dashboard" :to="{ name: 'club-dashboard', params: { clubId} }">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
                   <path d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z" />
@@ -73,6 +77,8 @@ const club = (await getDoc(doc(db, "schools", claims.school, "clubs", clubId))).
         </div>
       </div>
     </div>
-    <router-view></router-view>
+    <router-view v-slot="{ Component }">
+      <component :is="Component" :role="role" :school="claims.school" :club="club" />
+    </router-view>
   </section>
 </template>

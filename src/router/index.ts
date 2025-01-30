@@ -1,7 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { auth } from "../firebase";
-import HomeView from '../views/HomeView.vue';
-import LoginView from '../views/LoginView.vue';
+import { auth } from "@/firebase";
+// statically loaded
+import HomeView from '@/views/HomeView.vue';
+import LoginView from '@/views/LoginView.vue';
 import { getIdTokenResult, onAuthStateChanged } from 'firebase/auth';
 
 // promise that gets fired on the first onAuthStateChanged event
@@ -44,7 +45,7 @@ const router = createRouter({
     {
       path: '/account',
       name: 'account',
-      component: () => import("../views/AccountView.vue"),
+      component: () => import("@/views/AccountView.vue"),
       meta: {
         authRequired: true,
         title: "My Account"
@@ -53,7 +54,7 @@ const router = createRouter({
     {
       path: '/school/create',
       name: 'create-school',
-      component: () => import("../views/CreateSchoolView.vue"),
+      component: () => import("@/views/CreateSchoolView.vue"),
       meta: {
         authRequired: true,
         title: "Create School",
@@ -64,7 +65,7 @@ const router = createRouter({
     {
       path: '/account/setup',
       name: 'onboard',
-      component: () => import("../views/OnboardAccountView.vue"),
+      component: () => import("@/views/OnboardAccountView.vue"),
       meta: {
         authRequired: true,
         title: "Setup Account",
@@ -75,7 +76,7 @@ const router = createRouter({
     {
       path: '/school',
       name: 'school-detail',
-      component: () => import("../views/SchoolDetailView.vue"),
+      component: () => import("@/views/SchoolDetailView.vue"),
       meta: {
         authRequired: true,
         title: "School Info"
@@ -84,7 +85,7 @@ const router = createRouter({
     {
       path: '/clubs',
       name: 'club-list',
-      component: () => import("../views/ClubListView.vue"),
+      component: () => import("@/views/ClubListView.vue"),
       meta: {
         authRequired: true,
         title: "Explore Clubs"
@@ -93,7 +94,7 @@ const router = createRouter({
     {
       path: '/clubs/create',
       name: 'club-create',
-      component: () => import("../views/ClubCreateView.vue"),
+      component: () => import("@/views/ClubCreateView.vue"),
       meta: {
         authRequired: true,
         title: "Create a Club"
@@ -103,7 +104,7 @@ const router = createRouter({
     {
       path: '/clubs/:clubId/info',
       name: 'club-detail',
-      component: () => import("../views/ClubDetailView.vue"),
+      component: () => import("@/views/ClubDetailView.vue"),
       meta: {
         authRequired: true,
         title: "Club Detail"
@@ -112,12 +113,12 @@ const router = createRouter({
     // views for members/officers
     {
       path: '/clubs/:clubId',
-      component: () => import("../views/club/BaseView.vue"),
+      component: () => import("@/views/club/BaseView.vue"),
       children: [
         {
           name: 'club-dashboard',
           path: '',
-          component: import("../views/club/Dashboard.vue"),
+          component: import("@/views/club/Dashboard.vue"),
           meta: {
             authRequired: true,
             title: "Club Dashboard"
@@ -126,16 +127,25 @@ const router = createRouter({
         {
           name: 'club-settings',
           path: 'edit',
-          component: import("../views/club/SettingsView.vue"),
+          component: import("@/views/club/SettingsView.vue"),
           meta: {
             authRequired: true,
             title: "Club Settings"
           }
         },
+        {
+          name: 'club-updates',
+          path: 'updates',
+          component: import("@/views/club/Messages.vue"),
+          meta: {
+            authRequired: true,
+            title: "Club Updates"
+          }
+        }
         /*{
           name: 'club-attendance',
           path: 'attendance',
-          component: import("../views/club/AttendanceView.vue"),
+          component: import("@/views/club/AttendanceView.vue"),
           meta: {
             authRequired: true,
             title: "Club Attendance"

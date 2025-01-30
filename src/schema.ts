@@ -71,3 +71,9 @@ export enum OfficerPermission {
   ClubDetails = 32,
   All = ~(~0 << 6)
 }
+
+export interface ClubRole {
+  stuco: boolean,
+  officer: OfficerPermission,
+  member: boolean
+}

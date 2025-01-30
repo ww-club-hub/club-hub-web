@@ -1,33 +1,32 @@
 <script setup lang="ts">
-import { getIdTokenResult } from "firebase/auth";
-import { auth, db } from "@/firebase";
+import { db } from "@/firebase";
 import { ref } from "vue";
-import type { UserClaims } from "@/utils";
-import { ClubSignupType, OfficerPermission, type Club } from "@/schema";
+import { ClubSignupType, OfficerPermission, type Club, type ClubRole } from "@/schema";
 import { useRoute, useRouter } from "vue-router";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 import { onMounted } from "vue";
 import FormInput from "@/components/FormInput.vue";
 import TimeInput from "@/components/TimeInput.vue";
-import { unref } from "vue";
+
+const props = defineProps<{
+  role: ClubRole,
+  school: string,
+  club: Club
+}>();
 
 const router = useRouter();
 const route = useRoute();
 
 const clubId = route.params.clubId as string;
 
-const claims = (await getIdTokenResult(auth.currentUser!)).claims as UserClaims;
-const stuco = claims.role == "owner" || claims.role == "admin";
-const officer = clubId in claims.officerOf && (claims.officerOf[clubId] & OfficerPermission.ClubDetails);
-
-if (!stuco && !officer)
+// must be officer/stuco for editing settings
+if (!(props.role.stuco || (props.role.officer & OfficerPermission.ClubDetails)))
   router.push({ name: "club-list" });
 
 const club = ref<Club | null>(null);
 
 async function onFormSubmit() {
-    console.log(unref(club.value));
-  await setDoc(doc(db, "schools", claims.school, "clubs", clubId), club.value);
+  await setDoc(doc(db, "schools", props.school, "clubs", clubId), club.value);
 
   router.push({ name: "club-list" });
 }
@@ -38,9 +37,8 @@ function addMeetingTime() {
 }
 
 onMounted(async () => {
-  // fetch club
-  const clubDoc = await getDoc(doc(db, "schools", claims.school, "clubs", clubId));
-  club.value = clubDoc.data() as Club;
+  // init club
+  club.value = props.club;
 });
 
 </script>

@@ -8,8 +8,10 @@ service cloud.firestore {
     function admin() {
       return request.auth.token.role == "owner" || request.auth.token.role == "admin";
     }
-    function officer(clubId) {
-      return clubId in request.auth.token.officerOf;
+    // check if the user is an officer of this club and the specified permission bit is set
+    function officer(clubId, permissionBit) {
+      // basically (officerOf[clubId] & (1 << permissionBit)) != 0
+      return clubId in request.auth.token.officerOf && int(request.auth.token.officerOf[clubId] / math.pow(2, permissionBit)) % 2 == 1;
     }
     function member(clubId) {
       return clubId in request.auth.token.memberOf;
