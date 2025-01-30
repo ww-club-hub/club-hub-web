@@ -28,31 +28,35 @@ const appRouter = router({
 
 export default {
   async fetch(req, env): Promise<Response> {
-    return fetchRequestHandler({
+    const origin = req.headers.get("Origin");
+    
+    if (req.method === "OPTIONS" && env.USE_EMULATOR) {
+      // handle cors preflight
+      const headers = new Headers();
+      if (origin === "http://localhost:5173") {
+        headers.append("Access-Control-Allow-Origin", origin);
+        headers.append("Access-Control-Allow-Headers", "authorization,content-type");
+      }
+      return new Response(null, {
+        status: 204,
+        headers
+      });
+    }
+    const res = await fetchRequestHandler({
       endpoint: "/api",
       req,
       router: appRouter,
       createContext: async ({ req, resHeaders }: FetchCreateContextFnOptions) => {
         const user = await getUserFromReq(env, caches.default, req);
         return { req, resHeaders, env, user };
-      },
-      responseMeta({ ctx }) {
-        // in dev mode, allow cors to vite server
-        if (env.USE_EMULATOR) {
-          const origin = ctx?.req.headers.get("Origin");
-          if (origin === "http://localhost:5173") {
-            return {
-              headers: new Headers([
-                ["Access-Control-Allow-Origin", origin]
-              ])
-            };
-          }
-        }
-
-        // typescript being annoying
-        return {} as {};
       }
     });
+
+    // non-preflight cors
+    if (env.USE_EMULATOR && origin === "http://localhost:5173")
+      res.headers.append("Access-Control-Allow-Origin", origin);
+
+    return res;
   }
 } satisfies ExportedHandler<Env>;
 

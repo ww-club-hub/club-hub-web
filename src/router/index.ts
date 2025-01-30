@@ -109,24 +109,15 @@ const router = createRouter({
         title: "Club Detail"
       }
     },
-    {
-      path: '/clubs/:clubId/edit',
-      name: 'club-edit',
-      component: () => import("../views/ClubEditView.vue"),
-      meta: {
-        authRequired: true,
-        title: "Club Settings"
-      }
-    },
     // views for members/officers
     {
       path: '/clubs/:clubId',
       component: () => import("../views/club/BaseView.vue"),
       children: [
-        /*{
+        {
           name: 'club-dashboard',
           path: '',
-          component: import("../views/club/DashboardView.vue"),
+          component: import("../views/club/BaseView.vue"),
           meta: {
             authRequired: true,
             title: "Club Dashboard"
@@ -134,13 +125,13 @@ const router = createRouter({
         },
         {
           name: 'club-settings',
-          path: 'settings',
+          path: 'edit',
           component: import("../views/club/SettingsView.vue"),
           meta: {
             authRequired: true,
             title: "Club Settings"
           }
-        },*/
+        },
         /*{
           name: 'club-attendance',
           path: 'attendance',

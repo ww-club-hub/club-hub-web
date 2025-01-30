@@ -79,7 +79,7 @@ export default authedProcedure
     // update the doc officer list
     await authedJsonRequest(
       makeFirestoreField({
-        officers: input.officers
+        officers: Object.fromEntries(Object.entries(input.officers).map(([k, v]) => [btoa(k), v]))
       }).mapValue,
       token,
       `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents/schools/${ctx.user.school}/clubs/${input.clubId}?updateMask=officers`,

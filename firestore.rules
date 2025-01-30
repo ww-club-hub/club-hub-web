@@ -32,7 +32,7 @@ service cloud.firestore {
         allow update: if student(school_id) && (admin() || officer(club_id)) &&
           onlyChanged(["name", "description", "contact", "logoUrl", "topics", "meetings", "signup"]);
         // signup.type == 0 indicates private
-        allow read: if student(school_id) && (resource.data.signup.type != 0 || officer(club_id) || admin());
+        allow read: if student(school_id) && (("signup" in resource.data && resource.data.signup.type != 0) || request.auth.token.email.toUtf8().toBase64() in resource.data.officers || admin());
 
         match /messages/{message_id} {
           // todo: implement fine grained officer permissions

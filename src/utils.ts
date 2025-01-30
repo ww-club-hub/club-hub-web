@@ -12,8 +12,8 @@ export interface UserClaims extends ParsedToken {
 
 export const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-function minutesToTimeString(minutes: number) {
-  return new Date((minutes + new Date().getTimezoneOffset()) * 60 * 1000).toLocaleTimeString();
+export function minutesToTimeString(minutes: number) {
+  return new Date((minutes + new Date().getTimezoneOffset()) * 60 * 1000).toLocaleTimeString(undefined, { timeStyle: "short" });
 }
 
 export function clubMeetingTimesToString(meetings: ClubMeetingTime[]) {
@@ -26,10 +26,18 @@ export function clubMeetingTimesToString(meetings: ClubMeetingTime[]) {
 /**
  * Get the name of the club president
  */
-export function getClubPresident(officers: Officers) {
+export function getClubPresidentName(officers: Officers) {
   // if they have an item called president, return it
   return Object.entries(officers)
     .find(el => el[1].role.toLowerCase() === "president")?.[1].name ??
     // otherwise, return the first item
     Object.values(officers)[0].name;
+}
+
+export function getClubPresidentEmail(officers: Officers) {
+  // if they have an item called president, return it
+  return Object.entries(officers)
+    .find(el => el[1].role.toLowerCase() === "president")?.[0] ??
+    // otherwise, return the first item
+    Object.keys(officers)[0];
 }

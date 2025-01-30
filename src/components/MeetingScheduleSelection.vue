@@ -19,10 +19,7 @@ defineModel<ClubMeetingTime[]>({ default: [] });
       </tr>
     </thead>
     <tbody>
-      <tr class="not-last:border-b dark:border-gray-700 border-gray-200">
-        <th>hi</th>
-      </tr>
-      <tr class="not-last:border-b dark:border-gray-700 border-gray-200">
+      <tr>
         <th>hi</th>
       </tr>
     </tbody>

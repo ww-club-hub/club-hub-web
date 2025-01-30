@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { getIdTokenResult } from "firebase/auth";
 import { auth, db } from "../firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, or, query, where } from "firebase/firestore";
 import { ref } from "vue";
-import { clubMeetingTimesToString, getClubPresident, type UserClaims } from "@/utils";
+import { clubMeetingTimesToString, getClubPresidentName, type UserClaims } from "@/utils";
 import { type Club } from "@/schema";
 import { onMounted } from "vue";
 import { onUnmounted } from "vue";
@@ -26,8 +26,10 @@ function onDocumentClick() {
 }
 
 onMounted(async () => {
-  const docs = await getDocs(collection(db, "schools", claims.school, "clubs"))
-  // TODO: filter for officers/stuco visibility
+  const col = collection(db, "schools", claims.school, "clubs");
+  // TODO: display clubs for officers (perhaps somewhere else?)
+  const clubsQuery = stuco ? col : query(col, where("signup.type", "!=", 0));
+  const docs = await getDocs(clubsQuery)
   clubs.value = docs.docs.map(s => ({
     id: s.id,
     ...s.data()
@@ -109,7 +111,7 @@ onUnmounted(() => {
                 <th scope="row" class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">{{ club.name }}</th>
                 <td class="px-4 py-3">{{ club.description }}</td>
                 <!-- todo: better way of finding president -->
-                <td class="px-4 py-3">{{ getClubPresident(club.officers) }}</td>
+                <td class="px-4 py-3">{{ getClubPresidentName(club.officers) }}</td>
                 <td class="px-4 py-3">{{ clubMeetingTimesToString(club.meetings) }}</td>
                 <td class="px-4 py-3 flex items-center justify-end absolute">
                   <button class="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-hidden dark:text-gray-400 dark:hover:text-gray-100" type="button" @click.stop="clubDetailsDropdown === club.id ? clubDetailsDropdown = null : clubDetailsDropdown = club.id">
