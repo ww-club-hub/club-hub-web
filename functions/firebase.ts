@@ -53,9 +53,9 @@ export async function makeServiceAccountToken(env: Env, scopes: string[]) {
     headers: {
       "Content-Type": "application/x-www-form-urlencoded"
     }
-  }).then(r => r.json()) as { access_token?: string };
-  if (!res.access_token) throw new Error("Could not generate GAPI token");
-  return res.access_token;
+  }).then(r => r.json()) as { id_token?: string };
+  if (!res.id_token) throw new Error("Could not generate GAPI token");
+  return res.id_token;
 }
 
 const firebaseJwkUrl = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com";
