@@ -63,12 +63,12 @@ export interface ClubPrivate {
 }
 
 export enum OfficerPermission {
-  Officers = 1,
-  Members = 2,
-  Meetings = 4,
-  Messages = 8,
-  Forms = 16,
-  ClubDetails = 32,
+  Officers = 1, // bit 0
+  Members = 2, // bit 1
+  Meetings = 4, // bit 2
+  Messages = 8, // bit 3
+  Forms = 16, // bit 4 
+  ClubDetails = 32, // bit 5
   All = ~(~0 << 6)
 }
 

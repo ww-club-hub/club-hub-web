@@ -9,6 +9,7 @@ service cloud.firestore {
       return request.auth.token.role == "owner" || request.auth.token.role == "admin";
     }
     // check if the user is an officer of this club and the specified permission bit is set
+    // see schema.ts for more info
     function officer(clubId, permissionBit) {
       // basically (officerOf[clubId] & (1 << permissionBit)) != 0
       return clubId in request.auth.token.officerOf && int(request.auth.token.officerOf[clubId] / math.pow(2, permissionBit)) % 2 == 1;
@@ -30,21 +31,22 @@ service cloud.firestore {
         allow delete: if admin() && student(school_id);
         allow create: if admin() && student(school_id) &&
           request.resource.data.keys().toSet() == ["name", "description", "contact", "signup"].toSet();
-        // officers can edit fields
-        allow update: if student(school_id) && (admin() || officer(club_id)) &&
+        // officers can edit fields (permission bit 5 - ClubDetails)
+        allow update: if student(school_id) && (admin() || officer(club_id, 5)) &&
           onlyChanged(["name", "description", "contact", "logoUrl", "topics", "meetings", "signup"]);
         // signup.type == 0 indicates private
         allow read: if student(school_id) && (("signup" in resource.data && resource.data.signup.type != 0) || request.auth.token.email.toUtf8().toBase64() in resource.data.officers || admin());
 
         match /messages/{message_id} {
-          // todo: implement fine grained officer permissions
-          allow create: if student(school_id) && officer(club_id) && request.resource.data.keys.hasOnly(["timestamp", "message", "sender"]);
+          // permission bit 3 - Messages
+          allow create: if student(school_id) && officer(club_id, 3) && request.resource.data.keys.hasOnly(["timestamp", "message", "sender"]);
           allow read: if student(school_id) && member(club_id);
         }
       }
 
       match /clubs_private/{club_id} {
-        allow read: if student(school_id) && officer(club_id);
+        // permission bit 1 - Members
+        allow read: if student(school_id) && officer(club_id, 1);
         // can only be written by backend
       }
     }
