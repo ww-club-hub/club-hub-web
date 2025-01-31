@@ -7,9 +7,11 @@
     "dev": "vite --host",
     "preview": "vite preview",
     "build": "vite build",
-    "build:cf": "esbuild functions/worker.ts --bundle --minify --platform=browser --target=es2022 --format=esm --outfile=dist/_worker.js",
+    "build:cf": "esbuild functions/worker.ts --bundle --minify --platform=browser --target=es2022 --format=esm --outfile=dist/_worker.js && cp functions/_routes.json dist/",
     "dev:cf": "wrangler pages dev ./dist",
-    "dev:firebase": "firebase emulators:start --import .firebase-emulator-data --export-on-exit"
+    "dev:firebase": "firebase emulators:start --import .firebase-emulator-data --export-on-exit",
+    "deploy:firebase": "firebase deploy --only firestore",
+    "deploy:cf": "npm run build && npm run build:cf && wrangler pages deploy"
   },
   "dependencies": {
     "vue": "^3.4.29",
