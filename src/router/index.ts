@@ -153,6 +153,15 @@ const router = createRouter({
         }*/
       ]
     },
+    {
+      path: '/privacy',
+      component: () => import("@/views/Privacy.vue"),
+      meta: {
+        title: "Privacy Policy",
+        // allow access to privacy policy even when onboarding
+        onboarding: true
+      }
+    },
   ]
 })
 
