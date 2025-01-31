@@ -16,3 +16,10 @@ npm run dev
 ```
 
 See [DEVELOPMENT.md](DEVELOPMENT.md) for more information
+
+## Tech Stack
+
+- Vue
+- Tailwind CSS
+- Cloudflare Pages + Functions
+- Firebase Auth + Firestore
