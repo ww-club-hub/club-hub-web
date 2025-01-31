@@ -77,3 +77,13 @@ export interface ClubRole {
   officer: OfficerPermission,
   member: boolean
 }
+
+export interface ClubUpdate {
+  // email
+  creator: string,
+  title: string,
+  description: string,
+  timestamp: Date,
+  // map of url to title
+  links: Record<string, string>
+};

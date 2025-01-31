@@ -26,6 +26,7 @@ async function join() {
     await api.club.members.mutate({ clubId });
     // refresh id token
     claims.value = (await getIdTokenResult(auth.currentUser!, true)).claims as UserClaims;
+    
   } catch (err) {
     if (isTRPCClientError(err)) {
       errorMessage.value = err.message;
