@@ -15,7 +15,7 @@ export default publicProcedure
     const cachedRes = await caches.default.match(ctx.req);
     if (cachedRes) return cachedRes;
 
-    const token = await makeServiceAccountToken(ctx.env, [AUTH_SCOPE]);
+    const authToken = await makeServiceAccountToken(ctx.env, AUTH_SCOPE);
     
     const userRes = await authedJsonRequest<{
       users: {
@@ -24,7 +24,7 @@ export default publicProcedure
       }[]
     }>({
       email: [input.email]
-    }, token, `${getIdentityToolkitUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/accounts:lookup`);
+    }, authToken, `${getIdentityToolkitUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/accounts:lookup`);
     
     const user = userRes.users?.[0];
 

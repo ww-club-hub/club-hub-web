@@ -22,7 +22,8 @@ export default authedProcedure
         message: "User is already a member of a school"
       });
     } else {
-      const firestoreToken = await makeServiceAccountToken(ctx.env, [FIRESTORE_SCOPE, AUTH_SCOPE]);
+      const firestoreToken = await makeServiceAccountToken(ctx.env, FIRESTORE_SCOPE);
+      const authToken = await makeServiceAccountToken(ctx.env, AUTH_SCOPE);
 
       // check if any schools with this website exist
       const queryResponse = await authedJsonRequest(
@@ -80,7 +81,7 @@ export default authedProcedure
 
       const schoolId = getFirestoreDocId(doc);
 
-      await updateUserRoles(ctx.env, firestoreToken, ctx.user.user_id, ctx.user, {
+      await updateUserRoles(ctx.env, authToken, ctx.user.user_id, ctx.user, {
         school: schoolId,
         role: "owner"
       });

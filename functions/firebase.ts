@@ -4,10 +4,8 @@ import { authedJsonRequest } from "./utils";
 
 // NOTE: I would use the firebase-admin SDK here, but it's massive (probably over the 1MB cf workers limit) and uses unsupported node APIs
 
-const googleTokenUrl = "https://www.googleapis.com/oauth2/v4/token";
-
-export const FIRESTORE_SCOPE = "https:///www.googleapis.com/auth/datastore";
-export const AUTH_SCOPE = "https://www.googleapis.com/auth/identitytoolkit";
+export const FIRESTORE_SCOPE = "https://firestore.googleapis.com/";
+export const AUTH_SCOPE = "https://identitytoolkit.googleapis.com/";
 
 export function getFirestoreUrl(env: Env) {
   if (env.USE_EMULATOR) {
@@ -26,36 +24,26 @@ export function getIdentityToolkitUrl(env: Env) {
 }
 
 // Get a bearer token for Google APIs from a service account key
-export async function makeServiceAccountToken(env: Env, scopes: string[]) {
+export async function makeServiceAccountToken(env: Env, scope: string) {
   if (env.USE_EMULATOR) {
     // emulator token
     return "owner";
   }
     
   // the key is stored with literal "\n"s to make it easier to enter
-  const secretKey = await importPKCS8(env.SERVICE_ACCOUNT_KEY.replaceAll("\\n", "\n"), "RS256");
+  const key = env.SERVICE_ACCOUNT_KEY.replaceAll("\\n", "\n");
+  const secretKey = await importPKCS8(key, "RS256");
   // make the JWT for these scopes
-  const jwt = await new SignJWT({ scope: scopes.join(" ") })
-    .setProtectedHeader({ alg: "RS256", typ: "JWT" })
+  const jwt = await new SignJWT()
+    .setProtectedHeader({ alg: "RS256", typ: "JWT", kid: env.SERVICE_ACCOUNT_KID })
     .setIssuedAt()
     .setSubject(env.SERVICE_ACCOUNT_EMAIL)
     .setIssuer(env.SERVICE_ACCOUNT_EMAIL)
-    .setAudience(googleTokenUrl)
+    .setAudience(scope)
     .setExpirationTime("1h")
     .sign(secretKey);
-  // get an access token
-  const res = await fetch(googleTokenUrl, {
-    method: "POST",
-    body: new URLSearchParams({
-      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-      assertion: jwt
-    }),
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded"
-    }
-  }).then(r => r.json()) as { id_token?: string };
-  if (!res.id_token) throw new Error("Could not generate GAPI token");
-  return res.id_token;
+
+  return jwt;
 }
 
 const firebaseJwkUrl = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com";

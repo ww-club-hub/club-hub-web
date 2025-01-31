@@ -25,12 +25,13 @@ export default authedProcedure
       });
     }
 
-    const token = await makeServiceAccountToken(ctx.env, [FIRESTORE_SCOPE, AUTH_SCOPE]);
+    const firestoreToken = await makeServiceAccountToken(ctx.env, FIRESTORE_SCOPE);
+    const authToken = await makeServiceAccountToken(ctx.env, AUTH_SCOPE);
 
     const queryResponse = await authedJsonRequest(
       null,
-      token,
-      `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents/schools/${ctx.user.school}/clubs/${input.clubId}?fieldMask=officers`,
+      firestoreToken,
+      `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents/schools/${ctx.user.school}/clubs/${input.clubId}?mask.fieldPaths=name&mask.fieldPaths=officers`,
       "GET"
     ) as FirestoreRestDocument;
 
@@ -48,7 +49,7 @@ export default authedProcedure
       }[]
     }>({
       email: allOfficerEmails
-    }, token, `${getIdentityToolkitUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/accounts:lookup`);
+    }, authToken, `${getIdentityToolkitUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/accounts:lookup`);
 
     await Promise.all(allOfficerEmails.map(async email => {
       const userDetails = officerUsers.users.find(u => u.email === email);
@@ -71,7 +72,7 @@ export default authedProcedure
         }
       }
       // update roles
-      await updateUserRoles(ctx.env, token, userDetails!.localId, attrs, {
+      await updateUserRoles(ctx.env, authToken, userDetails!.localId, attrs, {
         officerOf: attrs.officerOf
       });
     }));
@@ -81,8 +82,8 @@ export default authedProcedure
       makeFirestoreField({
         officers: Object.fromEntries(Object.entries(input.officers).map(([k, v]) => [btoa(k), v]))
       }).mapValue,
-      token,
-      `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents/schools/${ctx.user.school}/clubs/${input.clubId}?updateMask=officers`,
+      firestoreToken,
+      `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents/schools/${ctx.user.school}/clubs/${input.clubId}?updateMask.fieldPaths=officers`,
       "PATCH"
     );
 

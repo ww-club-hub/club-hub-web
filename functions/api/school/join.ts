@@ -14,12 +14,13 @@ export default authedProcedure
   .mutation(async ({ ctx, input }) => {
     const userEmailDomain = ctx.user.email.split("@")[1];
 
-    const firebaseToken = await makeServiceAccountToken(ctx.env, [FIRESTORE_SCOPE, AUTH_SCOPE]);
+    const firestoreToken = await makeServiceAccountToken(ctx.env, FIRESTORE_SCOPE);
+    const authToken = await makeServiceAccountToken(ctx.env, AUTH_SCOPE);
 
     // make sure they can join this school
     const queryResponse = await authedJsonRequest(
       null,
-      firebaseToken,
+      firestoreToken,
       `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents/schools/${input.schoolId}`,
       "GET"
     ) as FirestoreRestDocument;
@@ -46,11 +47,11 @@ export default authedProcedure
           }
         }]
       },
-      firebaseToken,
+      firestoreToken,
       `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents:batchWrite`
     );
 
-    await updateUserRoles(ctx.env, firebaseToken, ctx.user.user_id, ctx.user, {
+    await updateUserRoles(ctx.env, authToken, ctx.user.user_id, ctx.user, {
       school: input.schoolId,
     });
 

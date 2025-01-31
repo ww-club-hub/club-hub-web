@@ -6,6 +6,7 @@ export { Club, ClubSignupType, UserClaims, OfficerPermission };
 export interface Env {
   SERVICE_ACCOUNT_EMAIL: string;
   SERVICE_ACCOUNT_KEY: string;
+  SERVICE_ACCOUNT_KID: string;
   GCP_PROJECT_ID: string;
   USE_EMULATOR: string;
 }

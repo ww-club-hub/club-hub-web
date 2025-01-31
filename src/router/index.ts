@@ -118,7 +118,7 @@ const router = createRouter({
         {
           name: 'club-dashboard',
           path: '',
-          component: import("@/views/club/Dashboard.vue"),
+          component: () => import("@/views/club/Dashboard.vue"),
           meta: {
             authRequired: true,
             title: "Club Dashboard"
@@ -127,7 +127,7 @@ const router = createRouter({
         {
           name: 'club-settings',
           path: 'edit',
-          component: import("@/views/club/SettingsView.vue"),
+          component: () => import("@/views/club/SettingsView.vue"),
           meta: {
             authRequired: true,
             title: "Club Settings"
@@ -136,7 +136,7 @@ const router = createRouter({
         {
           name: 'club-updates',
           path: 'updates',
-          component: import("@/views/club/Messages.vue"),
+          component: () => import("@/views/club/Messages.vue"),
           meta: {
             authRequired: true,
             title: "Club Updates"
@@ -145,7 +145,7 @@ const router = createRouter({
         /*{
           name: 'club-attendance',
           path: 'attendance',
-          component: import("@/views/club/AttendanceView.vue"),
+          component: () => import("@/views/club/AttendanceView.vue"),
           meta: {
             authRequired: true,
             title: "Club Attendance"

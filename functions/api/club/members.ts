@@ -13,7 +13,8 @@ const AddRemoveMemberReq = z.object({
 export default authedProcedure
   .input(AddRemoveMemberReq)
   .mutation(async ({ ctx, input }) => {
-    const token = await makeServiceAccountToken(ctx.env, [FIRESTORE_SCOPE, AUTH_SCOPE]);
+    const firestoreToken = await makeServiceAccountToken(ctx.env, FIRESTORE_SCOPE);
+    const authToken = await makeServiceAccountToken(ctx.env, AUTH_SCOPE);
 
     let userId: string;
     let userEmail: string;
@@ -37,7 +38,7 @@ export default authedProcedure
         }[]
       }>({
         email: input.memberEmail
-      }, token, `${getIdentityToolkitUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/accounts:lookup`);
+      }, authToken, `${getIdentityToolkitUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/accounts:lookup`);
 
       const userDetails = memberDetails.users[0];
       const attrs = JSON.parse(userDetails?.customAttributes) ?? null;
@@ -56,8 +57,8 @@ export default authedProcedure
       // member adding themselves to a club
       const queryResponse = await authedJsonRequest(
         null,
-        token,
-        `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents/schools/${ctx.user.school}/clubs/${input.clubId}?fieldMask=signup`,
+        firestoreToken,
+        `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents/schools/${ctx.user.school}/clubs/${input.clubId}?mask.fieldPaths=signup`,
         "GET"
       ) as FirestoreRestDocument;
 
@@ -85,7 +86,7 @@ export default authedProcedure
     // update user roles
     if (!userAttrs.memberOf) userAttrs.memberOf = [];
     userAttrs.memberOf.push(input.clubId);
-    await updateUserRoles(ctx.env, token, userId, userAttrs, {
+    await updateUserRoles(ctx.env, authToken, userId, userAttrs, {
       memberOf: userAttrs.memberOf
     });
 
@@ -102,7 +103,7 @@ export default authedProcedure
           }
         }]
       },
-      token,
+      firestoreToken,
       `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents:batchWrite`
     );
 

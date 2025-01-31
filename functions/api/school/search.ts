@@ -11,8 +11,8 @@ export default authedProcedure
   .input(SearchReq)
   .query(async ({ ctx, input }) => {
     const userEmailDomain = ctx.user.email.split("@")[1];
-
-    const firestoreToken = await makeServiceAccountToken(ctx.env, [FIRESTORE_SCOPE]);
+    
+    const firestoreToken = await makeServiceAccountToken(ctx.env, FIRESTORE_SCOPE);
 
     const query = input.query.toLowerCase();
     // search

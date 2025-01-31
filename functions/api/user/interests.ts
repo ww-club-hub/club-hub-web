@@ -9,9 +9,9 @@ const SetInterestsReq = z.object({
 export default authedProcedure
   .input(SetInterestsReq)
   .mutation(async ({ ctx, input }) => {
-    const firebaseToken = await makeServiceAccountToken(ctx.env, [AUTH_SCOPE]);
+    const authToken = await makeServiceAccountToken(ctx.env, AUTH_SCOPE);
 
-    await updateUserRoles(ctx.env, firebaseToken, ctx.user.user_id, ctx.user, {
+    await updateUserRoles(ctx.env, authToken, ctx.user.user_id, ctx.user, {
       interests: input.interests,
     });
 
