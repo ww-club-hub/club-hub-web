@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { auth } from "../firebase";
-import { signInWithCredential, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, OAuthCredential } from "firebase/auth";
+import { signInWithCredential, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, OAuthCredential, signInWithPhoneNumber, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import type { FirebaseError } from "firebase/app";
 import AuthForm from "@/components/AuthForm.vue";
 
@@ -44,10 +44,14 @@ async function signupPassword(name: string, email: string, password: string) {
 
 async function loginCred(cred: OAuthCredential) {
   try {
-      await signInWithCredential(auth, cred);
+    await signInWithCredential(auth, cred);
   } catch (e) {
     errorMessage.value = (e as Error).message;
   }
+}
+
+async function loginGoogle() {
+  await signInWithPopup(auth, new GoogleAuthProvider());
 }
 </script>
 
@@ -58,7 +62,7 @@ async function loginCred(cred: OAuthCredential) {
     </h1>
     <div class="w-full bg-white rounded-lg shadow-sm dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
       <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
-        <AuthForm v-model:error="errorMessage" :mode="createAccount ? 'signup' : 'login'" @login-cred="loginCred" @login-password="loginPassword" @signup-password="signupPassword" />
+        <AuthForm v-model:error="errorMessage" :mode="createAccount ? 'signup' : 'login'" @login-cred="loginCred" @login-password="loginPassword" @signup-password="signupPassword" @auth-google-manual="loginGoogle" />
 
         <!-- create account/login switch prompt -->
         <p class="text-sm font-light text-gray-500 dark:text-gray-400 mt-3" v-if="createAccount">

@@ -3,6 +3,8 @@ import { GoogleAuthProvider, OAuthCredential } from 'firebase/auth';
 import { ref } from 'vue';
 import type { CredentialResponse } from 'vue3-google-signin';
 
+const isDev = import.meta.env.DEV;
+
 const props = defineProps<{
   mode: 'signup' | 'login' | 'reauth'
 }>();
@@ -11,7 +13,8 @@ const emit = defineEmits<{
   loginCred: [cred: OAuthCredential],
   loginPassword: [email: string, password: string],
   signupPassword: [name: string, email: string, password: string],
-  reauthPassword: [password: string]
+  reauthPassword: [password: string],
+  authGoogleManual: [],
 }>();
 
 const name = ref("");
@@ -75,6 +78,10 @@ async function handleGoogleSuccess({ credential }: CredentialResponse) {
         @success="handleGoogleSuccess"
         @error="handleGoogleError"
       ></GoogleSignInButton>
+
+      <button v-if="isDev" class="bg-black text-white p-3 rounded" @click="emit('authGoogleManual')" type="button">
+        DEV: Emulator Google
+      </button>
     </div>
   </form>
 </template>
