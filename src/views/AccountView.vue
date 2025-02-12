@@ -2,9 +2,11 @@
 import { ref } from "vue";
 import { auth } from "../firebase";
 import { EmailAuthProvider, OAuthCredential, deleteUser, reauthenticateWithCredential } from "firebase/auth";
-import type AuthForm from "@/components/AuthForm.vue";
+import AuthForm from "@/components/AuthForm.vue";
+import type { FirebaseError } from "firebase/app";
 
 const showModal = ref(false);
+const errorMessage = ref("");
 
 async function deleteAccount() {
   if (auth.currentUser)
@@ -13,16 +15,34 @@ async function deleteAccount() {
 
 async function reauthCred(cred: OAuthCredential) {
   if (!auth.currentUser) return;
-  await reauthenticateWithCredential(auth.currentUser, cred);
-
-  await deleteAccount();
+  try {
+    await reauthenticateWithCredential(auth.currentUser, cred);
+    
+    await deleteAccount();
+  } catch (e) {
+    if ((e as FirebaseError).code === "auth/wrong-password") {
+      errorMessage.value = "Invalid password";
+    } else {
+      errorMessage.value = (e as Error).message;
+    }
+  }
 }
 
 async function reauthPassword(password: string) {
   if (!auth.currentUser) return;
   const cred = EmailAuthProvider.credential(auth.currentUser.email!, password);
-  await reauthenticateWithCredential(auth.currentUser, cred);
+  try {
+    await reauthenticateWithCredential(auth.currentUser, cred);
+    errorMessage.value = "";
     await deleteAccount();
+  } catch (e) {
+    if ((e as FirebaseError).code === "auth/wrong-password") {
+      errorMessage.value = "Invalid password";
+    } else {
+      errorMessage.value = (e as Error).message;
+    }
+  }
+ 
 }
 </script>
 
@@ -45,8 +65,8 @@ async function reauthPassword(password: string) {
   </section>
 
   <!-- reauth modal -->
-  <dialog :show="showModal" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
-    <div class="relative p-4 w-full max-w-2xl max-h-full">
+  <dialog :open="showModal" tabindex="-1" aria-hidden="true" class="overflow-y-auto overflow-x-hidden fixed inset-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full bg-gray-300/50 dark:bg-gray-700/50">
+    <div class="relative p-4 w-full max-w-2xl max-h-full left-1/2 top-1/2 -translate-1/2">
       <!-- Modal content -->
       <div class="relative bg-white rounded-lg shadow-sm dark:bg-gray-700">
         <!-- Modal header -->
@@ -63,7 +83,7 @@ async function reauthPassword(password: string) {
         </div>
         <!-- Modal body -->
         <div class="p-4 md:p-5 space-y-4">
-          <AuthForm mode="reauth" @login-cred="reauthCred" @reauth-password="reauthPassword" />
+          <AuthForm mode="reauth" @login-cred="reauthCred" @reauth-password="reauthPassword" :error="errorMessage" />
         </div>
       </div>
     </div>
