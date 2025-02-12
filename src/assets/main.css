@@ -25,3 +25,9 @@ html, body, #app {
 .fade-leave-to {
   opacity: 0;
 }
+
+
+[type="checkbox"]:checked,
+[type="radio"]:checked {
+  background-color: currentColor;
+}
