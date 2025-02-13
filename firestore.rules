@@ -15,7 +15,7 @@ service cloud.firestore {
       return clubId in request.auth.token.officerOf && int(request.auth.token.officerOf[clubId] / math.pow(2, permissionBit)) % 2 == 1;
     }
     function member(clubId) {
-      return clubId in request.auth.token.memberOf;
+      return admin() || ("officerOf" in request.auth.token && clubId in request.auth.token.officerOf) || clubId in request.auth.token.memberOf;
     }
     function onlyChanged(keys) {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);

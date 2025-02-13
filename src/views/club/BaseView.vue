@@ -20,7 +20,10 @@ const role: ClubRole = {
   member: claims.memberOf?.includes(clubId) ?? false
 };
 
-const club = (await getDoc(doc(db, "schools", claims.school, "clubs", clubId))).data() as Club;
+const club = {
+  ...((await getDoc(doc(db, "schools", claims.school, "clubs", clubId))).data() as Club),
+  id: clubId
+};
 
 </script>
 
