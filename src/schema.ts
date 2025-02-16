@@ -78,6 +78,7 @@ export interface ClubRole {
   member: boolean
 }
 
+// /messages/{id}
 export interface ClubUpdate {
   // email
   creator: string,
@@ -87,3 +88,18 @@ export interface ClubUpdate {
   // map of url to title
   links: Record<string, string>
 };
+
+// /meetings/{id}
+export interface ClubMeeting {
+  time: ClubMeetingTime,
+  description?: string,
+  slides?: string
+}
+
+// /meeting_attendance/{id}
+export interface ClubMeetingAttendance {
+  code: string,
+  // map of email to code used
+  membersPresent: Record<string, string>,
+  membersAttending: string[]
+}

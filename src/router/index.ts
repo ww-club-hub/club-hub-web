@@ -141,6 +141,15 @@ const router = createRouter({
             authRequired: true,
             title: "Club Updates"
           }
+        },
+        {
+          name: 'club-mettings',
+          path: 'meetings',
+          component: () => import("@/views/club/Meetings.vue"),
+          meta: {
+            authRequired: true,
+            title: "Club Meetings"
+          }
         }
         /*{
           name: 'club-attendance',

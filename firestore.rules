@@ -20,6 +20,15 @@ service cloud.firestore {
     function onlyChanged(keys) {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
     }
+    function listDiffHasOnly(list1, list2, targetDiff) {
+      let set1 = list1.toSet();
+      let set2 = list2.toSet();
+      return set1.difference(set2).hasOnly(targetDiff) && set2.difference(set1).hasOnly(targetDiff);
+    }
+    function mapDiffHasOnly(map1, map2, targetKey, targetValue) {
+      let diff = map1.diff(map2);
+      return diff.affectedKeys() == [targetKey].toSet() && diff.addedKeys() == [targetKey].toSet() && map1[targetKey] == targetValue;
+}
     match /schools/{school_id} {
       // schools can only be created/deleted from the admin API
       allow read: if student(school_id);
@@ -39,8 +48,28 @@ service cloud.firestore {
 
         match /messages/{message_id} {
           // permission bit 3 - Messages
-          allow create: if student(school_id) && officer(club_id, 3) && request.resource.data.keys.hasOnly(["timestamp", "message", "sender"]);
+          allow create: if student(school_id) && officer(club_id, 3) && request.resource.data.keys().hasOnly(["timestamp", "message", "sender"]);
           allow read: if student(school_id) && member(club_id);
+        }
+
+        match /meetings/{meeting_id} {
+          // permission bit 2 - Meetings
+          allow create: if student(school_id) && officer(club_id, 2) && request.resource.data.keys().hasOnly(["time", "description", "slides"]) && request.resource.data.keys().hasAll(["time"]);
+          allow update: if student(school_id) && officer(club_id, 2) && onlyChanged(["description", "slides"]);
+          allow read: if student(school_id) && member(club_id);
+        }
+
+        match /meeting_attendance/{meeting_id} {
+          // permission bit 2 - Meetings
+          // officers must initialize membersPresent and membersAttending
+          allow create: if student(school_id) && officer(club_id, 2) && request.resource.data.keys().toSet() == ["code", "membersPresent", "membersAttending"].toSet(); && request.resource.data.membersPresent == {} && request.resource.data.membersAttending == [];
+          allow read: if student(school_id) && officer(club_id, 2);
+          // officers can only update code
+          allow update: if student(school_id) && officer(club_id, 2) && onlyChanged(["code"]);
+          // members can add/remove themselves from membersAttending
+          allow update: if student(school_id) && member(club_id) && onlyChanged(["membersAttending"]) && listDiffHasOnly(request.resource.data.membersAttending, resource.data.membersAttending, [request.auth.token.email]);
+          // members can add themselves to membersPresent if they have the correct code
+          allow update: if student(school_id) && member(club_id) && onlyChanged(["membersPresent"]) && mapDiffHasOnly(request.resource.data.membersPresent, resource.data.membersPresent, request.auth.token.email, resource.data.code);
         }
       }
 
