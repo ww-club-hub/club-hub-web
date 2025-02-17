@@ -91,7 +91,9 @@ export interface ClubUpdate {
 
 // /meetings/{id}
 export interface ClubMeeting {
-  time: ClubMeetingTime,
+  location: string,
+  startTime: Date,
+  endTime: Date,
   description?: string,
   slides?: string
 }

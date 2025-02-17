@@ -54,7 +54,7 @@ service cloud.firestore {
 
         match /meetings/{meeting_id} {
           // permission bit 2 - Meetings
-          allow create: if student(school_id) && officer(club_id, 2) && request.resource.data.keys().hasOnly(["time", "description", "slides"]) && request.resource.data.keys().hasAll(["time"]);
+          allow create: if student(school_id) && officer(club_id, 2) && request.resource.data.keys().hasOnly(["location", "startTime", "endTime", "description", "slides"]) && request.resource.data.keys().hasAll(["location", "startTime", "endTime"]);
           allow update: if student(school_id) && officer(club_id, 2) && onlyChanged(["description", "slides"]);
           allow read: if student(school_id) && member(club_id);
         }
