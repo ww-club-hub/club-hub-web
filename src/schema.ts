@@ -1,3 +1,5 @@
+import type { Timestamp } from "firebase/firestore";
+
 export type ClubMeetingTime = ClubMeetingDayTime | ClubMeetingFlex;
 
 export interface ClubMeetingDayTime {
@@ -84,7 +86,7 @@ export interface ClubUpdate {
   creator: string,
   title: string,
   description: string,
-  timestamp: Date,
+  timestamp: Timestamp,
   // map of url to title
   links: Record<string, string>
 };
@@ -92,8 +94,8 @@ export interface ClubUpdate {
 // /meetings/{id}
 export interface ClubMeeting {
   location: string,
-  startTime: Date,
-  endTime: Date,
+  startTime: Timestamp,
+  endTime: Timestamp,
   description?: string,
   slides?: string
 }

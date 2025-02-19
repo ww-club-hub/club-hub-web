@@ -80,7 +80,7 @@ async function onFormSubmit() {
         <FormInput label="Name:" type="text" required v-model="name" />
         <FormInput label="Description:" type="text" required v-model="description" />
         <FormInput label="President's Student Email:" type="email" required v-model="president" />
-        <FormInput label="Sponsor:" type="text" required v-model="sponsor" />
+        <FormInput label="Sponsor:" type="email" required v-model="sponsor" />
 
         <p v-if="errorMessage" class="mb-2 text-rose-600 dark:text-rose-400 italic">{{ errorMessage }}</p>
 

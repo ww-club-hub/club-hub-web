@@ -56,7 +56,7 @@ export default authedProcedure
         firestoreToken,
         `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents:runAggregationQuery`
       ) as AggregationQueryResponse;
-      if (parseInt(queryResponse[0].result.aggregateFields.count.integerValue!) > 0) {
+      if (parseInt(queryResponse[0]?.result.aggregateFields.count.integerValue!) > 0) {
         // this school already exists
         throw new TRPCError({
           code: "CONFLICT",

@@ -49,7 +49,7 @@ onMounted(async () => {
     <FormInput label="Name:" type="text" required v-model="club.name"/>
     <FormInput label="Description:" type="text" required v-model="club.description" />
     <FormInput label="Club Contact Email:" type="text" required v-model="club.contact.email" />
-    <FormInput label="Sponsor:" type="text" required v-model="club.contact.sponsor" />
+    <FormInput label="Sponsor:" type="email" required v-model="club.contact.sponsor" />
     <FormInput label="Logo URL:" type="url" v-model="club.logoUrl" />
     
     <div class="flex items-start gap-3">
@@ -66,7 +66,8 @@ onMounted(async () => {
       <FormInput label="Signup Application URL:" type="url" v-model="club.signup.formUrl" v-if="club.signup.type == ClubSignupType.ApplicationRequired" class="grow" />
     </div>
     
-    <h3 class="text-lg font-bold text-black dark:text-white">Meeting times:</h3>
+    <h3 class="text-lg font-bold text-black dark:text-white mb-2">Usual meeting times:</h3>
+    <p class="text-black dark:text-white">This gives members an idea of when meetings usually occur for this club. You can schedule specific meetings on the meetings page.</p>
     <div class="lg:columns-2 gap-3" v-if="club.meetings?.length > 0">
       <div v-for="meeting, i in club.meetings" :key="i" class="flex items-start gap-3 break-inside-avoid-column mb-3">
         <div>

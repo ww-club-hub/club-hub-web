@@ -48,7 +48,7 @@ service cloud.firestore {
 
         match /messages/{message_id} {
           // permission bit 3 - Messages
-          allow create: if student(school_id) && officer(club_id, 3) && request.resource.data.keys().hasOnly(["timestamp", "message", "sender"]);
+          allow create: if student(school_id) && officer(club_id, 3) && request.resource.data.keys().hasOnly(["creator", "description", "links", "timestamp", "title"]) && request.resource.data.creator == request.auth.token.email;
           allow read: if student(school_id) && member(club_id);
         }
 
@@ -62,7 +62,7 @@ service cloud.firestore {
         match /meeting_attendance/{meeting_id} {
           // permission bit 2 - Meetings
           // officers must initialize membersPresent and membersAttending
-          allow create: if student(school_id) && officer(club_id, 2) && request.resource.data.keys().toSet() == ["code", "membersPresent", "membersAttending"].toSet(); && request.resource.data.membersPresent == {} && request.resource.data.membersAttending == [];
+          allow create: if student(school_id) && officer(club_id, 2) && request.resource.data.keys().toSet() == ["code", "membersPresent", "membersAttending"].toSet() && request.resource.data.membersPresent == {} && request.resource.data.membersAttending == [];
           allow read: if student(school_id) && officer(club_id, 2);
           // officers can only update code
           allow update: if student(school_id) && officer(club_id, 2) && onlyChanged(["code"]);

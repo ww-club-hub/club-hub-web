@@ -36,8 +36,8 @@ export function getClubPresidentName(officers: Officers) {
 
 export function getClubPresidentEmail(officers: Officers) {
   // if they have an item called president, return it
-  return Object.entries(officers)
+  return atob(Object.entries(officers)
     .find(el => el[1].role.toLowerCase() === "president")?.[0] ??
     // otherwise, return the first item
-    Object.keys(officers)[0];
+    Object.keys(officers)[0]);
 }
