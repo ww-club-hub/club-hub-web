@@ -143,7 +143,7 @@ const router = createRouter({
           }
         },
         {
-          name: 'club-mettings',
+          name: 'club-meetings',
           path: 'meetings',
           component: () => import("@/views/club/Meetings.vue"),
           meta: {
