@@ -57,7 +57,7 @@ onUnmounted(() => {
           class="font-medium flex flex-col p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 md:bg-white dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700">
           <NavbarLink url="/" name="Home" :active="route.name === 'home'" />
           <NavbarLink url="/clubs/" name="Explore Clubs" :active="route.name === 'club-list'" />
-          <NavbarLink url="/dashboard/" name="Dashboard" :active="route.name === 'dash'" />
+          <NavbarLink url="/dashboard/" name="Dashboard" v-if="currentUser" :active="route.name === 'dash'" />
           <NavbarLink url="/login/" name="Log In" v-if="!currentUser" :active="route.name === 'login'" />
         </ul>
       </div>

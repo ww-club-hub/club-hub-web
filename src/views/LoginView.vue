@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { auth } from "../firebase";
-import { signInWithCredential, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, OAuthCredential, signInWithPhoneNumber, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { signInWithCredential, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, OAuthCredential, signInWithPhoneNumber, signInWithPopup, sendPasswordResetEmail, GoogleAuthProvider } from "firebase/auth";
 import type { FirebaseError } from "firebase/app";
 import AuthForm from "@/components/AuthForm.vue";
 
@@ -50,6 +50,15 @@ async function loginCred(cred: OAuthCredential) {
   }
 }
 
+async function forgotPassword(email: string) {
+  try {
+    await sendPasswordResetEmail(auth, email);
+    errorMessage.value = `A password reset email was sent to ${email}`;
+  } catch (e) {
+    errorMessage.value = (e as Error).message;
+  }
+}
+
 async function loginGoogle() {
   await signInWithPopup(auth, new GoogleAuthProvider());
 }
@@ -60,16 +69,21 @@ async function loginGoogle() {
     <h1 class="flex items-center mb-6 text-2xl font-semibold text-gray-900 dark:text-white">
       {{ createAccount ? "Create account" : "Sign in to your account" }}:
     </h1>
-    <div class="w-full bg-white rounded-lg shadow-sm dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
+    <div
+      class="w-full bg-white rounded-lg shadow-sm dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
       <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
-        <AuthForm v-model:error="errorMessage" :mode="createAccount ? 'signup' : 'login'" @login-cred="loginCred" @login-password="loginPassword" @signup-password="signupPassword" @auth-google-manual="loginGoogle" />
+        <AuthForm v-model:error="errorMessage" :mode="createAccount ? 'signup' : 'login'" @login-cred="loginCred"
+          @login-password="loginPassword" @forgot-password="forgotPassword" @signup-password="signupPassword"
+          @auth-google-manual="loginGoogle" />
 
         <!-- create account/login switch prompt -->
         <p class="text-sm font-light text-gray-500 dark:text-gray-400 mt-3" v-if="createAccount">
-          Already have an account? <button class="font-medium text-orange-600 hover:underline dark:text-orange-500" type="button" @click="createAccount = false">Log in</button>
+          Already have an account? <button class="font-medium text-orange-600 hover:underline dark:text-orange-500"
+            type="button" @click="createAccount = false">Log in</button>
         </p>
         <p class="text-sm font-light text-gray-500 dark:text-gray-400 mt-3" v-else>
-          Don’t have an account yet? <button class="font-medium text-orange-600 hover:underline dark:text-orange-500" type="button" @click="createAccount = true">Sign up</button>
+          Don’t have an account yet? <button class="font-medium text-orange-600 hover:underline dark:text-orange-500"
+            type="button" @click="createAccount = true">Sign up</button>
         </p>
       </div>
     </div>

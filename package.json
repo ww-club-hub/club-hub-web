@@ -15,7 +15,8 @@
   },
   "dependencies": {
     "vue": "^3.4.29",
-    "vue-router": "^4.3.3"
+    "vue-router": "^4.3.3",
+    "wrangler": "^3.110.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241112.0",
