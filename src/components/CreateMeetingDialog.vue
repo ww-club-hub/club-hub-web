@@ -53,7 +53,7 @@ async function createMeeting() {
         <form class="p-4 md:p-5 space-y-4 dark:bg-gray-800 rounded-b" @submit.prevent="createMeeting">
           <FormInput label="Room location:" type="text" required v-model="location" />
           <FormInput label="Slides URL:" type="url" v-model="slides" />
-          <FormInput label="Room location:" type="text" v-model="description" />
+          <FormInput label="Description:" type="text" v-model="description" />
 
           <div class="flex items-center gap-3">
             <DateTimeInput label="Start time:" required v-model="startTime" />
