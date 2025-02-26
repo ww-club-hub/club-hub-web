@@ -2,19 +2,31 @@
 import { ref } from 'vue';
 import DateTimeInput from './DateTimeInput.vue';
 import FormInput from './FormInput.vue';
+import type { ClubMeeting } from '@/schema';
+import { Timestamp } from 'firebase/firestore';
 
 const show = defineModel<boolean>("show", {
   default: false
 });
 
+const emit = defineEmits<{
+  (e: 'create-meeting', meeting: ClubMeeting): void
+}>();
+
 const location = ref("");
 const slides = ref("");
 const description = ref("");
-const startTime = ref(null);
-const endTime = ref(null);
+const startTime = ref<Date | undefined>();
+const endTime = ref<Date | undefined>();
 
 async function createMeeting() {
-  
+  emit("create-meeting", {
+    location: location.value,
+    slides: slides.value || undefined,
+    description: description.value || undefined,
+    startTime: Timestamp.fromDate(startTime.value!),
+    endTime: Timestamp.fromDate(endTime.value!)
+  });
 }
 </script>
 
@@ -40,13 +52,15 @@ async function createMeeting() {
         <!-- TODO: autofill data from general meeting times -->
         <form class="p-4 md:p-5 space-y-4 dark:bg-gray-800 rounded-b" @submit.prevent="createMeeting">
           <FormInput label="Room location:" type="text" required v-model="location" />
-          <FormInput label="Slides URL:" type="text" v-model="slides" />
-          <FormInput label="Room location:" type="text" required v-model="description" />
+          <FormInput label="Slides URL:" type="url" v-model="slides" />
+          <FormInput label="Room location:" type="text" v-model="description" />
 
           <div class="flex items-center gap-3">
             <DateTimeInput label="Start time:" required v-model="startTime" />
             <DateTimeInput label="End time:" required v-model="endTime" />
           </div>
+
+          <!-- TODO: recurring meetings -->
 
           <button class="text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800 block">Submit</button>
         </form>
