@@ -1,5 +1,10 @@
 <script setup lang="ts">
+import { db } from '@/firebase';
 import type { Club, ClubRole, ClubUpdate } from '@/schema';
+import { typedGetDocs } from '@/utils';
+import { collection, limit, orderBy, query, where } from 'firebase/firestore';
+import { ref } from 'vue';
+import { onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 
 const route = useRoute();
@@ -12,17 +17,23 @@ const props = defineProps<{
 }>();
 
 // TODO: actually implement updates
-const updates: ClubUpdate[] = [{
-  creator: "example@example.com",
-  title: "Example update",
-  description: "Hi",
-  links: {
-    "https://club-hub.org": "More info"
-  },
-  timestamp: new Date()
-}];
+const updates = ref<ClubUpdate[]>([]);
 
 const meetings: unknown[] = [];
+
+const messagesCollection = collection(db, "schools", props.school, "clubs", props.club.id, "messages");
+
+onMounted(async () => {
+  // get 5 most recent messages
+  updates.value = await typedGetDocs(
+    query(
+      messagesCollection,
+      where("timestamp", ">=", Date.now()),
+      orderBy("timestamp", "desc"),
+      limit(5)
+    )
+  );
+});
 </script>
 
 <template>
@@ -39,7 +50,7 @@ const meetings: unknown[] = [];
           </div>
 
           <!-- date -->
-          <p class="text-sm uppercase font-normal text-gray-600 dark:text-gray-500">{{ update.timestamp.toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" }) }}</p>
+          <p class="text-sm uppercase font-normal text-gray-600 dark:text-gray-500">{{ update.timestamp.toDate().toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" }) }}</p>
         </div>
       </div>
       <p v-else class="italic text-black dark:text-white">No updates yet...</p>

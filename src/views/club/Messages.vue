@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import type { Club, ClubRole, ClubUpdate } from '@/schema';
+import { OfficerPermission, type Club, type ClubRole, type ClubUpdate } from '@/schema';
 import { onMounted } from 'vue';
 import { ref } from 'vue';
-import { getDocs, collection, doc, setDoc, Timestamp } from "@firebase/firestore";
+import { collection, doc, setDoc, Timestamp } from "@firebase/firestore";
 import { db, auth } from "@/firebase";
 import FormInput from '@/components/FormInput.vue';
+import { computed } from 'vue';
+import { typedGetDocs, type DocWithId } from '@/utils';
 
 const props = defineProps<{
   role: ClubRole,
@@ -12,7 +14,9 @@ const props = defineProps<{
   club: Club
 }>();
 
-const updates = ref<(ClubUpdate & { id: string })[]>([]);
+const canCreateUpdate = computed(() => props.role.stuco || (props.role.officer & OfficerPermission.Messages));
+
+const updates = ref<DocWithId<ClubUpdate>[]>([]);
 
 const updateTitle = ref("");
 const updateDescription = ref("");
@@ -21,11 +25,7 @@ const updateLinks = ref<[string, string][]>([]);
 const messagesCollection = collection(db, "schools", props.school, "clubs", props.club.id, "messages");
 
 onMounted(async () => {
-  const docs = await getDocs(messagesCollection);
-  updates.value = docs.docs.map(el => ({
-      id: el.id,
-      ...el.data()
-  } as ClubUpdate & { id: string }));
+  updates.value = await typedGetDocs(messagesCollection);
 })
 
 const showModal = ref(false);
@@ -56,7 +56,7 @@ async function createUpdate() {
   <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
     Updates:
   </h2>
-  <button type="button" class=" my-3 text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800 block" @click="showModal = true">Create update</button>
+  <button v-if="canCreateUpdate" type="button" class=" my-3 text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800 block" @click="showModal = true">Create update</button>
   
   <div v-if="updates.length > 0" class="flex gap-3 flex-row flex-wrap">
     <div v-for="update in updates" :key="update.id" class="max-w-sm py-4 px-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700 flex flex-col">

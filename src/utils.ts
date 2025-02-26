@@ -1,5 +1,6 @@
 import type { ParsedToken } from "firebase/auth";
 import type { ClubMeetingTime, OfficerPermission, Officers } from "./schema";
+import { getDocs, type DocumentData, type Query } from "firebase/firestore";
 
 export interface UserClaims extends ParsedToken {
   school: string,
@@ -40,4 +41,14 @@ export function getClubPresidentEmail(officers: Officers) {
     .find(el => el[1].role.toLowerCase() === "president")?.[0] ??
     // otherwise, return the first item
     Object.keys(officers)[0]);
+}
+
+export type DocWithId<T> = T & { id: string };
+
+export async function typedGetDocs<T>(query: Query<DocumentData, DocumentData>) {
+  const docs = await getDocs(query);
+  return docs.docs.map(el => ({
+    id: el.id,
+    ...el.data()
+  } as DocWithId<T>));
 }
