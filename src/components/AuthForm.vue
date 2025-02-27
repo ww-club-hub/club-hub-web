@@ -21,6 +21,7 @@ const emit = defineEmits<{
 const name = ref("");
 const email = ref("");
 const password = ref("");
+const emailInput = ref<HTMLInputElement>();
 
 const error = defineModel("error");
 
@@ -41,7 +42,8 @@ async function signIn() {
 }
 
 async function forgotPassword() {
-  emit("forgotPassword", email.value);
+  if (emailInput.value?.reportValidity())
+    emit("forgotPassword", email.value);
 }
 
 async function handleGoogleError() {
@@ -67,7 +69,7 @@ async function handleGoogleSuccess({ credential }: CredentialResponse) {
 
     <div v-if="mode !== 'reauth'">
       <label for="input-email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Email:</label>
-      <input type="email" v-model="email" id="input-email"
+      <input type="email" v-model="email" id="input-email" ref="emailInput"
         class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-orange-500 dark:focus:border-orange-500"
         required />
     </div>
@@ -78,7 +80,7 @@ async function handleGoogleSuccess({ credential }: CredentialResponse) {
         class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-orange-500 dark:focus:border-orange-500"
         required />
 
-      <p class="text-sm font-light text-gray-500 dark:text-gray-400 mt-2">
+      <p class="text-sm font-light text-gray-500 dark:text-gray-400 mt-2" v-if="mode !== 'reauth'">
         <button class="font-medium text-orange-600 hover:underline dark:text-orange-500" type="button" @click="forgotPassword">Forgot
           Password</button>
       </p>
