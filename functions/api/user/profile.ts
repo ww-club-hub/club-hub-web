@@ -12,8 +12,12 @@ const GetProfileReq = z.object({
 export default publicProcedure
   .input(GetProfileReq)
   .query(async ({ ctx, input }) => {
-    const cachedRes = await caches.default.match(ctx.req);
-    if (cachedRes) return cachedRes;
+    //const cachedRes = await caches.default.match(ctx.req);
+    //if (cachedRes) return cachedRes as {
+    //success: boolean,
+    //displayName: string,
+    //photoUrl?: string
+    //};
 
     const authToken = await makeServiceAccountToken(ctx.env, AUTH_SCOPE);
     
@@ -30,16 +34,16 @@ export default publicProcedure
 
     ctx.resHeaders.set("Cache-Control", "max-age=604800, public, stale-while-revalidate");
 
-    if (user) {
-      return {
-        success: true,
-        displayName: user.displayName,
-        photoUrl: user.photoUrl
-      }
-    } else {
+    if (!user) {
       throw new TRPCError({
         code: "NOT_FOUND",
         message: "user not found"
       });
     }
+    
+    return {
+      success: true,
+      displayName: user.displayName as string,
+      photoUrl: user.photoUrl as string
+    };
   });

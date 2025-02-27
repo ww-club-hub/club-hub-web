@@ -5,6 +5,8 @@ import { doc } from "firebase/firestore";
 
 const { claims } = await getIdTokenResult(auth.currentUser!);
 const school = await tryGetDocFromCache(doc(db, "schools", claims.school as string));
+const stuco = claims.role == "owner" || claims.role == "admin";
+
 </script>
 
 <template>
@@ -33,9 +35,12 @@ const school = await tryGetDocFromCache(doc(db, "schools", claims.school as stri
         <!-- members -->
         <div class="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-sm grow">
           <h2 class="text-xl text-black dark:text-white font-bold mb-3">
-            Members:
+            School info:
           </h2>
-          <p class="text-gray-800 dark:text-gray-200 mb-1" v-for="member in school.get('members')">{{ member }}</p>
+          <p class="text-gray-800 dark:text-gray-200 mb-2">{{ school.get("members").length }} members</p>
+          <p v-if="stuco" class="mb-2">
+            <router-link :to="{ name: 'school-officers' }" class="text-sky-500 hover:underline hover:text-sky-600 dark:hover:text-sky-400">Manage school admins</router-link>
+          </p>
         </div>
       </div>
     </div>

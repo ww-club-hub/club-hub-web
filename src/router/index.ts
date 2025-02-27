@@ -83,6 +83,15 @@ const router = createRouter({
       }
     },
     {
+      path: '/school/admins',
+      name: 'school-officers',
+      component: () => import("@/views/SchoolOfficersView.vue"),
+      meta: {
+        authRequired: true,
+        title: "School Admins"
+      }
+    },
+    {
       path: '/clubs',
       name: 'club-list',
       component: () => import("@/views/ClubListView.vue"),
