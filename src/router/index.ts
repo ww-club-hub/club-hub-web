@@ -4,6 +4,7 @@ import { auth } from "@/firebase";
 import HomeView from '@/views/HomeView.vue';
 import LoginView from '@/views/LoginView.vue';
 import { getIdTokenResult, onAuthStateChanged } from 'firebase/auth';
+import NotFoundView from '@/views/NotFoundView.vue';
 
 // promise that gets fired on the first onAuthStateChanged event
 const firebaseAuthReady = new Promise<void>(resolve => {
@@ -189,6 +190,7 @@ const router = createRouter({
         onboarding: true
       }
     },
+    { path: '/:pathMatch(.*)*', component: NotFoundView },
   ]
 })
 
