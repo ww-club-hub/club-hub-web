@@ -127,7 +127,7 @@ const router = createRouter({
         {
           name: 'club-dashboard',
           path: '',
-          component: () => import("@/views/club/Dashboard.vue"),
+          component: () => import("@/views/club/DashboardView.vue"),
           meta: {
             authRequired: true,
             title: "Club Dashboard"
@@ -145,7 +145,7 @@ const router = createRouter({
         {
           name: 'club-updates',
           path: 'updates',
-          component: () => import("@/views/club/Messages.vue"),
+          component: () => import("@/views/club/MessagesView.vue"),
           meta: {
             authRequired: true,
             title: "Club Updates"
@@ -154,7 +154,7 @@ const router = createRouter({
         {
           name: 'club-meetings',
           path: 'meetings',
-          component: () => import("@/views/club/Meetings.vue"),
+          component: () => import("@/views/club/MeetingsView.vue"),
           meta: {
             authRequired: true,
             title: "Club Meetings"
@@ -182,13 +182,22 @@ const router = createRouter({
     },
     {
       path: '/privacy',
-      component: () => import("@/views/Privacy.vue"),
+      component: () => import("@/views/PrivacyView.vue"),
       meta: {
         title: "Privacy Policy",
         // allow access to privacy policy even when onboarding
         onboarding: true
       }
     },
+    {
+      path: '/terms',
+      component: () => import("@/views/TermsOfServiceView.vue"),
+      meta: {
+        title: "Terms Of Service",
+        // allow access to terms of service even when onboarding
+        onboarding: true
+      }
+    }
   ]
 })
 
