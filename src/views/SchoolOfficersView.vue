@@ -6,25 +6,34 @@ import { useRouter } from "vue-router";
 import { api, isTRPCClientError } from "@/api";
 import FormInput from "@/components/FormInput.vue";
 import { ref } from "vue";
+import { onMounted } from "vue";
 
 const { claims } = await getIdTokenResult(auth.currentUser!);
 const isOwner = claims.role === "owner";
 const stuco = isOwner || claims.role === "admin";
 
-const school = await getDoc(doc(db, "schools", claims.school as string));
-
-// TODO: batch profile requests
-const owner = await api.user.profile.query({ email: school.get("owner") });
-const admins = await Promise.all(school.get("admins").map(async (email: string) => ({
-  email,
-  ...await api.user.profile.query({ email })
-})));
+const owner = ref<{ email: string; displayName: string; photoUrl: string } | null>(null);
+const admins = ref<{ email: string; displayName: string; photoUrl: string }[]>([]);
 
 const router = useRouter();
 
-if (!stuco) {
-  router.push({ name: 'school-detail' });
-}
+onMounted(async () => {
+  if (!stuco) {
+    router.push({ name: 'school-detail' });
+  }
+  
+  const school = await getDoc(doc(db, "schools", claims.school as string));
+  
+  // TODO: batch profile requests
+  owner.value = {
+    ...await api.user.profile.query({ email: school.get("owner") }),
+    email: school.get("owner")
+  };
+  admins.value = await Promise.all(school.get("admins").map(async (email: string) => ({
+    email,
+    ...await api.user.profile.query({ email })
+  })));
+});
 
 const adminEmail = ref("");
 const errorMessage = ref("");
@@ -32,15 +41,24 @@ const errorMessage = ref("");
 async function addAdmin() {
   if (!adminEmail.value) return;
   
-  if (school.get("owner") === adminEmail.value || school.get("admins").includes(adminEmail.value)) {
+  if (owner.value?.email === adminEmail.value || admins.value.some(v => v.email === adminEmail.value)) {
     errorMessage.value = "This user is already an admin of this school";
     return;
   }
   
   try {
     const newAdmin = await api.user.profile.query({ email: adminEmail.value });
+    await api.school.admin.add.query({ adminEmail: adminEmail.value });
 
-      errorMessage.value = "";
+    admins.value.push({
+      email: adminEmail.value,
+      displayName: newAdmin.displayName,
+      photoUrl: newAdmin.photoUrl
+    });
+
+    adminEmail.value = "";
+    
+    errorMessage.value = "";
   } catch (e) {
     if (isTRPCClientError(e)) {
       if (e.data?.code === "NOT_FOUND") {
@@ -50,6 +68,12 @@ async function addAdmin() {
       }
     }
   }
+}
+
+async function removeAdmin(i: number) {
+  if (i < 0 || i >= admins.value.length) return;
+
+  await api
 }
 </script>
 
@@ -63,21 +87,29 @@ async function addAdmin() {
       <!-- owner -->
       <h2 class="text-lg text-black dark:text-white font-semibold mb-2">Owner:</h2>
 
-      <div class="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-sm grow flex items-center gap-3 mb-3">
+      <div class="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-sm grow flex items-center gap-3 mb-3" v-if="owner">
         <img :src="owner.photoUrl ?? '/icons/icon.svg'" alt="user photo" class="w-6 h-6" />
         <div class="flex flex-col gap-1">
           <span class="text-black dark:text-white">{{ owner.displayName }}</span>
-          <span class="font-sm text-gray-700 dark:text-gray-300">{{ school.get("owner") }}</span>
+          <span class="font-sm text-gray-700 dark:text-gray-300">{{ owner.email }}</span>
         </div>
       </div>
 
       <h2 class="text-lg text-black dark:text-white font-semibold mb-2">Admins:</h2>
 
-      <div class="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-sm grow flex items-center gap-3 mb-2" v-for="admin in admins" :key="admin.email">
+      <div class="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-sm grow flex items-center gap-3 mb-2" v-for="admin, i in admins" :key="admin.email">
         <img :src="admin.photoUrl ?? '/icons/icon.svg'" alt="user photo" class="w-6 h-6" />
         <div class="flex flex-col gap-1">
           <span class="text-black dark:text-white">{{ admin.displayName }}</span>
           <span class="font-sm text-gray-700 dark:text-gray-300">{{ admin.email }}</span>
+
+          <button type="button" @click="removeAdmin(i)" v-if="owner">
+            <span class="sr-only">Remove admin</span>
+          </button>
+          
+          <button type="button" @click="promoteAdmin(i)" v-if="owner">
+            <span class="sr-only">Make owner</span>
+          </button>
         </div>
       </div>
 
@@ -94,5 +126,7 @@ async function addAdmin() {
 
       <p class="text-red-500 mt-2" v-if="errorMessage">{{ errorMessage }}</p>
     </div>
+
+    <button type="button" class="focus:outline-hidden text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900" @click="showModal = true">Delete school</button>
   </section>
 </template>

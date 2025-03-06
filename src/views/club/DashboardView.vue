@@ -16,7 +16,6 @@ const props = defineProps<{
   club: Club
 }>();
 
-// TODO: actually implement updates
 const updates = ref<ClubUpdate[]>([]);
 
 const meetings: unknown[] = [];
