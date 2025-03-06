@@ -111,7 +111,7 @@
         <!--  My Clubs -->
         <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow col-span-3">
           <h2 class="text-xl font-semibold text-gray-700 dark:text-white">My Clubs</h2>
-          <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow col-span-3 grid grid-cols-2 gap-6">
+          <div class="bg-white dark:bg-gray-800 p-6 rounded-lg col-span-3 grid grid-cols-2 grid-rows-2 gap-6">
 
           <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow">
             <h3 class="text-xl font-semibold text-gray-700 dark:text-white">Westwood DECA</h3>
@@ -119,10 +119,10 @@
           <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow">
             <h3 class="text-xl font-semibold text-gray-700 dark:text-white">Westwood Tech Starters</h3>
           </div>
-          <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow mt-6">
+          <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow">
             <h3 class="text-xl font-semibold text-gray-700 dark:text-white">Westwood Robotics</h3>
           </div>
-          <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow mt-6">
+          <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow">
             <h3 class="text-xl font-semibold text-gray-700 dark:text-white">Westwood Art Club</h3>
           </div>
         </div>
