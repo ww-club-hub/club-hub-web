@@ -13,13 +13,7 @@ async function loginPassword(email: string, password: string) {
     await signInWithEmailAndPassword(auth, email, password);
     errorMessage.value = "";
   } catch (e) {
-    if ((e as FirebaseError).code === "auth/user-not-found") {
-      errorMessage.value = "A user with that email address does not exist";
-    } else if ((e as FirebaseError).code === "auth/wrong-password") {
-      errorMessage.value = "Invalid password";
-    } else {
-      errorMessage.value = (e as Error).message;
-    }
+    errorMessage.value = parseError(e);
   }
 }
 
@@ -32,13 +26,7 @@ async function signupPassword(name: string, email: string, password: string) {
     });
     errorMessage.value = "";
   } catch (e) {
-    if ((e as FirebaseError).code === "auth/email-already-in-use") {
-      errorMessage.value = "That email is already in use";
-    } else if ((e as FirebaseError).code === "auth/weak-password") {
-      errorMessage.value = "Password should be at least 6 characters";
-    } else {
-      errorMessage.value = (e as Error).message;
-    }
+    errorMessage.value = parseError(e);
   }
 }
 
@@ -46,7 +34,7 @@ async function loginCred(cred: OAuthCredential) {
   try {
     await signInWithCredential(auth, cred);
   } catch (e) {
-    errorMessage.value = (e as Error).message;
+    errorMessage.value = parseError(e);
   }
 }
 
@@ -55,12 +43,27 @@ async function forgotPassword(email: string) {
     await sendPasswordResetEmail(auth, email);
     errorMessage.value = `A password reset email was sent to ${email}`;
   } catch (e) {
-    errorMessage.value = (e as Error).message;
+    errorMessage.value = parseError(e);
   }
 }
 
 async function loginGoogle() {
   await signInWithPopup(auth, new GoogleAuthProvider());
+}
+
+function parseError(e: unknown): string {
+  switch ((e as FirebaseError).code) {
+    case "auth/email-already-in-use":
+      return "The entered email is already in use";
+    case "auth/weak-password":
+      return "Password should be at least 6 characters";
+    case "auth/user-not-found":
+      return "A user with that email address does not exist";
+    case "auth/wrong-password":
+      return "Invalid password";
+    default:
+      return `An unknown error has occurred (${(e as Error).message})`;
+  }
 }
 </script>
 
