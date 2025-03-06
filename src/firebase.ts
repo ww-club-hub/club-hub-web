@@ -19,10 +19,10 @@ export const db = getFirestore(app);
 
 // setup emulators
 if (import.meta.env.DEV) {
-  connectAuthEmulator(auth, "http://127.0.0.1:9099", {
+  connectAuthEmulator(auth, AUTH_EMULATOR, {
     disableWarnings: true
   });
-  connectFirestoreEmulator(db, "127.0.0.1", 8080);
+  connectFirestoreEmulator(db, ...FIRESTORE_EMULATOR);
 }
 
 export async function tryGetDocFromCache<A, D extends DocumentData>(ref: DocumentReference<A, D>): Promise<DocumentSnapshot<A, D>> {

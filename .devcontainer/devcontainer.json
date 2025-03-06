@@ -1,6 +1,8 @@
 {
   "image": "mcr.microsoft.com/devcontainers/typescript-node",
   "features": {
-    "ghcr.io/devcontainers-extra/features/firebase-cli:2": {}
-  }
+    "ghcr.io/devcontainers-extra/features/firebase-cli:2": {},
+    "ghcr.io/devcontainers/features/java:1": {}
+  },
+  "postStartCommand": "npm install && npm run dev:all"
 }

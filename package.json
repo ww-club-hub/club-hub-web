@@ -8,8 +8,9 @@
     "preview": "vite preview",
     "build": "vite build",
     "build:cf": "esbuild functions/worker.ts --bundle --minify --platform=browser --target=es2022 --format=esm --outfile=dist/_worker.js && cp functions/_routes.json dist/",
-    "dev:cf": "wrangler pages dev ./dist",
+    "dev:cf": "npm run build:cf && wrangler pages dev ./dist",
     "dev:firebase": "firebase emulators:start --import .firebase-emulator-data --export-on-exit",
+    "dev:all": "npm run dev & npm run dev:cf & npm run dev:firebase",
     "deploy:firebase": "firebase deploy --only firestore",
     "deploy:cf": "npm run build && npm run build:cf && wrangler pages deploy"
   },
