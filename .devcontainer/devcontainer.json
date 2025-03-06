@@ -1,0 +1,6 @@
+{
+  "image": "mcr.microsoft.com/devcontainers/typescript-node",
+  "features": {
+    "ghcr.io/devcontainers-extra/features/firebase-cli:2": {}
+  }
+}
