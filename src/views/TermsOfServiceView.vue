@@ -1,5 +1,5 @@
 <template>
-    <div class="mx-auto max-w-screen-2xl prose dark:prose-invert mt-10 mb-10">
+    <div class="mx-auto max-w-screen-2xl prose dark:prose-invert mt-10 mb-10 ms-10 me-10">
 
       <h1>Terms Of Service</h1>
       <p>Last updated: March 5, 2025</p>
