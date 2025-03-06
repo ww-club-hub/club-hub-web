@@ -48,7 +48,7 @@ async function addAdmin() {
   
   try {
     const newAdmin = await api.user.profile.query({ email: adminEmail.value });
-    await api.school.admin.add.query({ adminEmail: adminEmail.value });
+    await api.school.admin.add.mutate({ adminEmail: adminEmail.value });
 
     admins.value.push({
       email: adminEmail.value,
@@ -71,9 +71,19 @@ async function addAdmin() {
 }
 
 async function removeAdmin(i: number) {
-  if (i < 0 || i >= admins.value.length) return;
+  try {
+    if (i < 0 || i >= admins.value.length) return;
+    
+    const admin = admins.value[i];
+    
+    await api.school.admin.remove.mutate({ adminEmail: admin.email });
 
-  await api
+      admins.value.splice(i, 1);
+  } catch (e) {
+    if (isTRPCClientError(e)) {
+      errorMessage.value = e.message;
+    }
+  }
 }
 </script>
 

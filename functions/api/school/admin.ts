@@ -10,7 +10,7 @@ const AdminModReq = z.object({
 
 export const removeAdmin = authedProcedure
   .input(AdminModReq)
-  .query(async ({ ctx, input }) => {
+  .mutation(async ({ ctx, input }) => {
     // verify permissions  
     if (ctx.user.role !== "owner") {
       throw new TRPCError({
@@ -66,7 +66,7 @@ export const removeAdmin = authedProcedure
 
 export const addAdmin = authedProcedure
   .input(AdminModReq)
-  .query(async ({ ctx, input }) => {
+  .mutation(async ({ ctx, input }) => {
     // verify permissions  
     if (ctx.user.role !== "owner") {
       throw new TRPCError({
