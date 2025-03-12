@@ -160,7 +160,7 @@ const router = createRouter({
             authRequired: true,
             title: "Club Meetings"
           }
-        }
+        },
         {
           name: 'club-attendance',
           path: 'attendance',
