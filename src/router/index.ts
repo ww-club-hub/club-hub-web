@@ -161,7 +161,7 @@ const router = createRouter({
             title: "Club Meetings"
           }
         }
-        /*{
+        {
           name: 'club-attendance',
           path: 'attendance',
           component: () => import("@/views/club/AttendanceView.vue"),
@@ -169,7 +169,7 @@ const router = createRouter({
             authRequired: true,
             title: "Club Attendance"
           }
-        }*/
+        }
       ]
     },
     {
