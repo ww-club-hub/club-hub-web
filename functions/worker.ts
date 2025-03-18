@@ -9,7 +9,7 @@ import joinSchool from "./api/school/join";
 import searchSchools from "./api/school/search";
 import clubMembers from "./api/club/members";
 import clubOfficers from "./api/club/officers";
-import { removeAdmin, addAdmin } from "./api/school/admin";
+import { removeAdmin, addAdmin, transferOwnership } from "./api/school/admin";
 
 const appRouter = router({
   user: router({
@@ -22,7 +22,8 @@ const appRouter = router({
     join: joinSchool,
     admin: router({
       remove: removeAdmin,
-      add: addAdmin
+      add: addAdmin,
+      transferOwnership
     })
   }),
   club: router({

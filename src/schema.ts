@@ -1,5 +1,17 @@
 import type { Timestamp } from "firebase/firestore";
 
+export interface School {
+  name: string,
+  nameLowercase: string,
+  domainRestriction?: string,
+  website: string,
+  
+  // emails
+  owner: string,
+  admins: string[],
+  members: string[]
+}
+
 export type ClubMeetingTime = ClubMeetingDayTime | ClubMeetingFlex;
 
 export interface ClubMeetingDayTime {

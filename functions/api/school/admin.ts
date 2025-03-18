@@ -47,10 +47,84 @@ export const removeAdmin = authedProcedure
               transform: {
                 document: `projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents/schools/${ctx.user.school}`,
                 fieldTransforms: [{
-                  fieldPath: "officers",
+                  fieldPath: "admins",
                   removeAllFromArray: makeFirestoreField([input.adminEmail]).arrayValue
                 }]
               }
+            }]
+          },
+          firestoreToken,
+          `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents:batchWrite`
+        );
+      }
+    }
+
+    return {
+      success: true
+    };
+  });
+
+export const transferOwnership = authedProcedure
+  .input(AdminModReq)
+  .mutation(async ({ ctx, input }) => {
+    // verify permissions  
+    if (ctx.user.role !== "owner") {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "You must be a school owner in order to modify school admins"
+      });
+    }
+    
+    const firestoreToken = await makeServiceAccountToken(ctx.env, FIRESTORE_SCOPE);
+    const authToken = await makeServiceAccountToken(ctx.env, AUTH_SCOPE);
+
+    const userResult = await authedJsonRequest<{
+      users: {
+        localId: string,
+        email: string,
+        customAttributes: string,
+      }[]
+    }>({
+      email: input.adminEmail
+    }, authToken, `${getIdentityToolkitUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/accounts:lookup`);
+
+    if (userResult.users.length >= 1) {
+      const user = userResult.users[0];
+      const attrs = (JSON.parse(user.customAttributes) ?? null) as UserClaims | null;
+      if (attrs?.school === ctx.user.school) {
+        // update roles
+        await updateUserRoles(ctx.env, authToken, user.localId, attrs, {
+          role: "owner"
+        });
+
+        await updateUserRoles(ctx.env, authToken, ctx.user.user_id, ctx.user, {
+          role: "admin"
+        });
+        
+        // update doc
+        await authedJsonRequest(
+          {
+            writes: [{
+              updateMask: {
+                fieldPaths: [
+                  "admins", "owner"
+                ]
+              },
+              update: {
+                name: `projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents/schools/${ctx.user.school}`,
+                ...makeFirestoreField({
+                  // make them an admin
+                  owner: input.adminEmail
+                }).mapValue
+              },
+              
+              updateTransforms: [{
+                fieldPath: "admins",
+                // remove the old admin from the admin array
+                removeAllFromArray: makeFirestoreField([input.adminEmail]).arrayValue,
+                // add the old owner to the admin array,
+                appendMissingElements: makeFirestoreField([ctx.user.email]).arrayValue
+              }]
             }]
           },
           firestoreToken,
@@ -103,7 +177,7 @@ export const addAdmin = authedProcedure
               transform: {
                 document: `projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents/schools/${ctx.user.school}`,
                 fieldTransforms: [{
-                  fieldPath: "officers",
+                  fieldPath: "admins",
                   appendMissingElements: makeFirestoreField([input.adminEmail]).arrayValue
                 }]
               }

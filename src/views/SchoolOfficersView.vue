@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getIdTokenResult } from "firebase/auth";
+import { getIdToken, getIdTokenResult } from "firebase/auth";
 import { auth, db } from "../firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { useRouter } from "vue-router";
@@ -77,8 +77,26 @@ async function removeAdmin(i: number) {
     const admin = admins.value[i];
     
     await api.school.admin.remove.mutate({ adminEmail: admin.email });
+    
+    admins.value.splice(i, 1);
+  } catch (e) {
+    if (isTRPCClientError(e)) {
+      errorMessage.value = e.message;
+    }
+  }
+}
 
-      admins.value.splice(i, 1);
+async function transferOwnership(i: number) {
+  try {
+    if (i < 0 || i >= admins.value.length) return;
+    
+    const admin = admins.value[i];
+    
+    await api.school.admin.transferOwnership.mutate({ adminEmail: admin.email });
+    
+    // complete reload
+    await getIdToken(auth.currentUser!, true);
+    router.go(0);
   } catch (e) {
     if (isTRPCClientError(e)) {
       errorMessage.value = e.message;
@@ -117,7 +135,7 @@ async function removeAdmin(i: number) {
             <span class="sr-only">Remove admin</span>
           </button>
           
-          <button type="button" @click="promoteAdmin(i)" v-if="owner">
+          <button type="button" @click="transferOwnership(i)" v-if="owner">
             <span class="sr-only">Make owner</span>
           </button>
         </div>
