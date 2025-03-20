@@ -113,7 +113,9 @@ export interface ClubMeeting {
 }
 
 // /meeting_attendance/{id}
+// cannot be read  by members
 export interface ClubMeetingAttendance {
+  // current code
   code: string,
   // map of email to code used
   membersPresent: Record<string, string>,

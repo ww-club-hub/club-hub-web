@@ -1,6 +1,6 @@
-import type { ParsedToken } from "firebase/auth";
+import { type ParsedToken, type Auth, getIdTokenResult } from "firebase/auth";
 import type { ClubMeetingTime, OfficerPermission, Officers } from "./schema";
-import { getDocs, type DocumentData, type Query } from "firebase/firestore";
+import { DocumentReference, getDoc, getDocs, type DocumentData, type Query } from "firebase/firestore";
 
 export interface UserClaims extends ParsedToken {
   school: string,
@@ -51,4 +51,17 @@ export async function typedGetDocs<T>(query: Query<DocumentData, DocumentData>) 
     id: el.id,
     ...el.data()
   } as DocWithId<T>));
+}
+
+export async function typedGetDoc<T>(ref: DocumentReference<DocumentData, DocumentData>) {
+  const doc = await getDoc(ref);
+  return {
+    ...doc.data(),
+    id: doc.id
+  } as DocWithId<T>;
+}
+
+export async function getClaims(auth: Auth) {
+  if (auth.currentUser) return (await getIdTokenResult(auth.currentUser, false)).claims as UserClaims;
+  else return null;
 }
