@@ -19,7 +19,9 @@ const role: ClubRole = {
   member: claims.memberOf?.includes(clubId) ?? false
 };
 
-const club = await typedGetDoc<Club>(doc(db, "schools", claims.school, "clubs", clubId));
+const clubDoc = doc(db, "schools", claims.school, "clubs", clubId);
+
+const club = await typedGetDoc<Club>(clubDoc);
 
 </script>
 
@@ -78,7 +80,7 @@ const club = await typedGetDoc<Club>(doc(db, "schools", claims.school, "clubs", 
     </div>
     <div class="max-w-screen-2xl mx-auto p-4">
       <router-view v-slot="{ Component }">
-        <component :is="Component" :role="role" :school="claims.school" :club="club" />
+        <component :is="Component" :role="role" :school="claims.school" :club="club" :club-doc="clubDoc" />
       </router-view>
     </div>
   </section>

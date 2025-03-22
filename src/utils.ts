@@ -65,3 +65,13 @@ export async function getClaims(auth: Auth) {
   if (auth.currentUser) return (await getIdTokenResult(auth.currentUser, false)).claims as UserClaims;
   else return null;
 }
+
+export function generateAttendanceCode() {
+  const length = 8;
+  const alphabet = [..."ABCDEFGHJKLMNPQRSTUVWXYZ23456789"];
+  const code = Array(length).fill(0).map(() => {
+    const idx = Math.floor(Math.random() * alphabet.length);
+    return alphabet[idx];
+  }).join("");
+  return code;
+}

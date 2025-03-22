@@ -10,7 +10,7 @@ import NotFoundView from '@/views/NotFoundView.vue';
 const firebaseAuthReady = new Promise<void>(resolve => {
   onAuthStateChanged(auth, user => {
     resolve();
-    
+
     const route = router.currentRoute.value;
     // apply auth guards when the user signs in/out
     if (route?.meta.authRequired && !user) {
@@ -163,11 +163,29 @@ const router = createRouter({
         },
         {
           name: 'club-attendance',
-          path: 'attendance',
+          path: 'attendance-overview',
           component: () => import("@/views/club/AttendanceView.vue"),
           meta: {
             authRequired: true,
             title: "Club Attendance"
+          }
+        },
+        {
+          name: 'member-attendance',
+          path: 'attendance',
+          component: () => import("@/views/club/TakeAttendanceView.vue"),
+          meta: {
+            authRequired: true,
+            title: "Take Attendance"
+          }
+        },
+        {
+          name: 'meeting-attendance',
+          path: 'meetings/:meetingId/attendance',
+          component: () => import("@/views/club/MeetingAttendanceView.vue"),
+          meta: {
+            authRequired: true,
+            title: "Meeting Attendance"
           }
         }
       ]
@@ -205,7 +223,7 @@ const router = createRouter({
 
 router.beforeEach(async to => {
   await firebaseAuthReady;
-  
+
   if (to.meta.authRequired && !auth.currentUser) {
     // redirect to login page
     return { name: "login", query: { next: to.fullPath } };
