@@ -160,11 +160,20 @@ const router = createRouter({
             authRequired: true,
             title: "Club Meetings"
           }
-        }
+        },
         {
           name: 'club-attendance',
           path: 'attendance',
           component: () => import("@/views/club/AttendanceView.vue"),
+          meta: {
+            authRequired: true,
+            title: "Club Attendance"
+          }
+        },
+        {
+          name: 'club-permission',
+          path: 'attendance',
+          component: () => import("@/views/club/PermissionView.vue"),
           meta: {
             authRequired: true,
             title: "Club Attendance"
