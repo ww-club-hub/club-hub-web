@@ -87,7 +87,7 @@ onUnmounted(() => {
               <div class="z-10 hidden w-48 p-3 bg-white rounded-lg shadow-sm dark:bg-gray-700">
                 <h6 class="mb-3 text-sm font-medium text-gray-900 dark:text-white">Choose topic</h6>
                 <ul class="space-y-2 text-sm" aria-labelledby="filterDropdownButton">
-                  
+                  <!--<li class= ""</li>-->
                 </ul>
               </div>
             </div>
