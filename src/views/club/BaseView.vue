@@ -1,17 +1,16 @@
 <script setup lang="ts">
-import { getIdTokenResult } from "firebase/auth";
 import { auth, db } from "@/firebase";
-import { type UserClaims } from "@/utils";
 import { type Club, type ClubRole } from "@/schema";
-import { useRoute, useRouter } from "vue-router";
-import { doc, getDoc } from "firebase/firestore";
+import { useRoute } from "vue-router";
+import { doc } from "firebase/firestore";
 import ClubTabLink from "@/components/ClubTabLink.vue";
+import { getClaims, typedGetDoc } from "@/utils";
 
 const route = useRoute();
 
 const clubId = route.params.clubId as string;
 
-const claims = (await getIdTokenResult(auth.currentUser!, false)).claims as UserClaims;
+const claims = (await getClaims(auth))!;
 
 const role: ClubRole = {
   stuco: claims.role == "owner" || claims.role == "admin",
@@ -20,10 +19,9 @@ const role: ClubRole = {
   member: claims.memberOf?.includes(clubId) ?? false
 };
 
-const club = {
-  ...((await getDoc(doc(db, "schools", claims.school, "clubs", clubId))).data() as Club),
-  id: clubId
-};
+const clubDoc = doc(db, "schools", claims.school, "clubs", clubId);
+
+const club = await typedGetDoc<Club>(clubDoc);
 
 </script>
 
@@ -82,7 +80,7 @@ const club = {
     </div>
     <div class="max-w-screen-2xl mx-auto p-4">
       <router-view v-slot="{ Component }">
-        <component :is="Component" :role="role" :school="claims.school" :club="club" />
+        <component :is="Component" :role="role" :school="claims.school" :club="club" :club-doc="clubDoc" />
       </router-view>
     </div>
   </section>

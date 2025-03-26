@@ -9,6 +9,9 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "plugins": [{
+      "name": "@vue/typescript-plugin"
+    }]
   }
 }
