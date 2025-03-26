@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type ClubRole, type Club, type ClubMeeting, OfficerPermission } from '@/schema';
+import { ClubRole, type Club, type ClubMeeting, OfficerPermission } from '@/schema';
 import { collection, query, where, orderBy, limit, and, doc, setDoc } from "@firebase/firestore";
 import { ref, computed, onMounted } from 'vue';
 import { auth, db } from "@/firebase";
@@ -69,19 +69,19 @@ onMounted(async () => {
 
 <template>
   <button v-if="canCreateMeeting" type="button" class=" my-3 text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800 block" @click="showModal = true">Create meeting</button>
-  
+
   <div class="md:grid grid-cols-3 gap-4">
     <!-- TODO: fix calendar view  -->
     <VCalendar/>
-    
+
     <div>
       <h2 class="text-lg tracking-tight uppercase font-semibold text-gray-800 dark:text-gray-100 mb-2">Upcoming meetings:</h2>
       <div v-if="upcomingMeetings.length > 0" class="flex gap-3 flex-row flex-wrap md:flex-col">
-        <MeetingCard v-for="meeting in upcomingMeetings" :key="meeting.id" :meeting="meeting" :club="club" />
+        <MeetingCard v-for="meeting in upcomingMeetings" :key="meeting.id" :meeting="meeting" :club="club" :show-attendance="role.officer  & (1 << OfficerPermission.Meetings)" />
       </div>
       <p v-else class="italic text-black dark:text-white">No meetings yet...</p>
     </div>
-    
+
     <div>
       <h2 class="text-lg tracking-tight uppercase font-semibold text-gray-800 dark:text-gray-100 mb-2">Current meetings:</h2>
       <div v-if="currentMeetings.length > 0" class="flex gap-3 flex-row flex-wrap md:flex-col">

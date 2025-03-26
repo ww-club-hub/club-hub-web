@@ -55,6 +55,7 @@ export async function typedGetDocs<T>(query: Query<DocumentData, DocumentData>) 
 
 export async function typedGetDoc<T>(ref: DocumentReference<DocumentData, DocumentData>) {
   const doc = await getDoc(ref);
+  if (!doc.exists()) return null;
   return {
     ...doc.data(),
     id: doc.id

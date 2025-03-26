@@ -16,8 +16,7 @@
   },
   "dependencies": {
     "vue": "^3.4.29",
-    "vue-router": "^4.3.3",
-    "wrangler": "^3.110.0"
+    "vue-router": "^4.3.3"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241112.0",
@@ -41,6 +40,7 @@
     "vite": "^6.2.0",
     "vue-tsc": "^2.0.21",
     "vue3-google-signin": "^2.0.1",
+    "wrangler": "^4.5.0",
     "zod": "^3.23.8"
   }
 }
