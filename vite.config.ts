@@ -20,6 +20,14 @@ function getAuthEmulatorUrl() {
   }
 }
 
+function getBackendEmulatorUrl() {
+  if (process.env.CODESPACE_NAME) {
+    return `"https://${process.env.CODESPACE_NAME}-8788.${process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}"`;
+  } else {
+    return `"http://localhost:8788"`;
+  }
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   plugins: [
@@ -48,6 +56,7 @@ export default defineConfig(({ mode }) => ({
   },
   define: {
     FIRESTORE_EMULATOR: mode === "development" ? getFirestoreEmulatorUrl() : null,
-    AUTH_EMULATOR: mode === "development" ? getAuthEmulatorUrl() : null
+    AUTH_EMULATOR: mode === "development" ? getAuthEmulatorUrl() : null,
+    BACKEND_EMULATOR: mode === "development" ? getBackendEmulatorUrl() : null,
   }
 }));
