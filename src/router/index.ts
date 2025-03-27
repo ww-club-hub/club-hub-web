@@ -244,7 +244,7 @@ router.beforeEach(async to => {
   if (auth.currentUser && !to.meta.onboarding) {
     // check if they need to onboard
     const claims = (await getIdTokenResult(auth.currentUser)).claims;
-    if (!(auth.currentUser.emailVerified && claims.school && claims.interests))
+    if (!(auth.currentUser.emailVerified && claims.school && claims.gradYear && claims.interests))
       return { name: "onboard" };
   }
 });

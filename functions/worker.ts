@@ -3,6 +3,7 @@ import { router } from "./trpc";
 import { Env } from "./types";
 import { fetchRequestHandler, FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 import profile from "./api/user/profile";
+import userGradYear from "./api/user/gradYear";
 import userInterests from "./api/user/interests";
 import createSchool from "./api/school/create";
 import joinSchool from "./api/school/join";
@@ -14,6 +15,7 @@ import { removeAdmin, addAdmin, transferOwnership } from "./api/school/admin";
 const appRouter = router({
   user: router({
     profile,
+    gradYear: userGradYear,
     interests: userInterests
   }),
   school: router({

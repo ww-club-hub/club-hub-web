@@ -108,6 +108,7 @@ export async function updateUserRoles(env: Env, token: string, userId: string, o
       // merge
       school: oldAttrs.school,
       role: oldAttrs.role,
+      gradYear: oldAttrs.gradYear,
       interests: oldAttrs.interests,
       officerOf: oldAttrs.officerOf,
       memberOf: oldAttrs.memberOf,

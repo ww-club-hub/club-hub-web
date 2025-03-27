@@ -15,9 +15,15 @@ const stuco = claims.role == "owner" || claims.role == "admin";
       <div class="pb-3 mb-3 border-b border-gray-300 dark:border-gray-700">
         <h1 class="text-2xl text-black dark:text-white font-semibold mb-2">{{ school.get("name") }}</h1>
         <p class="text-lg">
-          <a class="text-gray-800 dark:text-gray-200 hover:underline flex items-center gap-2" target="_blank" :href="school.get('website')">
+          <a class="text-gray-800 dark:text-gray-200 hover:underline flex items-center gap-2" target="_blank"
+            :href="school.get('website')">
             {{ school.get("website") }}
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 3h6v6" />
+              <path d="M10 14 21 3" />
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+            </svg>
           </a>
         </p>
       </div>
@@ -39,7 +45,9 @@ const stuco = claims.role == "owner" || claims.role == "admin";
           </h2>
           <p class="text-gray-800 dark:text-gray-200 mb-2">{{ school.get("members").length }} members</p>
           <p v-if="stuco" class="mb-2">
-            <router-link :to="{ name: 'school-officers' }" class="text-sky-500 hover:underline hover:text-sky-600 dark:hover:text-sky-400">Manage school admins</router-link>
+            <router-link :to="{ name: 'school-officers' }"
+              class="text-sky-500 hover:underline hover:text-sky-600 dark:hover:text-sky-400">Manage school
+              admins</router-link>
           </p>
         </div>
       </div>

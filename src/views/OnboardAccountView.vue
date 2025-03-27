@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { auth } from "../firebase";
+import { years } from "../assets/grad-years.json";
 import { topics } from "../assets/club-topics.json";
 import { type ParsedToken, getIdTokenResult, onAuthStateChanged, type User, sendEmailVerification, getIdToken } from "firebase/auth";
 import { computed } from "vue";
@@ -13,6 +14,7 @@ const claims = ref<ParsedToken | null>(null);
 const message = ref("");
 const searchQuery = ref("");
 const foundSchools = ref<School[]>([]);
+const gradYear = ref("");
 const interests = ref(new Set<number>());
 
 const router = useRouter();
@@ -28,6 +30,7 @@ onAuthStateChanged(auth, async currentUser => {
 enum OnboardingStepType {
   VerifyEmail,
   JoinSchool,
+  SetGraduationYear,
   SetInterests,
   Done
 };
@@ -39,8 +42,10 @@ interface School {
 }
 
 const currentStep = computed(() => {
+  console.log(claims.value);
   if (!user.value?.emailVerified) return OnboardingStepType.VerifyEmail;
   if (!claims.value?.school) return OnboardingStepType.JoinSchool;
+  if (!claims.value?.gradYear) return OnboardingStepType.SetGraduationYear;
   if (!claims.value?.interests) return OnboardingStepType.SetInterests;
 
   // go to school page
@@ -85,6 +90,26 @@ async function joinSchool(id: string) {
     // refresh id token
 
     claims.value = (await getIdTokenResult(user.value, true)).claims;
+  } catch (err) {
+    if (isTRPCClientError(err)) {
+      message.value = err.message;
+    }
+  }
+}
+
+async function setGradYear() {
+  if (!user.value) return;
+
+  try {
+    await api.user.gradYear.mutate({
+      gradYear: gradYear.value
+    });
+    message.value = "";
+
+    // refresh id token
+
+    claims.value = (await getIdTokenResult(user.value, true)).claims;
+    console.log(claims.value);
   } catch (err) {
     if (isTRPCClientError(err)) {
       message.value = err.message;
@@ -148,17 +173,24 @@ async function setInterests() {
             </div>
 
             <div class="mb-3">
-              <div class="max-w-sm p-3 bg-gray-50 border border-gray-200 rounded-lg shadow-sm dark:bg-gray-900 dark:border-gray-700 flex items-start gap-3 justify-between" v-for="school in foundSchools" :key="school.id">
+              <div
+                class="max-w-sm p-3 bg-gray-50 border border-gray-200 rounded-lg shadow-sm dark:bg-gray-900 dark:border-gray-700 flex items-start gap-3 justify-between"
+                v-for="school in foundSchools" :key="school.id">
                 <div>
                   <a :href="school.website" target="_blank" rel="noreferrer">
-                    <h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{{ school.name }}</h5>
+                    <h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{{ school.name }}
+                    </h5>
                   </a>
                   <p class="font-normal text-gray-700 dark:text-gray-400">{{ school.website }}</p>
                 </div>
-                <button type="button" class="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-orange-700 hover:text-white border-2 border-orange-700 hover:bg-orange-800 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg dark:border-orange-500 dark:text-orange-300 dark:hover:text-white dark:hover:bg-orange-500 dark:focus:ring-orange-800" @click="joinSchool(school.id)">
+                <button type="button"
+                  class="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-orange-700 hover:text-white border-2 border-orange-700 hover:bg-orange-800 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg dark:border-orange-500 dark:text-orange-300 dark:hover:text-white dark:hover:bg-orange-500 dark:focus:ring-orange-800"
+                  @click="joinSchool(school.id)">
                   Join
-                  <svg class="rtl:rotate-180 w-3.5 h-3.5 ms-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
-                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 5h12m0 0L9 1m4 4L9 9"/>
+                  <svg class="rtl:rotate-180 w-3.5 h-3.5 ms-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                    fill="none" viewBox="0 0 14 10">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M1 5h12m0 0L9 1m4 4L9 9" />
                   </svg>
                 </button>
               </div>
@@ -169,17 +201,39 @@ async function setInterests() {
                 class="font-medium text-orange-600 hover:underline dark:text-orange-500">create a school</router-link>.
             </p>
           </OnboardingStep>
-          <OnboardingStep
-            :active="currentStep == OnboardingStepType.SetInterests"
-            name="Set your interests"
+          <OnboardingStep :active="currentStep == OnboardingStepType.SetGraduationYear" name="Set your graduation year"
+            :done="currentStep > OnboardingStepType.SetGraduationYear">
+            <p class="mb-3">Your graduation year is used to determine grade-based eligibility. (e.g. officer positions)
+            </p>
+
+            <!-- graduation year dropdown -->
+            <!-- TODO: make list autoupdating, rather than just fixed list of 5 years -->
+            <div>
+              <div class="flex items-center mb-4" v-for="year in years" :key="year">
+                <input :id="`check-grad-year-${year}`" type="radio" :value="year" name="check-grad-years"
+                  v-model="gradYear"
+                  class="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 round-sm focus:ring-orange-500 dark:focus:ring-orange-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                <label :for="`check-grad-year-${year}`"
+                  class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">{{ year }}</label>
+              </div>
+            </div>
+
+            <button type="button"
+              class="w-full text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800"
+              @click="setGradYear">Next</button>
+          </OnboardingStep>
+          <OnboardingStep :active="currentStep == OnboardingStepType.SetInterests" name="Set your interests"
             :done="currentStep > OnboardingStepType.SetInterests">
             <p class="mb-3">This step is optional, but setting interests helps you find new clubs to join.</p>
 
             <!-- interests list -->
             <div>
               <div class="flex items-center mb-4" v-for="topic, i in topics" :key="i">
-                <input :id="`check-interests-${i}`" type="checkbox" :value="i" name="check-interests" v-model="interests" class="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-orange-500 dark:focus:ring-orange-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
-                <label :for="`check-interests-${i}`" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">{{ topic }}</label>
+                <input :id="`check-interests-${i}`" type="checkbox" :value="i" name="check-interests"
+                  v-model="interests"
+                  class="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-orange-500 dark:focus:ring-orange-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                <label :for="`check-interests-${i}`"
+                  class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">{{ topic }}</label>
               </div>
             </div>
 
