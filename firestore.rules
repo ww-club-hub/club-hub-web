@@ -12,7 +12,7 @@ service cloud.firestore {
     // see schema.ts for more info
     function officer(clubId, permissionBit) {
       // basically (officerOf[clubId] & (1 << permissionBit)) != 0
-      return clubId in request.auth.token.officerOf && int(request.auth.token.officerOf[clubId] / math.pow(2, permissionBit)) % 2 == 1;
+      return clubId in request.auth.token.officerOf && debug(int(debug(debug(request.auth.token.officerOf[clubId]) / math.pow(2, permissionBit)))) % 2 == 1;
     }
     function member(clubId) {
       return admin() || ("officerOf" in request.auth.token && clubId in request.auth.token.officerOf) || clubId in request.auth.token.memberOf;
@@ -35,7 +35,7 @@ service cloud.firestore {
       // Members/admins/owner updates can only be done through the admin API (requires changing roles)
       allow update: if student(school_id) && admin() && onlyChanged(["name", "website", "domainRestriction"]);
 
-      match /clubs/{club_id} {   
+      match /clubs/{club_id} {
         // stuco can create, edit, and delete
         allow delete: if admin() && student(school_id);
         allow create: if admin() && student(school_id) &&

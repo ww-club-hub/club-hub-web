@@ -5,6 +5,7 @@ import { useRoute } from "vue-router";
 import { doc } from "firebase/firestore";
 import ClubTabLink from "@/components/ClubTabLink.vue";
 import { getClaims, typedGetDoc } from "@/utils";
+import { getIdToken } from "@firebase/auth";
 
 const route = useRoute();
 
@@ -22,6 +23,18 @@ const role: ClubRole = {
 const clubDoc = doc(db, "schools", claims.school, "clubs", clubId);
 
 const club = await typedGetDoc<Club>(clubDoc);
+
+async function checkAuthClaimDesync() {
+  const emailKey = btoa(auth.currentUser!.email);
+
+  if (club.officers[emailKey]?.permissions !== role.officer) {
+    // refresh token
+    await getIdToken(auth.currentUser, true);
+    location.reload();
+  }
+}
+
+await checkAuthClaimDesync();
 
 </script>
 

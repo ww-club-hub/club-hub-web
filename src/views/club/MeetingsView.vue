@@ -1,25 +1,26 @@
 <script setup lang="ts">
-import { ClubRole, type Club, type ClubMeeting, OfficerPermission } from '@/schema';
-import { collection, query, where, orderBy, limit, and, doc, setDoc } from "@firebase/firestore";
+import { ClubRole, type Club, type ClubMeeting, OfficerPermission, type ClubMeetingAttendance } from '@/schema';
+import { collection, query, where, orderBy, limit, and, doc, setDoc, DocumentReference } from "@firebase/firestore";
 import { ref, computed, onMounted } from 'vue';
 import { auth, db } from "@/firebase";
 import MeetingCard from '@/components/MeetingCard.vue';
 import CreateMeetingDialog from '@/components/CreateMeetingDialog.vue';
-import { type DocWithId, typedGetDocs } from '@/utils';
+import { type DocWithId, typedGetDocs, generateAttendanceCode } from '@/utils';
 import 'v-calendar/style.css';
 import VCalendar from 'v-calendar';
 
 const props = defineProps<{
   role: ClubRole,
   school: string,
-  club: Club
+  club: Club,
+  clubDoc: DocumentReference
 }>();
 
 const canCreateMeeting = computed(() => props.role.stuco || (props.role.officer & OfficerPermission.Meetings));
 
 const upcomingMeetings = ref<DocWithId<ClubMeeting>[]>([]);
 const monthMeetings = ref<DocWithId<ClubMeeting>[]>([]);
-const meetingsCollection = collection(db, "schools", props.school, "clubs", props.club.id, "meetings");
+const meetingsCollection = collection(props.clubDoc, "meetings");
 
 const showModal = ref(false);
 
@@ -30,6 +31,16 @@ async function createMeeting(meeting: ClubMeeting) {
 
   const ref = doc(meetingsCollection);
   await setDoc(ref, meeting);
+  const attendanceRef = doc(props.clubDoc, "meeting_attendance", ref.id);
+
+  const code = generateAttendanceCode();
+  const attendanceDoc: ClubMeetingAttendance = {
+    code,
+    membersPresent: {},
+    membersAttending: []
+  };
+  await setDoc(attendanceRef, attendanceDoc);
+
   await refreshMeetings();
 
   showModal.value = false;

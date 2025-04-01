@@ -24,11 +24,12 @@ const meeting: Ref<DocWithId<ClubMeeting | null>> = ref(null);
 
 onMounted(async () => {
   meeting.value = await typedGetDoc<ClubMeeting>(doc(props.clubDoc, "meetings", meetingId));
+  console.log(meeting.value);
 });
 </script>
 
 <template>
-    <div class="rounded-lg p-3 shadow-md dark:bg-gray-800 bg-gray-100 text-gray-800 dark:text-gray-200">
+    <div class="rounded-lg p-3 shadow-md dark:bg-gray-800 bg-gray-100 text-gray-800 dark:text-gray-200" v-if="meeting">
         <p class="text-2xl text-center py-3">{{ meeting.startTime.toDate().toLocaleTimeString() }} - {{ meeting.endTime.toDate().toLocaleTimeString() }}</p>
         <p class="text-xl text-center italic py-1">Enter attendance code:</p>
 
