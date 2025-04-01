@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { auth } from "../firebase";
+import { auth, parseError } from "../firebase";
 import { signInWithCredential, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, OAuthCredential, signInWithPhoneNumber, signInWithPopup, sendPasswordResetEmail, GoogleAuthProvider } from "firebase/auth";
 import type { FirebaseError } from "firebase/app";
 import AuthForm from "@/components/AuthForm.vue";
@@ -51,20 +51,6 @@ async function loginGoogle() {
   await signInWithPopup(auth, new GoogleAuthProvider());
 }
 
-function parseError(e: unknown): string {
-  switch ((e as FirebaseError).code) {
-    case "auth/email-already-in-use":
-      return "The entered email is already in use";
-    case "auth/weak-password":
-      return "Password should be at least 6 characters";
-    case "auth/user-not-found":
-      return "A user with that email address does not exist";
-    case "auth/wrong-password":
-      return "Invalid password";
-    default:
-      return `An unknown error has occurred (${(e as Error).message})`;
-  }
-}
 </script>
 
 <template>

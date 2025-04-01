@@ -1,4 +1,4 @@
-import { initializeApp } from "firebase/app";
+import { FirebaseError, initializeApp } from "firebase/app";
 import { getAuth, connectAuthEmulator } from "firebase/auth";
 import { getFirestore, connectFirestoreEmulator, type DocumentData, type DocumentReference, type DocumentSnapshot, getDocFromCache, getDocFromServer } from "firebase/firestore";
 
@@ -30,5 +30,20 @@ export async function tryGetDocFromCache<A, D extends DocumentData>(ref: Documen
     return await getDocFromCache(ref);
   } catch {
     return await getDocFromServer(ref);
+  }
+}
+
+export function parseError(e: unknown): string {
+  switch ((e as FirebaseError).code) {
+    case "auth/email-already-in-use":
+      return "The entered email is already in use";
+    case "auth/weak-password":
+      return "Password should be at least 6 characters";
+    case "auth/user-not-found":
+      return "A user with that email address does not exist";
+    case "auth/wrong-password":
+      return "Invalid password";
+    default:
+      return `An unknown error has occurred (${(e as Error).message})`;
   }
 }
