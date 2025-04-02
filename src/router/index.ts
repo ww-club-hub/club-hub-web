@@ -167,16 +167,7 @@ const router = createRouter({
           component: () => import("@/views/club/AttendanceView.vue"),
           meta: {
             authRequired: true,
-            title: "Club Attendance"
-          }
-        },
-        {
-          name: 'member-attendance',
-          path: 'attendance',
-          component: () => import("@/views/club/TakeAttendanceView.vue"),
-          meta: {
-            authRequired: true,
-            title: "Take Attendance"
+            title: "Your Attendance"
           }
         },
         {

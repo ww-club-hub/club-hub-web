@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import type { Club, ClubMeeting } from '@/schema';
 
- defineProps<{
-   meeting: ClubMeeting & { id: string },
-   showAttendance?: boolean,
-   club: Club
- }>();
+defineProps<{
+  meeting: ClubMeeting & { id: string },
+  canTakeAttendance?: boolean,
+  canManageAttendance?: boolean,
+  club: Club
+}>();
+
+defineEmits<{
+  (e: 'open-attendance-modal'): void
+}>();
 </script>
 
 <template>
@@ -21,6 +26,7 @@ import type { Club, ClubMeeting } from '@/schema';
       <a :href="meeting.slides" class="text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800 block" target="_blank">Slides</a>
     </div>
 
-    <router-link v-if="showAttendance" :to="{ name: 'meeting-attendance', params: { clubId: club.id, meetingId: meeting.id } }" class="text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800 block">Take attendance</router-link>
+    <router-link v-if="canManageAttendance" :to="{ name: 'meeting-attendance', params: { clubId: club.id, meetingId: meeting.id } }" class="text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800 block">Manage attendance</router-link>
+    <button v-if="canTakeAttendance" class="text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800 block">Take attendance</button>
   </div>
 </template>

@@ -1,13 +1,19 @@
 <script setup lang="ts">
-import { ClubRole, type Club, type ClubMeeting, OfficerPermission, type ClubMeetingAttendance } from '@/schema';
-import { collection, query, where, orderBy, limit, and, doc, setDoc, DocumentReference } from "@firebase/firestore";
+import { type ClubRole, type Club, type ClubMeeting, OfficerPermission, type ClubMeetingAttendance } from '@/schema';
+import { collection, query, where, orderBy, limit, and, doc, setDoc, updateDoc, DocumentReference } from "@firebase/firestore";
 import { ref, computed, onMounted } from 'vue';
-import { auth, db } from "@/firebase";
+import { auth, db, parseError } from "@/firebase";
 import MeetingCard from '@/components/MeetingCard.vue';
 import CreateMeetingDialog from '@/components/CreateMeetingDialog.vue';
 import { type DocWithId, typedGetDocs, generateAttendanceCode } from '@/utils';
 import 'v-calendar/style.css';
 import VCalendar from 'v-calendar';
+import TakeAttendanceDialog from '@/components/TakeAttendanceDialog.vue';
+import { useRoute, useRouter } from 'vue-router';
+import type { FirebaseError } from '@firebase/util';
+
+const router = useRouter();
+const route = useRoute();
 
 const props = defineProps<{
   role: ClubRole,
@@ -22,7 +28,12 @@ const upcomingMeetings = ref<DocWithId<ClubMeeting>[]>([]);
 const monthMeetings = ref<DocWithId<ClubMeeting>[]>([]);
 const meetingsCollection = collection(props.clubDoc, "meetings");
 
+const currentAttendanceMeeting = ref<DocWithId<ClubMeeting> | null>(null);
+
 const showModal = ref(false);
+const showAttendanceDialog = ref(false);
+
+const attendanceError = ref("");
 
 const currentMeetings = computed(() => monthMeetings.value.filter(m => m.startTime.toMillis() <= Date.now() && m.endTime.toMillis() >= Date.now()));
 
@@ -44,6 +55,28 @@ async function createMeeting(meeting: ClubMeeting) {
   await refreshMeetings();
 
   showModal.value = false;
+}
+
+async function takeAttendance(code: string) {
+  if (!currentAttendanceMeeting.value || !auth.currentUser) return;
+  try {
+    attendanceError.value = "";
+
+    await updateDoc(doc(props.clubDoc, "meeting_attendance", currentAttendanceMeeting.value!.id), {
+      membersPresent: {
+        [auth.currentUser!.id]: code
+      }
+    });
+
+    showAttendanceDialog.value = false;
+    currentAttendanceMeeting.value = null;
+  } catch (err) {
+    if ((err as FirebaseError).code === "permission-denied") {
+      attendanceError.value = "Incorrect code";
+    } else {
+      attendanceError.value = parseError(err as Error);
+    }
+  }
 }
 
 async function refreshMeetings() {
@@ -73,8 +106,22 @@ async function refreshMeetings() {
   );
 }
 
+async function handleMeetingAttendance(meeting: ClubMeeting) {
+  // open the attendance modal
+  showAttendanceDialog.value = true;
+  currentAttendanceMeeting.value = meeting;
+}
+
 onMounted(async () => {
-    await refreshMeetings();
+  await refreshMeetings();
+
+  if (route.query.meetingId) {
+    const meeting = currentMeetings.value.find(el => el.id === route.query.meetingId);
+    if (meeting) {
+      showAttendanceDialog.value = true;
+      currentAttendanceMeeting.value = meeting;
+    }
+  }
 });
 </script>
 
@@ -88,7 +135,12 @@ onMounted(async () => {
     <div>
       <h2 class="text-lg tracking-tight uppercase font-semibold text-gray-800 dark:text-gray-100 mb-2">Upcoming meetings:</h2>
       <div v-if="upcomingMeetings.length > 0" class="flex gap-3 flex-row flex-wrap md:flex-col">
-        <MeetingCard v-for="meeting in upcomingMeetings" :key="meeting.id" :meeting="meeting" :club="club" :show-attendance="role.officer  & (1 << OfficerPermission.Meetings)" />
+        <MeetingCard
+          v-for="meeting in upcomingMeetings" :key="meeting.id" :meeting="meeting"
+          :can-take-attendance="false"
+          :can-manage-attendance="(props.role.officer & (1 << OfficerPermission.Meetings)) > 0"
+          :club="club"
+        />
       </div>
       <p v-else class="italic text-black dark:text-white">No meetings yet...</p>
     </div>
@@ -96,11 +148,17 @@ onMounted(async () => {
     <div>
       <h2 class="text-lg tracking-tight uppercase font-semibold text-gray-800 dark:text-gray-100 mb-2">Current meetings:</h2>
       <div v-if="currentMeetings.length > 0" class="flex gap-3 flex-row flex-wrap md:flex-col">
-        <MeetingCard v-for="meeting in currentMeetings" :key="meeting.id" :meeting="meeting" show-attendance :club="club" />
+        <MeetingCard
+          v-for="meeting in currentMeetings" :key="meeting.id" :meeting="meeting" :club="club"
+          :can-take-attendance="(props.role.officer & (1 << OfficerPermission.Meetings)) == 0"
+          :can-manage-attendance="(props.role.officer & (1 << OfficerPermission.Meetings)) > 0"
+          @open-attendance-modal="handleMeetingAttendance(meeting)"
+          />
       </div>
       <p v-else class="italic text-black dark:text-white">There are no meetings right now...</p>
     </div>
   </div>
 
   <CreateMeetingDialog v-model:show="showModal" @create-meeting="createMeeting" />
+  <TakeAttendanceDialog v-model:show="showAttendanceDialog" :error="attendanceError" @enter-code="takeAttendance" :meeting="currentAttendanceMeeting" />
 </template>

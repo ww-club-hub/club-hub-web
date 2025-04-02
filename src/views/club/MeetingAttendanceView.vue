@@ -52,7 +52,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <h1 class="text-4xl text-gray-700 dark:text-gray-300 mb-3 font-bold">Attendance:</h1>
+  <h1 class="text-4xl text-gray-700 dark:text-gray-300 mb-3 font-bold">Meeting Attendance:</h1>
 
   <div v-if="meetingAttendance">
     <div class="rounded-lg p-3 shadow-md dark:bg-gray-800 bg-gray-100 text-gray-800 dark:text-gray-200">
