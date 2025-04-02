@@ -51,11 +51,11 @@ import type { RouterLink } from 'vue-router';
 
         </div>
 
-        <img src="@/assets/landing/dashboard-preview.png" alt="Dashboard Preview"
+        <img src="@/assets/landing/iphone-preview.png" alt="iPhone Preview"
           class="hidden w-full md:block md:w-auto w-5/6 md:w-3/5 lg:w-7/12" />
       </div>
 
-      <img src="@/assets/landing/dashboard-preview.png" alt="Dashboard Preview"
+      <img src="@/assets/landing/iphone-preview.png" alt="iPhone Preview"
           class="block w-full md:hidden mt-8 md:w-auto w-4/5 mb-16" />
 
     </section>
