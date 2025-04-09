@@ -41,8 +41,8 @@ export default {
     if (req.method === "OPTIONS" && env.USE_EMULATOR) {
       // handle cors preflight
       const headers = new Headers();
-      if (origin === "http://localhost:5173") {
-        headers.append("Access-Control-Allow-Origin", origin);
+      if (true) {
+        headers.append("Access-Control-Allow-Origin", origin!);
         headers.append("Access-Control-Allow-Headers", "authorization,content-type");
       }
       return new Response(null, {

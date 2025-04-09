@@ -4,7 +4,7 @@ import type { AppRouter } from "../functions/worker";
 import { auth } from "./firebase";
 import { getIdToken } from "firebase/auth";
 
-const apiOrigin = import.meta.env.DEV ? BACKEND_EMULATOR : location.origin;
+const apiOrigin = BACKEND_EMULATOR;
 
 export const api = createTRPCProxyClient<AppRouter>({
   links: [
