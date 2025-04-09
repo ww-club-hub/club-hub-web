@@ -64,7 +64,7 @@ async function takeAttendance(code: string) {
 
     await updateDoc(doc(props.clubDoc, "meeting_attendance", currentAttendanceMeeting.value!.id), {
       membersPresent: {
-        [auth.currentUser!.id]: code
+        [auth.currentUser!.email!]: code
       }
     });
 
@@ -106,9 +106,11 @@ async function refreshMeetings() {
   );
 }
 
-async function handleMeetingAttendance(meeting: ClubMeeting) {
+async function handleMeetingAttendance(meeting: DocWithId<ClubMeeting>) {
+  console.log(meeting);
   // open the attendance modal
   showAttendanceDialog.value = true;
+  console.log(showAttendanceDialog.value);
   currentAttendanceMeeting.value = meeting;
 }
 
@@ -150,7 +152,7 @@ onMounted(async () => {
       <div v-if="currentMeetings.length > 0" class="flex gap-3 flex-row flex-wrap md:flex-col">
         <MeetingCard
           v-for="meeting in currentMeetings" :key="meeting.id" :meeting="meeting" :club="club"
-          :can-take-attendance="(props.role.officer & (1 << OfficerPermission.Meetings)) == 0"
+          :can-take-attendance="true"
           :can-manage-attendance="(props.role.officer & (1 << OfficerPermission.Meetings)) > 0"
           @open-attendance-modal="handleMeetingAttendance(meeting)"
           />

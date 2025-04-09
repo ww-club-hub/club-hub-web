@@ -18,7 +18,7 @@ service cloud.firestore {
       return admin() || ("officerOf" in request.auth.token && clubId in request.auth.token.officerOf) || clubId in request.auth.token.memberOf;
     }
     function onlyChanged(keys) {
-      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+      return debug(request.resource.data.diff(resource.data).affectedKeys()).hasOnly(keys);
     }
     function listDiffHasOnly(list1, list2, targetDiff) {
       let set1 = list1.toSet();
@@ -26,8 +26,8 @@ service cloud.firestore {
       return set1.difference(set2).hasOnly(targetDiff) && set2.difference(set1).hasOnly(targetDiff);
     }
     function mapDiffHasOnly(map1, map2, targetKey, targetValue) {
-      let diff = map1.diff(map2);
-      return diff.affectedKeys() == [targetKey].toSet() && diff.addedKeys() == [targetKey].toSet() && map1[targetKey] == targetValue;
+      let diff = debug(map1.diff(map2));
+      return debug(diff.affectedKeys()) == debug([targetKey].toSet()) && diff.addedKeys() == [targetKey].toSet() && debug(map1)[targetKey] == targetValue;
 }
     match /schools/{school_id} {
       // schools can only be created/deleted from the admin API

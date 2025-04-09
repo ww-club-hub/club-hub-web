@@ -21,9 +21,10 @@ const props = defineProps<{
 
 const docRef = doc(props.clubDoc, "meeting_attendance", meetingId);
 const meetingAttendance: Ref<DocWithId<ClubMeetingAttendance> | null> = ref(null);
-const meeting: Ref<DocWithId<ClubMeeting | null>> = ref(null);
+const meeting: Ref<DocWithId<ClubMeeting> | null> = ref(null);
 
 async function regenCode() {
+  if (!meetingAttendance.value) return;
   const code = generateAttendanceCode();
   meetingAttendance.value.code = code;
   await updateDoc(docRef, { code });
@@ -54,7 +55,7 @@ onMounted(async () => {
 <template>
   <h1 class="text-4xl text-gray-700 dark:text-gray-300 mb-3 font-bold">Meeting Attendance:</h1>
 
-  <div v-if="meetingAttendance">
+  <div v-if="meetingAttendance && meeting">
     <div class="rounded-lg p-3 shadow-md dark:bg-gray-800 bg-gray-100 text-gray-800 dark:text-gray-200">
         <p class="text-2xl text-center py-3">{{ meeting.startTime.toDate().toLocaleTimeString() }} - {{ meeting.endTime.toDate().toLocaleTimeString() }}</p>
         <p class="text-xl text-center italic py-1">Attendance code:</p>

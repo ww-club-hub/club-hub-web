@@ -2,13 +2,14 @@
 import { ref } from 'vue';
 import FormInput from './FormInput.vue';
 import type { ClubMeeting } from '@/schema';
+import { watch } from 'vue';
 
 defineProps<{
   meeting: ClubMeeting | null,
   error: string
 }>();
 
-const show = defineModel<boolean>({
+const show = defineModel<boolean>("show", {
   default: false
 });
 
@@ -21,6 +22,10 @@ const code = ref("");
 async function tryCode() {
   emit("enter-code", code.value);
 }
+
+watch(show, () => {
+  console.log(show.value);
+});
 </script>
 
 <template>
