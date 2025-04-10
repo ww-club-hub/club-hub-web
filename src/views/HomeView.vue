@@ -60,16 +60,4 @@ import type { RouterLink } from 'vue-router';
 
     </section>
   </main>
-
-
-
-
-
-
-
-
-
-
-
-
 </template>
