@@ -25,7 +25,9 @@ const clubDoc = doc(db, "schools", claims.school, "clubs", clubId);
 const club = await typedGetDoc<Club>(clubDoc);
 
 async function checkAuthClaimDesync() {
-  const emailKey = btoa(auth.currentUser!.email);
+  // TODO: 404 errors
+  if (!club || !auth.currentUser) return;
+  const emailKey = btoa(auth.currentUser.email!);
 
   if (club.officers[emailKey]?.permissions !== role.officer) {
     // refresh token
@@ -39,7 +41,7 @@ await checkAuthClaimDesync();
 </script>
 
 <template>
-  <section class="bg-white dark:bg-gray-900 grow">
+  <section class="bg-white dark:bg-gray-900 grow" v-if="club">
     <div class="bg-gray-200 dark:bg-gray-800">
       <div class="mx-auto max-w-screen-2xl p-3 pb-0">
         <!-- header -->

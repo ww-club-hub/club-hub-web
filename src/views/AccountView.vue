@@ -16,6 +16,8 @@ const showModal = ref(false);
 const error = ref("");
 
 async function reauthCred(cred: OAuthCredential) {
+  if (!auth.currentUser) return;
+
   try {
     await reauthenticateWithCredential(auth.currentUser, cred);
     await deleteAccount();
@@ -25,7 +27,9 @@ async function reauthCred(cred: OAuthCredential) {
 }
 
 async function reauthPassword(password: string) {
-  const cred = EmailAuthProvider.credential(auth.currentUser!.email, password);
+  if (!auth.currentUser) return;
+
+  const cred = EmailAuthProvider.credential(auth.currentUser.email!, password);
   try {
     await reauthenticateWithCredential(auth.currentUser, cred);
     await deleteAccount();
@@ -49,7 +53,7 @@ async function reauthPassword(password: string) {
       <p class="text-black dark:text-white mb-2"><strong class="font-bold">Email: </strong> {{ auth.currentUser?.email
         }}</p>
 
-      <p class="text-black dark:text-white mb-2"><strong class="font-bold">Graduation Year: </strong> {{ claims.gradYear as string
+      <p class="text-black dark:text-white mb-2" v-if="claims"><strong class="font-bold">Graduation Year: </strong> {{ claims.gradYear as string
         }}</p>
 
       <p class="text-black dark:text-white mb-3"><strong class="font-bold">Account created: </strong> {{ new
