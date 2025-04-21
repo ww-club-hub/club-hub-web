@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type ClubRole, type Club, type ClubMeeting, OfficerPermission, type ClubMeetingAttendance } from '@/schema';
-import { collection, query, where, orderBy, limit, and, doc, setDoc, updateDoc, DocumentReference } from "@firebase/firestore";
+import { collection, query, where, orderBy, limit, and, doc, setDoc, updateDoc, DocumentReference, FieldPath, arrayUnion, arrayRemove } from "@firebase/firestore";
 import { ref, computed, onMounted } from 'vue';
 import { auth, db, parseError } from "@/firebase";
 import MeetingCard from '@/components/MeetingCard.vue';
@@ -62,11 +62,9 @@ async function takeAttendance(code: string) {
   try {
     attendanceError.value = "";
 
-    await updateDoc(doc(props.clubDoc, "meeting_attendance", currentAttendanceMeeting.value!.id), {
-      membersPresent: {
-        [auth.currentUser!.email!]: code
-      }
-    });
+    FieldPath
+
+    await updateDoc(doc(props.clubDoc, "meeting_attendance", currentAttendanceMeeting.value!.id), new FieldPath("memberPresent", auth.currentUser.email!), code);
 
     showAttendanceDialog.value = false;
     currentAttendanceMeeting.value = null;
@@ -107,11 +105,17 @@ async function refreshMeetings() {
 }
 
 async function handleMeetingAttendance(meeting: DocWithId<ClubMeeting>) {
-  console.log(meeting);
   // open the attendance modal
   showAttendanceDialog.value = true;
-  console.log(showAttendanceDialog.value);
   currentAttendanceMeeting.value = meeting;
+}
+
+async function handleRsvp(meeting: DocWithId<ClubMeeting>, canAttend: boolean) {
+  if (!auth.currentUser) return;
+
+  await updateDoc(doc(props.clubDoc, "meeting_attendance", meeting.id), {
+    membersAttending: canAttend ? arrayUnion(auth.currentUser.email!) : arrayRemove(auth.currentUser.email!)
+  });
 }
 
 onMounted(async () => {
@@ -142,6 +146,7 @@ onMounted(async () => {
           :can-take-attendance="false"
           :can-manage-attendance="(props.role.officer & (1 << OfficerPermission.Meetings)) > 0"
           :club="club"
+          @rsvp="canAttend => handleRsvp(meeting, canAttend)"
         />
       </div>
       <p v-else class="italic text-black dark:text-white">No meetings yet...</p>

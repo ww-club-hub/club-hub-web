@@ -18,8 +18,15 @@ const slides = ref("");
 const description = ref("");
 const startTime = ref<Date | undefined>();
 const endTime = ref<Date | undefined>();
+const errorMessage = ref("");
 
 async function createMeeting() {
+  errorMessage.value = "";
+  // non null - required inputs
+  if (startTime.value! >= endTime.value!) {
+    errorMessage.value = "Meetings cannot start after they end.";
+    return;
+  }
   emit("create-meeting", {
     location: location.value,
     slides: slides.value || undefined,
@@ -56,9 +63,11 @@ async function createMeeting() {
           <FormInput label="Description:" type="text" v-model="description" />
 
           <div class="flex items-center gap-3">
-            <DateTimeInput label="Start time:" required v-model="startTime" />
-            <DateTimeInput label="End time:" required v-model="endTime" />
+            <DateTimeInput label="Start time:" no-past required v-model="startTime" />
+            <DateTimeInput label="End time:" no-past required v-model="endTime" />
           </div>
+
+          <p v-if="errorMessage" class="text-red-500 italic mb-3">{{ errorMessage }}</p>
 
           <!-- TODO: recurring meetings -->
 

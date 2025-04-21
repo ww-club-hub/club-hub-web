@@ -38,10 +38,16 @@ export function getClubPresidentName(officers: Officers) {
 
 export function getClubPresidentEmail(officers: Officers) {
   // if they have an item called president, return it
-  return atob(Object.entries(officers)
+  const b64Email = Object.entries(officers)
     .find(el => el[1].role.toLowerCase() === "president")?.[0] ??
     // otherwise, return the first item
-    Object.keys(officers)[0]);
+    Object.keys(officers)[0];
+  try {
+    return atob(b64Email);
+  } catch {
+    // legacy emulator stuff
+    return b64Email;
+  }
 }
 
 export type DocWithId<T> = T & { id: string };
