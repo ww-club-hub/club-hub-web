@@ -28,7 +28,12 @@ service cloud.firestore {
     function mapDiffHasOnly(map1, map2, targetKey, targetValue) {
       let diff = debug(map1.diff(map2));
       return debug(diff.affectedKeys()) == debug([targetKey].toSet()) && diff.addedKeys() == [targetKey].toSet() && debug(map1)[targetKey] == targetValue;
-}
+    }
+    match /user_data/{user_id} {
+      allow read: if request.auth.token.uid == user_id;
+      allow write: if request.auth.token.uid == user_id && request.resources.data.keys().hasOnly(["drive_refresh_token"]);
+
+    }
     match /schools/{school_id} {
       // schools can only be created/deleted from the admin API
       allow read: if student(school_id);
@@ -71,6 +76,14 @@ service cloud.firestore {
           // members can add themselves to membersPresent if they have the correct code
           allow update: if student(school_id) && member(club_id) && onlyChanged(["membersPresent"]) && mapDiffHasOnly(request.resource.data.membersPresent, resource.data.membersPresent, request.auth.token.email, resource.data.code);
         }
+
+        match /forms/{form_id} {
+          allow read: if student(school_id) && member(club_id);
+          // permission bit 4 - forms
+          allow create: if student(school_id) && officer(club_id, 4) && request.resource.data.keys().toSet() == ["formId", "description", "officerId"].toSet() && request.resource.data.officerId == request.auth.uid;
+          allow delete: if student(school_id) && officer(club_id, 4);
+          allow update: if student(school_id) && officer(club_id, 4) && onlyChanged(["description"]);
+        }
       }
 
       match /clubs_private/{club_id} {
@@ -78,6 +91,7 @@ service cloud.firestore {
         allow read: if student(school_id) && officer(club_id, 1);
         // can only be written by backend
       }
+
     }
   }
 }

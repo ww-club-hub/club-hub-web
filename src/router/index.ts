@@ -153,6 +153,15 @@ const router = createRouter({
           }
         },
         {
+          name: 'club-forms',
+          path: 'forms',
+          component: () => import("@/views/club/FormsView.vue"),
+          meta: {
+            authRequired: true,
+            title: "Club Forms"
+          }
+        },
+        {
           name: 'club-meetings',
           path: 'meetings',
           component: () => import("@/views/club/MeetingsView.vue"),

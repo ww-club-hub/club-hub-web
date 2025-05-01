@@ -5,7 +5,7 @@ export interface School {
   nameLowercase: string,
   domainRestriction?: string,
   website: string,
-  
+
   // emails
   owner: string,
   admins: string[],
@@ -73,7 +73,7 @@ export interface Club {
 // only availble to officers
 export interface ClubPrivate {
   // emails
-  members: string[]
+  members: string[],
 }
 
 export enum OfficerPermission {
@@ -81,7 +81,7 @@ export enum OfficerPermission {
   Members = 2, // bit 1
   Meetings = 4, // bit 2
   Messages = 8, // bit 3
-  Forms = 16, // bit 4 
+  Forms = 16, // bit 4
   ClubDetails = 32, // bit 5
   All = ~(~0 << 6)
 }
@@ -120,4 +120,12 @@ export interface ClubMeetingAttendance {
   // map of email to code used
   membersPresent: Record<string, string>,
   membersAttending: string[]
+}
+
+export interface ClubForm {
+  formId: string,
+  description: string,
+  // ID of officer who manages this form
+  // used for determining which OAuth key to use
+  officerId: string
 }
