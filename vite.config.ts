@@ -31,7 +31,15 @@ function getBackendEmulatorUrl() {
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   plugins: [
-    vue(),
+    vue({
+      template: {
+        compilerOptions: {
+          isCustomElement(tag) {
+            return tag.startsWith("drive-picker");
+          }
+        }
+      }
+    }),
     tailwindcss()
   ],
   resolve: {

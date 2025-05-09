@@ -83,3 +83,20 @@ export function generateAttendanceCode() {
   }).join("");
   return code;
 }
+
+
+export async function injectScript(src: string): Promise<void> {
+	return new Promise((resolve, reject) => {
+		if (!document.querySelector(`script[src="${src}"]`)) {
+			document.head.appendChild(
+				Object.assign(document.createElement("script"), {
+					src,
+					onload: resolve,
+					onerror: reject,
+				}),
+			);
+		} else {
+			resolve();
+		}
+	});
+}
