@@ -29,7 +29,7 @@ export async function makeServiceAccountToken(env: Env, scope: string) {
     // emulator token
     return "owner";
   }
-    
+
   // the key is stored with literal "\n"s to make it easier to enter
   const key = env.SERVICE_ACCOUNT_KEY.replaceAll("\\n", "\n");
   const secretKey = await importPKCS8(key, "RS256");
@@ -176,4 +176,50 @@ export function makeFirestoreField(field: FirestoreField): RawFirestoreField {
         }
       }
   }
+}
+
+export async function exchangeOauthToken(env: Env, oauthToken: string) {
+  const body = new URLSearchParams();
+  body.set("client_id", env.OAUTH_CLIENT_ID);
+  body.set("client_secret", env.OAUTH_CLIENT_SECRET);
+  body.set("code", oauthToken);
+  body.set("grant_type", "authorization_code");
+
+  const res = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    body,
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    }
+  }).then(r => r.json<{
+    access_token: string,
+    expires_in: number,
+    refresh_token: string,
+    scope: string,
+  }>());
+
+  return res;
+}
+
+export async function refreshAccessToken(env: Env, refreshToken: string) {
+  const body = new URLSearchParams();
+
+  body.set("client_id", env.OAUTH_CLIENT_ID);
+  body.set("client_secret", env.OAUTH_CLIENT_SECRET);
+  body.set("refresh_token", refreshToken);
+  body.set("grant_type", "refresh_token");
+
+  const res = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body
+  }).then(r => r.json<{
+    access_token: string,
+    expires_in: number,
+    scope: string,
+  }>())
+
+  return res;
 }

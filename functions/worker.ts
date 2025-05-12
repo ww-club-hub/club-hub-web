@@ -11,12 +11,16 @@ import searchSchools from "./api/school/search";
 import clubMembers from "./api/club/members";
 import clubOfficers from "./api/club/officers";
 import { removeAdmin, addAdmin, transferOwnership } from "./api/school/admin";
+import authorizeGoogle from "./api/user/google/authorize";
 
 const appRouter = router({
   user: router({
     profile,
     gradYear: userGradYear,
-    interests: userInterests
+    interests: userInterests,
+    google: router({
+      authorize: authorizeGoogle
+    })
   }),
   school: router({
     create: createSchool,
@@ -37,7 +41,7 @@ const appRouter = router({
 export default {
   async fetch(req, env): Promise<Response> {
     const origin = req.headers.get("Origin");
-    
+
     if (req.method === "OPTIONS" && env.USE_EMULATOR) {
       // handle cors preflight
       const headers = new Headers();

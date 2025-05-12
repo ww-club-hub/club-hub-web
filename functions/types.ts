@@ -7,6 +7,8 @@ export interface Env {
   SERVICE_ACCOUNT_EMAIL: string;
   SERVICE_ACCOUNT_KEY: string;
   SERVICE_ACCOUNT_KID: string;
+  OAUTH_CLIENT_ID: string;
+  OAUTH_CLIENT_SECRET: string;
   GCP_PROJECT_ID: string;
   USE_EMULATOR: string;
 }

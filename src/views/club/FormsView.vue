@@ -33,6 +33,7 @@ onMounted(async () => {
     ux_mode: "popup",
     scope: "https://www.googleapis.com/auth/drive.file",
     callback: response => {
+      // TODO: verify that user picked correct account
       console.log(response.code);
     },
     error_callback: e => {
