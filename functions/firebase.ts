@@ -178,6 +178,37 @@ export function makeFirestoreField(field: FirestoreField): RawFirestoreField {
   }
 }
 
+/**
+ * Parse custom attributes from a user object. Handles nullv alues
+ */
+export function getUserAttributes(user: { customAttributes?: string | null } | null) {
+  if (user?.customAttributes) return JSON.parse(user.customAttributes) as UserClaims;
+  return null;
+}
+
+export async function lookupUser(email: string, authToken: string, env: Env) {
+  const userResult = await authedJsonRequest<{
+    users: {
+      localId: string,
+      email: string,
+      customAttributes: string,
+      displayName: string,
+      photoUrl: string
+    }[]
+  }>({
+    email
+  }, authToken, `${getIdentityToolkitUrl(env)}/projects/${env.GCP_PROJECT_ID}/accounts:lookup`);
+
+  // no users
+  if (userResult.users.length === 0) return null;
+  
+  return userResult.users[0];
+}
+
+
+/**
+ * Exchange user OAuth sign in token for access token
+ */
 export async function exchangeOauthToken(env: Env, oauthToken: string) {
   const body = new URLSearchParams();
   body.set("client_id", env.OAUTH_CLIENT_ID);

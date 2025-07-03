@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { authedJsonRequest, authedProcedure } from "../../utils";
-import { AUTH_SCOPE, FIRESTORE_SCOPE, getFirestoreUrl, makeFirestoreField, makeServiceAccountToken, updateUserRoles, getIdentityToolkitUrl } from "../../firebase";
+import { AUTH_SCOPE, FIRESTORE_SCOPE, getFirestoreUrl, makeFirestoreField, makeServiceAccountToken, updateUserRoles, getIdentityToolkitUrl, getUserAttributes, lookupUser } from "../../firebase";
 import { UserClaims } from "../../types";
 import { TRPCError } from "@trpc/server";
 
@@ -22,19 +22,13 @@ export const removeAdmin = authedProcedure
     const firestoreToken = await makeServiceAccountToken(ctx.env, FIRESTORE_SCOPE);
     const authToken = await makeServiceAccountToken(ctx.env, AUTH_SCOPE);
 
-    const userResult = await authedJsonRequest<{
-      users: {
-        localId: string,
-        email: string,
-        customAttributes: string,
-      }[]
-    }>({
-      email: input.adminEmail
-    }, authToken, `${getIdentityToolkitUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/accounts:lookup`);
+    // get the referenced user
+    const user = await lookupUser(input.adminEmail, authToken, ctx.env);
 
-    if (userResult.users.length >= 1) {
-      const user = userResult.users[0];
-      const attrs = (JSON.parse(user.customAttributes) ?? null) as UserClaims | null;
+    if (user) {
+      const attrs = getUserAttributes(user);
+      // TODO: checking for this (school match) each time is really unsustainable
+      // we need a better interface for fetching users "as" another user which will throw if they're from another school
       if (attrs?.school === ctx.user.school) {
         await updateUserRoles(ctx.env, authToken, user.localId, attrs, {
           role: ""
@@ -56,12 +50,18 @@ export const removeAdmin = authedProcedure
           firestoreToken,
           `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents:batchWrite`
         );
+
+        return {
+          success: true
+        };
       }
     }
 
-    return {
-      success: true
-    };
+    // user not found or not from school
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: "user not found"
+    });
   });
 
 export const transferOwnership = authedProcedure
@@ -78,19 +78,11 @@ export const transferOwnership = authedProcedure
     const firestoreToken = await makeServiceAccountToken(ctx.env, FIRESTORE_SCOPE);
     const authToken = await makeServiceAccountToken(ctx.env, AUTH_SCOPE);
 
-    const userResult = await authedJsonRequest<{
-      users: {
-        localId: string,
-        email: string,
-        customAttributes: string,
-      }[]
-    }>({
-      email: input.adminEmail
-    }, authToken, `${getIdentityToolkitUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/accounts:lookup`);
+    // get the referenced user
+    const user = await lookupUser(input.adminEmail, authToken, ctx.env);
 
-    if (userResult.users.length >= 1) {
-      const user = userResult.users[0];
-      const attrs = (JSON.parse(user.customAttributes) ?? null) as UserClaims | null;
+    if (user) {
+      const attrs = getUserAttributes(user);
       if (attrs?.school === ctx.user.school) {
         // update roles
         await updateUserRoles(ctx.env, authToken, user.localId, attrs, {
@@ -130,12 +122,18 @@ export const transferOwnership = authedProcedure
           firestoreToken,
           `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents:batchWrite`
         );
+
+        return {
+          success: true
+        };
       }
     }
 
-    return {
-      success: true
-    };
+    // either this user doesn't exist or they aren't from the specified school
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: "user not found"
+    });
   });
 
 export const addAdmin = authedProcedure
@@ -152,19 +150,11 @@ export const addAdmin = authedProcedure
     const firestoreToken = await makeServiceAccountToken(ctx.env, FIRESTORE_SCOPE);
     const authToken = await makeServiceAccountToken(ctx.env, AUTH_SCOPE);
 
-    const userResult = await authedJsonRequest<{
-      users: {
-        localId: string,
-        email: string,
-        customAttributes: string,
-      }[]
-    }>({
-      email: input.adminEmail
-    }, authToken, `${getIdentityToolkitUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/accounts:lookup`);
+    // get the referenced user
+    const user = await lookupUser(input.adminEmail, authToken, ctx.env);
 
-    if (userResult.users.length >= 1) {
-      const user = userResult.users[0];
-      const attrs = (JSON.parse(user.customAttributes) ?? null) as UserClaims | null;
+    if (user) {
+      const attrs = getUserAttributes(user);
       if (attrs?.school === ctx.user.school) {
         await updateUserRoles(ctx.env, authToken, user.localId, attrs, {
           role: "admin"
@@ -186,11 +176,17 @@ export const addAdmin = authedProcedure
           firestoreToken,
           `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents:batchWrite`
         );
+
+        return {
+          success: true
+        };
       }
     }
 
-    return {
-      success: true
-    };
+    // either this user doesn't exist or they aren't from the specified school
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: "user not found"
+    });
   });
 

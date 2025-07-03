@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AUTH_SCOPE, FIRESTORE_SCOPE, getFirestoreUrl, getIdentityToolkitUrl, makeServiceAccountToken, parseFirestoreObject, makeFirestoreField, updateUserRoles } from "../../firebase";
+import { AUTH_SCOPE, FIRESTORE_SCOPE, getFirestoreUrl, getIdentityToolkitUrl, makeServiceAccountToken, parseFirestoreObject, makeFirestoreField, updateUserRoles, lookupUser, getUserAttributes } from "../../firebase";
 import { ClubSignupType, FirestoreFieldObject, FirestoreRestDocument, OfficerPermission, UserClaims } from "../../types";
 import { authedJsonRequest, authedProcedure, checkOfficerPermission } from "../../utils";
 import { TRPCError } from "@trpc/server";
@@ -31,19 +31,11 @@ export default authedProcedure
       }
 
       // fetch more info about this user
-      const memberDetails = await authedJsonRequest<{
-        users: {
-          localId: string,
-          customAttributes: string,
-        }[]
-      }>({
-        email: input.memberEmail
-      }, authToken, `${getIdentityToolkitUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/accounts:lookup`);
-
-      const userDetails = memberDetails.users[0];
-      const attrs = JSON.parse(userDetails?.customAttributes) ?? null;
+      const userDetails = await lookupUser(input.memberEmail, authToken, ctx.env);
+      
+      const attrs = getUserAttributes(userDetails);
       // make sure the user exists and they are part of this school
-      if (attrs?.school !== ctx.user.school) {
+      if (!userDetails || attrs?.school !== ctx.user.school) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "This user does not exist"

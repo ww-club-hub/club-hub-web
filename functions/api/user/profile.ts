@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AUTH_SCOPE, getIdentityToolkitUrl,  makeServiceAccountToken } from "../../firebase";
+import { AUTH_SCOPE, getIdentityToolkitUrl,  lookupUser,  makeServiceAccountToken } from "../../firebase";
 import { authedJsonRequest } from "../../utils";
 import { publicProcedure } from "../../trpc";
 import { TRPCError } from "@trpc/server";
@@ -12,6 +12,7 @@ const GetProfileReq = z.object({
 export default publicProcedure
   .input(GetProfileReq)
   .query(async ({ ctx, input }) => {
+    // TODO: did we need to cache this?
     //const cachedRes = await caches.default.match(ctx.req);
     //if (cachedRes) return cachedRes as {
     //success: boolean,
@@ -20,17 +21,8 @@ export default publicProcedure
     //};
 
     const authToken = await makeServiceAccountToken(ctx.env, AUTH_SCOPE);
-    
-    const userRes = await authedJsonRequest<{
-      users: {
-        displayName: string,
-        photoUrl: string
-      }[]
-    }>({
-      email: [input.email]
-    }, authToken, `${getIdentityToolkitUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/accounts:lookup`);
-    
-    const user = userRes.users?.[0];
+
+    const user = await lookupUser(input.email, authToken, ctx.env);
 
     ctx.resHeaders.set("Cache-Control", "max-age=604800, public, stale-while-revalidate");
 
