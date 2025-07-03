@@ -94,11 +94,10 @@ async function handleGoogleSuccess({ credential }: CredentialResponse) {
 
     <div class="mx-auto flex justify-center">
       <!-- google -->
-      <GoogleSignInButton @success="handleGoogleSuccess" @error="handleGoogleError"></GoogleSignInButton>
-
       <button v-if="isDev" class="bg-black text-white p-3 rounded" @click="emit('authGoogleManual')" type="button">
-        DEV: Emulator Google
+        [Emulator] Sign in with Google
       </button>
+      <GoogleSignInButton v-else @success="handleGoogleSuccess" @error="handleGoogleError"></GoogleSignInButton>
     </div>
   </form>
 </template>

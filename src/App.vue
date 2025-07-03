@@ -23,4 +23,5 @@ import Footer from "./components/Footer.vue";
   </RouterView>
 
   <Footer />
+  <div id="toast-container" class="fixed bottom-3 right-3 z-50"></div>
 </template>

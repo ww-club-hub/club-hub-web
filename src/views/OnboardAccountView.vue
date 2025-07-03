@@ -3,29 +3,16 @@ import { ref } from "vue";
 import { auth } from "../firebase";
 import { years } from "../assets/grad-years.json";
 import { topics } from "../assets/club-topics.json";
-import { type ParsedToken, getIdTokenResult, onAuthStateChanged, type User, sendEmailVerification, getIdToken } from "firebase/auth";
+import { type ParsedToken, getIdTokenResult, onAuthStateChanged, type User, sendEmailVerification, getIdToken, reload } from "firebase/auth";
 import { computed } from "vue";
 import OnboardingStep from "../components/OnboardingStep.vue";
 import { useRouter } from "vue-router";
 import { api, isTRPCClientError } from "@/api";
+import { nextTick } from "vue";
+import { showSuccessToast, showWarningToast } from "@/toast";
+import { getCurrentInstance } from "vue";
 
-const user = ref<User | null>(null);
-const claims = ref<ParsedToken | null>(null);
-const message = ref("");
-const searchQuery = ref("");
-const foundSchools = ref<School[]>([]);
-const gradYear = ref("");
-const interests = ref(new Set<number>());
-
-const router = useRouter();
-
-onAuthStateChanged(auth, async currentUser => {
-  if (currentUser) {
-    user.value = currentUser;
-    const idToken = await getIdTokenResult(currentUser);
-    claims.value = idToken.claims;
-  }
-});
+// TYPES
 
 enum OnboardingStepType {
   VerifyEmail,
@@ -41,8 +28,32 @@ interface School {
   name: string
 }
 
+// STATE
+
+const user = ref<User | null>(null);
+const claims = ref<ParsedToken | null>(null);
+const message = ref("");
+const searchQuery = ref("");
+const foundSchools = ref<School[]>([]);
+const gradYear = ref("");
+const interests = ref(new Set<number>());
+const emailVerificationSent = ref(false);
+
+const router = useRouter();
+
+const context = getCurrentInstance()?.appContext;
+
+// LISTENERS
+
+onAuthStateChanged(auth, async currentUser => {
+  if (currentUser) {
+    user.value = currentUser;
+    const idToken = await getIdTokenResult(currentUser);
+    claims.value = idToken.claims;
+  }
+});
+
 const currentStep = computed(() => {
-  console.log(claims.value);
   if (!user.value?.emailVerified) return OnboardingStepType.VerifyEmail;
   if (!claims.value?.school) return OnboardingStepType.JoinSchool;
   if (!claims.value?.gradYear) return OnboardingStepType.SetGraduationYear;
@@ -56,13 +67,31 @@ const currentStep = computed(() => {
 async function verifyEmail() {
   if (!user.value) return;
   await sendEmailVerification(user.value);
-  message.value = "Verification email sent. Refresh this page when you're done.";
+
+  emailVerificationSent.value = true;
+
+  // show toast
+  showSuccessToast("Verification email sent.", context, 1000);
+}
+
+async function refreshEmailVerification() {
+  if (!user.value) return;
+  
+  // need to refresh to register email verification
+  await reload(user.value);
+  await getIdToken(user.value, true);
+  user.value = auth.currentUser;
+
+  await nextTick();
+
+  if (user.value?.emailVerified) emailVerificationSent.value = false;
+  else showWarningToast("Email not verified!", context, 1000);
 }
 
 async function search() {
   if (!user.value) return;
 
-  // need to refresh to register email verification
+  // refresh just in case
   await getIdToken(user.value, true);
   // fetch schools starting with searchQuery
   try {
@@ -109,7 +138,6 @@ async function setGradYear() {
     // refresh id token
 
     claims.value = (await getIdTokenResult(user.value, true)).claims;
-    console.log(claims.value);
   } catch (err) {
     if (isTRPCClientError(err)) {
       message.value = err.message;
@@ -148,12 +176,31 @@ async function setInterests() {
         <ul class="max-w-md space-y-2 list-inside">
           <OnboardingStep :active="currentStep == OnboardingStepType.VerifyEmail" name="Verify your email address"
             :done="currentStep > OnboardingStepType.VerifyEmail">
-            <p class="mb-3">You'll need to verify your email before you can use this site</p>
+            <template v-if="emailVerificationSent">
+              <!-- we show this after they click send verification email -->
+              <p class="mb-2 text-gray-700 dark:text-gray-200">Verification email sent! Click the button below when you're done.</p>
 
-            <button type="button"
-              class="w-full text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800"
-              @click="verifyEmail">Send verification email</button>
+              <div class="flex gap-3 items-center">
+                <button type="button"
+                        class="w-full text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800"
+                        @click="refreshEmailVerification">Check verification</button>
+
+                <!-- TODO: make this outlined to de-emphasize it -->
+                <button type="button"
+                        class="w-full text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800"
+                        @click="verifyEmail">Resend email</button>
+              </div>
+            </template>
+            <template v-else>
+              <!-- initial verification prompt -->
+              <p class="mb-3">You'll need to verify your email before you can use this site</p>
+
+              <button type="button"
+                      class="w-full text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800"
+                      @click="verifyEmail">Send verification email</button>
+            </template>
           </OnboardingStep>
+          
           <OnboardingStep :active="currentStep == OnboardingStepType.JoinSchool" name="Join a school"
             :done="currentStep > OnboardingStepType.JoinSchool">
             <!-- search box -->
