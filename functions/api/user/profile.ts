@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { AUTH_SCOPE, getIdentityToolkitUrl,  lookupUser,  makeServiceAccountToken } from "../../firebase";
-import { authedJsonRequest } from "../../utils";
+import { AUTH_SCOPE, lookupUser,  makeServiceAccountToken } from "../../firebase";
 import { publicProcedure } from "../../trpc";
 import { TRPCError } from "@trpc/server";
 

@@ -109,7 +109,7 @@ export interface ClubMeeting {
   startTime: Timestamp,
   endTime: Timestamp,
   description?: string,
-  slides?: string
+  slides?: string,
 }
 
 // /meeting_attendance/{id}

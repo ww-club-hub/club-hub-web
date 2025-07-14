@@ -1,39 +1,38 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import DateTimeInput from './DateTimeInput.vue';
-import FormInput from './FormInput.vue';
-import type { ClubMeeting } from '@/schema';
-import { Timestamp } from 'firebase/firestore';
+import type { Club, ClubMeeting } from '@/schema';
+import MeetingTimeSelection from './MeetingTimeSelection.vue';
 
 const show = defineModel<boolean>("show", {
   default: false
 });
 
+const props = defineProps<{
+  club: Club
+}>();
+
 const emit = defineEmits<{
   (e: 'create-meeting', meeting: ClubMeeting): void
 }>();
 
-const location = ref("");
-const slides = ref("");
-const description = ref("");
-const startTime = ref<Date | undefined>();
-const endTime = ref<Date | undefined>();
 const errorMessage = ref("");
+
+const meeting = ref<ClubMeeting>({
+  location: "",
+  // @ts-expect-error
+  endTime: null,
+  // @ts-expect-error
+  startTime: null,
+});
 
 async function createMeeting() {
   errorMessage.value = "";
   // non null - required inputs
-  if (startTime.value! >= endTime.value!) {
+  if (meeting.value.startTime.seconds >= meeting.value.endTime.seconds) {
     errorMessage.value = "Meetings cannot start after they end.";
     return;
   }
-  emit("create-meeting", {
-    location: location.value,
-    slides: slides.value || undefined,
-    description: description.value || undefined,
-    startTime: Timestamp.fromDate(startTime.value!),
-    endTime: Timestamp.fromDate(endTime.value!)
-  });
+  emit("create-meeting", meeting.value);
 }
 </script>
 
@@ -55,17 +54,9 @@ async function createMeeting() {
           </button>
         </div>
         <!-- Modal body -->
-        <!-- TODO: flex meetings -->
-        <!-- TODO: autofill data from general meeting times -->
-        <form class="p-4 md:p-5 space-y-4 dark:bg-gray-800 rounded-b" @submit.prevent="createMeeting">
-          <FormInput label="Room location:" type="text" required v-model="location" />
-          <FormInput label="Slides URL:" type="url" v-model="slides" />
-          <FormInput label="Description:" type="text" v-model="description" />
 
-          <div class="flex items-center gap-3">
-            <DateTimeInput label="Start time:" no-past required v-model="startTime" />
-            <DateTimeInput label="End time:" no-past required v-model="endTime" />
-          </div>
+        <form class="p-4 md:p-5 space-y-4 dark:bg-gray-800 rounded-b" @submit.prevent="createMeeting">
+          <MeetingTimeSelection v-model="meeting" :meeting-time-selections="club.meetings" />
 
           <p v-if="errorMessage" class="text-red-500 italic mb-3">{{ errorMessage }}</p>
 

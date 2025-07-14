@@ -195,9 +195,15 @@ export async function lookupUser(email: string, authToken: string, env: Env) {
       displayName: string,
       photoUrl: string
     }[]
+  } | {
+    error: { message: string }
   }>({
-    email
+    email: [email]
   }, authToken, `${getIdentityToolkitUrl(env)}/projects/${env.GCP_PROJECT_ID}/accounts:lookup`);
+
+  if ("error" in userResult) {
+    throw new Error(`Firebase user lookup error: ${userResult.error.message}`);
+  }
 
   // no users
   if (userResult.users.length === 0) return null;

@@ -18,7 +18,7 @@ service cloud.firestore {
       return admin() || ("officerOf" in request.auth.token && clubId in request.auth.token.officerOf) || clubId in request.auth.token.memberOf;
     }
     function onlyChanged(keys) {
-      return debug(request.resource.data.diff(resource.data).affectedKeys()).hasOnly(keys);
+      return debug(request.resource.data.diff(resource.data)).affectedKeys().hasOnly(keys);
     }
     function listDiffHasOnly(list1, list2, targetDiff) {
       let set1 = list1.toSet();

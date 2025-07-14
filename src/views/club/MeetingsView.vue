@@ -62,8 +62,6 @@ async function takeAttendance(code: string) {
   try {
     attendanceError.value = "";
 
-    FieldPath
-
     await updateDoc(doc(props.clubDoc, "meeting_attendance", currentAttendanceMeeting.value!.id), new FieldPath("memberPresent", auth.currentUser.email!), code);
 
     showAttendanceDialog.value = false;
@@ -166,6 +164,6 @@ onMounted(async () => {
     </div>
   </div>
 
-  <CreateMeetingDialog v-model:show="showModal" @create-meeting="createMeeting" />
+  <CreateMeetingDialog v-model:show="showModal" :club="club" @create-meeting="createMeeting" />
   <TakeAttendanceDialog v-model:show="showAttendanceDialog" :error="attendanceError" @enter-code="takeAttendance" :meeting="currentAttendanceMeeting" />
 </template>
