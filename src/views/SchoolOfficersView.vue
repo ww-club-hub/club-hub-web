@@ -7,6 +7,7 @@ import { api, isTRPCClientError } from "@/api";
 import FormInput from "@/components/FormInput.vue";
 import { ref } from "vue";
 import { onMounted } from "vue";
+import { getCachedProfile } from "@/profiles";
 
 const { claims } = await getIdTokenResult(auth.currentUser!);
 const isOwner = claims.role === "owner";
@@ -21,17 +22,17 @@ onMounted(async () => {
   if (!stuco) {
     router.push({ name: 'school-detail' });
   }
-  
+
   const school = await getDoc(doc(db, "schools", claims.school as string));
-  
+
   // TODO: batch profile requests
   owner.value = {
-    ...await api.user.profile.query({ email: school.get("owner") }),
+    ...await getCachedProfile(school.get("owner")),
     email: school.get("owner")
   };
   admins.value = await Promise.all(school.get("admins").map(async (email: string) => ({
     email,
-    ...await api.user.profile.query({ email })
+    ...await getCachedProfile(email)
   })));
 });
 
@@ -40,14 +41,14 @@ const errorMessage = ref("");
 
 async function addAdmin() {
   if (!adminEmail.value) return;
-  
+
   if (owner.value?.email === adminEmail.value || admins.value.some(v => v.email === adminEmail.value)) {
     errorMessage.value = "This user is already an admin of this school";
     return;
   }
-  
+
   try {
-    const newAdmin = await api.user.profile.query({ email: adminEmail.value });
+    const newAdmin = await getCachedProfile(adminEmail.value);
     await api.school.admin.add.mutate({ adminEmail: adminEmail.value });
 
     admins.value.push({
@@ -57,7 +58,7 @@ async function addAdmin() {
     });
 
     adminEmail.value = "";
-    
+
     errorMessage.value = "";
   } catch (e) {
     if (isTRPCClientError(e)) {
@@ -73,11 +74,11 @@ async function addAdmin() {
 async function removeAdmin(i: number) {
   try {
     if (i < 0 || i >= admins.value.length) return;
-    
+
     const admin = admins.value[i];
-    
+
     await api.school.admin.remove.mutate({ adminEmail: admin.email });
-    
+
     admins.value.splice(i, 1);
   } catch (e) {
     if (isTRPCClientError(e)) {
@@ -89,11 +90,11 @@ async function removeAdmin(i: number) {
 async function transferOwnership(i: number) {
   try {
     if (i < 0 || i >= admins.value.length) return;
-    
+
     const admin = admins.value[i];
-    
+
     await api.school.admin.transferOwnership.mutate({ adminEmail: admin.email });
-    
+
     // complete reload
     await getIdToken(auth.currentUser!, true);
     router.go(0);
@@ -134,7 +135,7 @@ async function transferOwnership(i: number) {
           <button type="button" @click="removeAdmin(i)" v-if="owner">
             <span class="sr-only">Remove admin</span>
           </button>
-          
+
           <button type="button" @click="transferOwnership(i)" v-if="owner">
             <span class="sr-only">Make owner</span>
           </button>
@@ -143,7 +144,7 @@ async function transferOwnership(i: number) {
 
       <form @submit.prevent="addAdmin" class="flex items-end gap-3 max-w-screen-sm" v-if="owner">
         <FormInput type="email" v-model="adminEmail" label="New admin email" class="grow" label-style="placeholder" required />
-        
+
         <button type="submit" class="flex items-center justify-center text-white bg-orange-700 hover:bg-orange-800 focus:ring-4 focus:ring-orange-300 font-medium rounded-lg text-sm px-4 py-3 dark:bg-orange-600 dark:hover:bg-orange-700 focus:outline-hidden dark:focus:ring-orange-800">
           <svg class="h-3.5 w-3.5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <path clip-rule="evenodd" fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" />

@@ -2,13 +2,15 @@ import { z } from "zod";
 import { AUTH_SCOPE, lookupUser,  makeServiceAccountToken } from "../../firebase";
 import { publicProcedure } from "../../trpc";
 import { TRPCError } from "@trpc/server";
+import { authedProcedure } from "../../utils";
+import { UserClaims } from "../../types";
 
 const GetProfileReq = z.object({
   email: z.string().email()
 });
 
 // public endpoint to get a user's public profile info
-export default publicProcedure
+export default authedProcedure
   .input(GetProfileReq)
   .query(async ({ ctx, input }) => {
     // TODO: did we need to cache this?
@@ -23,7 +25,7 @@ export default publicProcedure
 
     const user = await lookupUser(input.email, authToken, ctx.env);
 
-    ctx.resHeaders.set("Cache-Control", "max-age=604800, public, stale-while-revalidate");
+    ctx.resHeaders.set("Cache-Control", "max-age=604800, stale-while-revalidate");
 
     if (!user) {
       throw new TRPCError({
@@ -31,7 +33,16 @@ export default publicProcedure
         message: "user not found"
       });
     }
-    
+
+    const attrs = JSON.parse(user.customAttributes) as UserClaims;
+
+    if (attrs.school !== ctx.user.school) {
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "You are not authorized to view this user's profile"
+      });
+    }
+
     return {
       success: true,
       displayName: user.displayName as string,

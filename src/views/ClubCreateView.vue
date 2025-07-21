@@ -8,6 +8,7 @@ import { useRouter } from "vue-router";
 import { addDoc, collection } from "firebase/firestore";
 import { api, isTRPCClientError } from "@/api";
 import FormInput from "@/components/FormInput.vue";
+import { getCachedProfile } from "@/profiles";
 
 const claims = (await getIdTokenResult(auth.currentUser!)).claims as UserClaims;
 const stuco = claims.role == "owner" || claims.role == "admin";
@@ -29,10 +30,10 @@ const errorMessage = ref("");
 
 async function onFormSubmit() {
   errorMessage.value = "";
-  
+
   try {
     // fetch president name
-    const { displayName } = await api.user.profile.query({ email: president.value });
+    const { displayName } = await getCachedProfile(president.value)
     const officers = {
       [president.value]: {
         name: displayName as string,
@@ -50,18 +51,18 @@ async function onFormSubmit() {
         type: ClubSignupType.Private
       }
     };
-    
+
     const doc = await addDoc(collection(db, "schools", claims.school, "clubs"), club);
 
     // update officers
     await api.club.officers.mutate({ clubId: doc.id, officers });
-    
+
     router.push({ name: "club-list" });
   } catch (err) {
     if (isTRPCClientError(err)) {
       if (err.data?.code === "NOT_FOUND")
         errorMessage.value = `The president email ${president.value} is not associated with any ClubHub account.`;
-      
+
       // else, generic error
       else errorMessage.value = err.message;
     }
