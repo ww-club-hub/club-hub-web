@@ -62,7 +62,7 @@ async function takeAttendance(code: string) {
   try {
     attendanceError.value = "";
 
-    await updateDoc(doc(props.clubDoc, "meeting_attendance", currentAttendanceMeeting.value!.id), new FieldPath("memberPresent", auth.currentUser.email!), code);
+    await updateDoc(doc(props.clubDoc, "meeting_attendance", currentAttendanceMeeting.value!.id), new FieldPath("membersPresent", auth.currentUser.email!), code);
 
     showAttendanceDialog.value = false;
     currentAttendanceMeeting.value = null;
@@ -116,17 +116,15 @@ async function handleRsvp(meeting: DocWithId<ClubMeeting>, canAttend: boolean) {
   });
 }
 
-onMounted(async () => {
-  await refreshMeetings();
+await refreshMeetings();
 
-  if (route.query.meetingId) {
-    const meeting = currentMeetings.value.find(el => el.id === route.query.meetingId);
-    if (meeting) {
-      showAttendanceDialog.value = true;
-      currentAttendanceMeeting.value = meeting;
-    }
+if (route.query.meetingId) {
+  const meeting = currentMeetings.value.find(el => el.id === route.query.meetingId);
+  if (meeting) {
+    showAttendanceDialog.value = true;
+    currentAttendanceMeeting.value = meeting;
   }
-});
+}
 </script>
 
 <template>
@@ -151,7 +149,7 @@ onMounted(async () => {
     </div>
 
     <div>
-      <h2 class="text-lg tracking-tight uppercase font-semibold text-gray-800 dark:text-gray-100 mb-2">Current meetings:</h2>
+      <h2 class="text-lg tracking-tight uppercase font-semibold text-gray-800 dark:text-gray-100 mb-2">Active meetings:</h2>
       <div v-if="currentMeetings.length > 0" class="flex gap-3 flex-row flex-wrap md:flex-col">
         <MeetingCard
           v-for="meeting in currentMeetings" :key="meeting.id" :meeting="meeting" :club="club"
