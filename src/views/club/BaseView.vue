@@ -6,6 +6,7 @@ import { doc } from "firebase/firestore";
 import ClubTabLink from "@/components/ClubTabLink.vue";
 import { getClaims, typedGetDoc } from "@/utils";
 import { getIdToken } from "@firebase/auth";
+import Loader from "@/components/Loader.vue";
 
 const route = useRoute();
 
@@ -95,7 +96,13 @@ await checkAuthClaimDesync();
     </div>
     <div class="max-w-screen-2xl mx-auto p-4">
       <router-view v-slot="{ Component }">
-        <component :is="Component" :role="role" :school="claims.school" :club="club" :club-doc="clubDoc" />
+        <Suspense>
+          <component :is="Component" :role="role" :school="claims.school" :club="club" :club-doc="clubDoc" />
+
+          <template #fallback>
+            <Loader/>
+          </template>
+        </Suspense>
       </router-view>
     </div>
   </section>

@@ -4,7 +4,7 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
 import GoogleSignInPlugin from 'vue3-google-signin'
-import setupCalendar from 'v-calendar'
+import { setupCalendar } from 'v-calendar'
 
 const app = createApp(App)
 
