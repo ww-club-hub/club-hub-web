@@ -31,6 +31,13 @@ export function getNextDayOfWeekDate(targetDay: number, fromDate: Date = new Dat
   return resultDate;
 }
 
+export function dateToISODateString(date: Date) {
+  const y = date.getFullYear();
+  const m = (date.getMonth() + 1).toString().padStart(2, "0");
+  const d = date.getDate().toString().padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 /**
  * Formats a single ClubMeetingTime object into a human-readable string.
  */

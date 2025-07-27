@@ -6,7 +6,6 @@ import { useRoute, useRouter } from "vue-router";
 import { doc, setDoc } from "firebase/firestore";
 import { onMounted } from "vue";
 import FormInput from "@/components/FormInput.vue";
-import TimeInput from "@/components/TimeInput.vue";
 import GeneralMeetingTimeSelection from "@/components/GeneralMeetingTimeSelection.vue";
 import FormSelect from "@/components/FormSelect.vue";
 
@@ -74,7 +73,7 @@ onMounted(async () => {
 
     <h3 class="text-lg font-bold text-black dark:text-white mb-2">Usual meeting times:</h3>
     <p class="text-black dark:text-white">This gives members an idea of when meetings usually occur for this club. You can schedule specific meetings on the meetings page.</p>
-    <div class="lg:columns-2 gap-3" v-if="club.meetings?.length > 0">
+    <div class="gap-3" v-if="club.meetings?.length > 0">
       <GeneralMeetingTimeSelection v-for="_, i in club.meetings" :key="i" v-model="club.meetings[i]" />
     </div>
     <p v-else class="italic text-black dark:text-white">No meeting times set...</p>

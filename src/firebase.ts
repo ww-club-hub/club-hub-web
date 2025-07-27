@@ -1,6 +1,6 @@
 import { FirebaseError, initializeApp } from "firebase/app";
 import { getAuth, connectAuthEmulator } from "firebase/auth";
-import { getFirestore, connectFirestoreEmulator, type DocumentData, type DocumentReference, type DocumentSnapshot, getDocFromCache, getDocFromServer } from "firebase/firestore";
+import { connectFirestoreEmulator, type DocumentData, type DocumentReference, type DocumentSnapshot, getDocFromCache, getDocFromServer, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, enablePersistentCacheIndexAutoCreation, getPersistentCacheIndexManager } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -14,8 +14,13 @@ const firebaseConfig = {
 
 // Initialize Firebase
 export const app = initializeApp(firebaseConfig);
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager()
+  })
+});
+
 export const auth = getAuth(app);
-export const db = getFirestore(app);
 
 // setup emulators
 if (import.meta.env.DEV) {
@@ -24,6 +29,8 @@ if (import.meta.env.DEV) {
   });
   connectFirestoreEmulator(db, ...FIRESTORE_EMULATOR);
 }
+
+enablePersistentCacheIndexAutoCreation(getPersistentCacheIndexManager(db)!);
 
 export async function tryGetDocFromCache<A, D extends DocumentData>(ref: DocumentReference<A, D>): Promise<DocumentSnapshot<A, D>> {
   try {

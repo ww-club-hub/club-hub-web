@@ -110,6 +110,9 @@ export interface ClubMeeting {
   endTime: Timestamp,
   description?: string,
   slides?: string,
+
+  // used for only fetching meetings updated since a certain time
+  lastUpdated: Timestamp
 }
 
 // /meeting_attendance/{id}

@@ -4,7 +4,7 @@ import FormInput from './FormInput.vue';
 import TimeInput from './TimeInput.vue';
 import type { ClubMeeting, ClubMeetingTime } from '@/schema';
 import { Timestamp } from 'firebase/firestore';
-import { formatMeetingTime, getNextDayOfWeekDate } from "@/utils";
+import { dateToISODateString, formatMeetingTime, getNextDayOfWeekDate } from "@/utils";
 import FormSelect from './FormSelect.vue';
 
 const meeting = defineModel<ClubMeeting>({ required: true });
@@ -26,7 +26,7 @@ watch(
   (val) => {
     if (val?.startTime) {
       const startTime = val.startTime.toDate();
-      date.value = startTime.toISOString().slice(0, 10);
+      date.value = dateToISODateString(startTime);
       startMinutes.value = startTime.getHours() * 60 + startTime.getMinutes();
     } else {
       date.value = undefined;
@@ -50,7 +50,7 @@ watch(autofillIndex, idx => {
     if (autofill.type === 'time') {
       // time sessions - set start, end, and room// Autofill date to nearest day of week in the future (including current day)
 
-      date.value = getNextDayOfWeekDate(autofill.day).toISOString().slice(0, 10);
+      date.value = dateToISODateString(getNextDayOfWeekDate(autofill.day));
 
       meeting.value.location = autofill.room;
       startMinutes.value = autofill.start;
@@ -97,7 +97,7 @@ watch([date, startMinutes, endMinutes], () => {
         v-model="date"
         required
         class="mb-0 w-full flex-1"
-        :min="new Date().toISOString().slice(0, 10)"
+        :min="dateToISODateString(new Date())"
       />
     </div>
     <!-- start/end time -->

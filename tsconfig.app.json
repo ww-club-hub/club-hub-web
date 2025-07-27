@@ -12,6 +12,7 @@
     },
     "plugins": [{
       "name": "@vue/typescript-plugin"
-    }]
+    }],
+    "noErrorTruncation": true
   }
 }
