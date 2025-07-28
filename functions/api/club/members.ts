@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AUTH_SCOPE, FIRESTORE_SCOPE, getFirestoreUrl, getIdentityToolkitUrl, makeServiceAccountToken, parseFirestoreObject, makeFirestoreField, updateUserRoles, lookupUser, getUserAttributes } from "../../firebase";
+import { AUTH_SCOPE, FIRESTORE_SCOPE, getFirestoreUrl, getIdentityToolkitUrl, makeServiceAccountToken, parseFirestoreObject, makeFirestoreField, updateUserRoles, lookupUser, getUserAttributes, makeFirestoreDocPath } from "../../firebase";
 import { ClubSignupType, FirestoreFieldObject, FirestoreRestDocument, OfficerPermission, UserClaims } from "../../types";
 import { authedJsonRequest, authedProcedure, checkOfficerPermission } from "../../utils";
 import { TRPCError } from "@trpc/server";
@@ -32,7 +32,7 @@ export default authedProcedure
 
       // fetch more info about this user
       const userDetails = await lookupUser(input.memberEmail, authToken, ctx.env);
-      
+
       const attrs = getUserAttributes(userDetails);
       // make sure the user exists and they are part of this school
       if (!userDetails || attrs?.school !== ctx.user.school) {
@@ -50,7 +50,7 @@ export default authedProcedure
       const queryResponse = await authedJsonRequest(
         null,
         firestoreToken,
-        `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents/schools/${ctx.user.school}/clubs/${input.clubId}?mask.fieldPaths=signup`,
+        makeFirestoreDocPath(ctx.env, `/schools/${ctx.user.school}/clubs/${input.clubId}?mask.fieldPaths=signup`),
         "GET"
       ) as FirestoreRestDocument;
 
@@ -87,7 +87,7 @@ export default authedProcedure
       {
         writes: [{
           transform: {
-            document: `projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents/schools/${ctx.user.school}/clubs_private/${input.clubId}`,
+            document: makeFirestoreDocPath(ctx.env, `/schools/${ctx.user.school}/clubs_private/${input.clubId}`, false),
             fieldTransforms: [{
               fieldPath: "members",
               appendMissingElements: makeFirestoreField([userEmail]).arrayValue
@@ -96,7 +96,7 @@ export default authedProcedure
         }]
       },
       firestoreToken,
-      `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents:batchWrite`
+      makeFirestoreDocPath(ctx.env, `:batchWrite`)
     );
 
     return {

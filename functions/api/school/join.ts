@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AUTH_SCOPE, FIRESTORE_SCOPE, getFirestoreUrl, makeServiceAccountToken, parseFirestoreObject, makeFirestoreField } from "../../firebase";
+import { AUTH_SCOPE, FIRESTORE_SCOPE, makeServiceAccountToken, parseFirestoreObject, makeFirestoreField, makeFirestoreDocPath } from "../../firebase";
 import { FirestoreRestDocument } from "../../types";
 import { authedJsonRequest, authedProcedure } from "../../utils";
 import { updateUserRoles } from "../../firebase";
@@ -21,7 +21,7 @@ export default authedProcedure
     const queryResponse = await authedJsonRequest(
       null,
       firestoreToken,
-      `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents/schools/${input.schoolId}`,
+      makeFirestoreDocPath(ctx.env, `/schools/${input.schoolId}`),
       "GET"
     ) as FirestoreRestDocument;
 
@@ -39,7 +39,7 @@ export default authedProcedure
       {
         writes: [{
           transform: {
-            document: `projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents/schools/${input.schoolId}`,
+            document: makeFirestoreDocPath(ctx.env, `/schools/${input.schoolId}`, false),
             fieldTransforms: [{
               fieldPath: "members",
               appendMissingElements: makeFirestoreField([ctx.user.email]).arrayValue
@@ -48,7 +48,7 @@ export default authedProcedure
         }]
       },
       firestoreToken,
-      `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents:batchWrite`
+      makeFirestoreDocPath(ctx.env, `:batchWrite`)
     );
 
     await updateUserRoles(ctx.env, authToken, ctx.user.user_id, ctx.user, {

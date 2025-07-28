@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { authedJsonRequest, authedProcedure } from "../../utils";
-import { AUTH_SCOPE, FIRESTORE_SCOPE, getFirestoreUrl, makeFirestoreField, makeServiceAccountToken, updateUserRoles, getIdentityToolkitUrl, getUserAttributes, lookupUser } from "../../firebase";
+import { AUTH_SCOPE, FIRESTORE_SCOPE, makeFirestoreDocPath, makeFirestoreField, makeServiceAccountToken, updateUserRoles, getIdentityToolkitUrl, getUserAttributes, lookupUser } from "../../firebase";
 import { UserClaims } from "../../types";
 import { TRPCError } from "@trpc/server";
 
@@ -11,14 +11,14 @@ const AdminModReq = z.object({
 export const removeAdmin = authedProcedure
   .input(AdminModReq)
   .mutation(async ({ ctx, input }) => {
-    // verify permissions  
+    // verify permissions
     if (ctx.user.role !== "owner") {
       throw new TRPCError({
         code: "FORBIDDEN",
         message: "You must be a school owner in order to modify school admins"
       });
     }
-    
+
     const firestoreToken = await makeServiceAccountToken(ctx.env, FIRESTORE_SCOPE);
     const authToken = await makeServiceAccountToken(ctx.env, AUTH_SCOPE);
 
@@ -33,13 +33,13 @@ export const removeAdmin = authedProcedure
         await updateUserRoles(ctx.env, authToken, user.localId, attrs, {
           role: ""
         });
-        
+
         // add to officer list
         await authedJsonRequest(
           {
             writes: [{
               transform: {
-                document: `projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents/schools/${ctx.user.school}`,
+                document: makeFirestoreDocPath(ctx.env, `/schools/${ctx.user.school}`, false),
                 fieldTransforms: [{
                   fieldPath: "admins",
                   removeAllFromArray: makeFirestoreField([input.adminEmail]).arrayValue
@@ -48,7 +48,7 @@ export const removeAdmin = authedProcedure
             }]
           },
           firestoreToken,
-          `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents:batchWrite`
+          makeFirestoreDocPath(ctx.env, `:batchWrite`)
         );
 
         return {
@@ -67,14 +67,14 @@ export const removeAdmin = authedProcedure
 export const transferOwnership = authedProcedure
   .input(AdminModReq)
   .mutation(async ({ ctx, input }) => {
-    // verify permissions  
+    // verify permissions
     if (ctx.user.role !== "owner") {
       throw new TRPCError({
         code: "FORBIDDEN",
         message: "You must be a school owner in order to modify school admins"
       });
     }
-    
+
     const firestoreToken = await makeServiceAccountToken(ctx.env, FIRESTORE_SCOPE);
     const authToken = await makeServiceAccountToken(ctx.env, AUTH_SCOPE);
 
@@ -92,7 +92,7 @@ export const transferOwnership = authedProcedure
         await updateUserRoles(ctx.env, authToken, ctx.user.user_id, ctx.user, {
           role: "admin"
         });
-        
+
         // update doc
         await authedJsonRequest(
           {
@@ -103,13 +103,13 @@ export const transferOwnership = authedProcedure
                 ]
               },
               update: {
-                name: `projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents/schools/${ctx.user.school}`,
+                name: makeFirestoreDocPath(ctx.env, `/schools/${ctx.user.school}`, false),
                 ...makeFirestoreField({
                   // make them an admin
                   owner: input.adminEmail
                 }).mapValue
               },
-              
+
               updateTransforms: [{
                 fieldPath: "admins",
                 // remove the old admin from the admin array
@@ -120,7 +120,7 @@ export const transferOwnership = authedProcedure
             }]
           },
           firestoreToken,
-          `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents:batchWrite`
+          makeFirestoreDocPath(ctx.env, `:batchWrite`)
         );
 
         return {
@@ -139,14 +139,14 @@ export const transferOwnership = authedProcedure
 export const addAdmin = authedProcedure
   .input(AdminModReq)
   .mutation(async ({ ctx, input }) => {
-    // verify permissions  
+    // verify permissions
     if (ctx.user.role !== "owner") {
       throw new TRPCError({
         code: "FORBIDDEN",
         message: "You must be a school owner in order to modify school admins"
       });
     }
-    
+
     const firestoreToken = await makeServiceAccountToken(ctx.env, FIRESTORE_SCOPE);
     const authToken = await makeServiceAccountToken(ctx.env, AUTH_SCOPE);
 
@@ -159,13 +159,13 @@ export const addAdmin = authedProcedure
         await updateUserRoles(ctx.env, authToken, user.localId, attrs, {
           role: "admin"
         });
-        
+
         // add to officer list
         await authedJsonRequest(
           {
             writes: [{
               transform: {
-                document: `projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents/schools/${ctx.user.school}`,
+                document: makeFirestoreDocPath(ctx.env, `/schools/${ctx.user.school}`, false),
                 fieldTransforms: [{
                   fieldPath: "admins",
                   appendMissingElements: makeFirestoreField([input.adminEmail]).arrayValue
@@ -174,7 +174,7 @@ export const addAdmin = authedProcedure
             }]
           },
           firestoreToken,
-          `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents:batchWrite`
+          makeFirestoreDocPath(ctx.env, `:batchWrite`)
         );
 
         return {
@@ -189,4 +189,3 @@ export const addAdmin = authedProcedure
       message: "user not found"
     });
   });
-

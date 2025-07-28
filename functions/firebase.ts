@@ -15,6 +15,11 @@ export function getFirestoreUrl(env: Env) {
   }
 }
 
+export function makeFirestoreDocPath(env: Env, docPath: string, absolute: boolean = true): string {
+  const base = `projects/${env.GCP_PROJECT_ID}/databases/(default)/documents${docPath}`;
+  return absolute ? `${getFirestoreUrl(env)}/${base}` : base;
+}
+
 export function getIdentityToolkitUrl(env: Env) {
   if (env.USE_EMULATOR) {
     return "http://localhost:9099/identitytoolkit.googleapis.com/v1";
@@ -207,7 +212,7 @@ export async function lookupUser(email: string, authToken: string, env: Env) {
 
   // no users
   if (userResult.users.length === 0) return null;
-  
+
   return userResult.users[0];
 }
 

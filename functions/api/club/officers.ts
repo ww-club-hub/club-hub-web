@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AUTH_SCOPE, FIRESTORE_SCOPE, getFirestoreUrl, getIdentityToolkitUrl, makeServiceAccountToken, updateUserRoles, parseFirestoreObject, makeFirestoreField } from "../../firebase";
+import { AUTH_SCOPE, FIRESTORE_SCOPE, makeFirestoreDocPath, getIdentityToolkitUrl, makeServiceAccountToken, updateUserRoles, parseFirestoreObject, makeFirestoreField } from "../../firebase";
 import { FirestoreRestDocument, OfficerPermission } from "../../types";
 import { authedJsonRequest, authedProcedure, checkOfficerPermission } from "../../utils";
 import { TRPCError } from "@trpc/server";
@@ -31,7 +31,7 @@ export default authedProcedure
     const queryResponse = await authedJsonRequest(
       null,
       firestoreToken,
-      `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents/schools/${ctx.user.school}/clubs/${input.clubId}?mask.fieldPaths=name&mask.fieldPaths=officers`,
+      makeFirestoreDocPath(ctx.env, `/schools/${ctx.user.school}/clubs/${input.clubId}?mask.fieldPaths=name&mask.fieldPaths=officers`),
       "GET"
     ) as FirestoreRestDocument;
 
@@ -83,7 +83,7 @@ export default authedProcedure
         officers: Object.fromEntries(Object.entries(input.officers).map(([k, v]) => [btoa(k), v]))
       }).mapValue,
       firestoreToken,
-      `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents/schools/${ctx.user.school}/clubs/${input.clubId}?updateMask.fieldPaths=officers`,
+      makeFirestoreDocPath(ctx.env, `/schools/${ctx.user.school}/clubs/${input.clubId}?updateMask.fieldPaths=officers`),
       "PATCH"
     );
 

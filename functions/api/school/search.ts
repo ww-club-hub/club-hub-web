@@ -1,4 +1,4 @@
-import {  makeServiceAccountToken, FIRESTORE_SCOPE, getFirestoreUrl, getFirestoreDocId, parseFirestoreObject } from "../../firebase";
+import {  makeServiceAccountToken, FIRESTORE_SCOPE, makeFirestoreDocPath, getFirestoreDocId, parseFirestoreObject } from "../../firebase";
 import { FirestoreRestDocument, QueryResponse } from "../../types";
 import { authedJsonRequest, authedProcedure } from "../../utils";
 import { z } from "zod";
@@ -11,7 +11,7 @@ export default authedProcedure
   .input(SearchReq)
   .query(async ({ ctx, input }) => {
     const userEmailDomain = ctx.user.email.split("@")[1];
-    
+
     const firestoreToken = await makeServiceAccountToken(ctx.env, FIRESTORE_SCOPE);
 
     const query = input.query.toLowerCase();
@@ -72,7 +72,7 @@ export default authedProcedure
         }
       },
       firestoreToken,
-      `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents:runQuery`
+      makeFirestoreDocPath(ctx.env, `:runQuery`)
     ) as QueryResponse;
 
     // parse docsg
