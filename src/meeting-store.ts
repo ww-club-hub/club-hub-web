@@ -5,17 +5,23 @@ import { openDB, type DBSchema } from "idb";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "./firebase";
 import { collection, query, where } from "firebase/firestore";
+import api from "./api";
 
 type MeetingSection = [clubId: string, month: Date];
+type ClubMeetingWithId = DocWithId<ClubMeeting> & { clubId: string };
 
 interface MeetingsDB extends DBSchema {
   meetings: {
     key: string; // id from DocWithId<ClubMeeting>
-    value: DocWithId<ClubMeeting>;
+    value: ClubMeetingWithId;
     indexes: {
       lastUpdated: number;
-      startTime: number;
+      endTime: number;
     };
+  };
+  meetingAttendance: {
+    key: string;
+    value: boolean;
   };
   monthSyncTime: {
     key: MeetingSection;
@@ -32,10 +38,13 @@ function getDB() {
           const store = db.createObjectStore("meetings", { keyPath: "id" });
           // These are Firestore Timestamp values
           store.createIndex("lastUpdated", ["lastUpdated", "seconds"]);
-          store.createIndex("startTime", ["startTime", "seconds"]);
+          store.createIndex("endTime", ["endTime", "seconds"]);
         }
         if (!db.objectStoreNames.contains("monthSyncTime")) {
           db.createObjectStore("monthSyncTime");
+        }
+        if (!db.objectStoreNames.contains("meetingAttendance")) {
+          db.createObjectStore("meetingAttendance");
         }
       }
     });
@@ -68,8 +77,12 @@ const meetingStore = defineStore("meetings", {
   state: () => ({
     _initialized: false,
     loadedSections: new Set<MeetingSection>(),
-    meetings: [] as DocWithId<ClubMeeting>[]
+    meetings: [] as ClubMeetingWithId[],
+    meetingAttendance: new Map<string, boolean>()
   }),
+  getters: {
+    meetingsForClub: state => (clubId: string) => state.meetings.filter(el => el.clubId == clubId)
+  },
   actions: {
     // clear loaded meetings and also wipe idb
     async clear() {
@@ -129,7 +142,7 @@ const meetingStore = defineStore("meetings", {
 
       const tx = db.transaction(["meetings", "monthSyncTime"], "readwrite");
       const syncTimes = tx.objectStore("monthSyncTime");
-      const newDocs: Promise<DocWithId<ClubMeeting>[]>[] = [];
+      const newDocs: Promise<ClubMeetingWithId[]>[] = [];
 
       // Get last sync times for all sections to load
       for (const section of sectionsToLoad) {
@@ -139,7 +152,15 @@ const meetingStore = defineStore("meetings", {
         // more than two days ago
         if (lastSync < twoDaysAgo) {
           // fetch
-          newDocs.push(fetchMeetingSection(section, lastSync));
+          // Track clubId from section[0] through this
+          newDocs.push(
+            fetchMeetingSection(section, lastSync).then(meetings =>
+              meetings.map(meeting => ({
+                ...meeting,
+                clubId: section[0]
+              }))
+            )
+          );
 
           // update sync time
           await syncTimes.put(now, section);
@@ -156,13 +177,88 @@ const meetingStore = defineStore("meetings", {
         await db.put("meetings", meeting);
         this.meetings.push(meeting);
       }
+
+      // fetch and load attendance
+      await this.fetchMissingAttendance();
+      // Load attendance from IDB for all currently loaded meetings
+      const attendanceTx = db.transaction("meetingAttendance", "readonly");
+      const attendanceStore = attendanceTx.objectStore("meetingAttendance");
+
+      // Get all meeting IDs currently loaded
+      const loadedMeetingIds = this.meetings.map(meeting => meeting.id);
+
+      // Fetch attendance for each loaded meeting and update the map
+      for (const meetingId of loadedMeetingIds) {
+        if (this.meetingAttendance.has(meetingId)) continue;
+        const present = await attendanceStore.get(meetingId);
+        if (typeof present === "boolean") {
+          this.meetingAttendance.set(meetingId, present);
+        }
+      }
+
+      await attendanceTx.done;
     },
 
     // temporarily add a meeting that was just created
-    async addMeeting(meeting: DocWithId<ClubMeeting>) {
-      this.meetings.push(meeting);
+    async addMeeting(meeting: DocWithId<ClubMeeting>, clubId: string) {
+      // Ensure meeting has clubId properties
+      const meetingWithId: ClubMeetingWithId = {
+        ...meeting,
+        clubId
+      };
+      this.meetings.push(meetingWithId);
       const db = await getDB();
-      await db.put("meetings", meeting);
+      await db.put("meetings", meetingWithId);
+    },
+
+    // set the attendance for a specific meeting (used when succesfully entering code)
+    async setAttendance(meetingId: string, present: boolean) {
+      const db = await getDB();
+      await db.put("meetingAttendance", present, meetingId);
+    },
+
+    // fetch the attendance for all meetings without a fetched attendance
+    async fetchMissingAttendance() {
+      const db = await getDB();
+      const tx1 = db.transaction(["meetings", "meetingAttendance"], "readwrite");
+      const meetingsStore = tx1.objectStore("meetings");
+      let attendanceStore = tx1.objectStore("meetingAttendance");
+
+      // Only consider meetings that have ended (endTime at least 30 minutes ago)
+      const nowSeconds = Math.floor(Date.now() / 1000);
+      const endTimeIndex = meetingsStore.index("endTime");
+      const endedMeetingIds = await endTimeIndex
+        .getAll(IDBKeyRange.upperBound(Math.floor(nowSeconds - 30 * 60)))
+        // get the meeting id
+        .then(m => m.map(meeting => ({ id: meeting.id, clubId: meeting.clubId })));
+
+      const meetingsWithAttendance = await attendanceStore.getAllKeys();
+
+      await tx1.done;
+
+      const meetingsMissingAttendance = endedMeetingIds.filter(
+        meeting => !meetingsWithAttendance.includes(meeting.id)
+      );
+      if (meetingsMissingAttendance.length === 0) {
+        // nothing to do
+        return;
+      }
+
+      const { presentMeetings } = await api.club.attendance.query.query({
+        meetings: meetingsMissingAttendance
+      });
+
+      // Re-create the transaction - after fetch
+      const tx2 = db.transaction("meetingAttendance", "readwrite");
+      attendanceStore = tx2.objectStore("meetingAttendance");
+
+      // Mark attendance in IDB
+      for (const meeting of meetingsMissingAttendance) {
+        const present = presentMeetings.includes(meeting.id);
+        await attendanceStore.put(present, meeting.id);
+      }
+
+      await tx2.done;
     }
   }
 });

@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import {  makeServiceAccountToken, FIRESTORE_SCOPE, makeFirestoreDocPath } from "../../../firebase";
+import { makeServiceAccountToken, FIRESTORE_SCOPE, makeFirestoreDocPath } from "../../../firebase";
 import { AggregationQueryResponse, FirestoreRestDocument, OfficerPermission, QueryResponse } from "../../../types";
 import { authedJsonRequest, authedProcedure } from "../../../utils";
 import { z } from "zod";

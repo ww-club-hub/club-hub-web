@@ -13,7 +13,7 @@ const TakeAttendanceReq = z.object({
 export default authedProcedure
   .input(TakeAttendanceReq)
   .mutation(async ({ ctx, input }) => {
-    if (!ctx.user.memberOf.includes(input.clubId)) {
+    if (!ctx.user.memberOf?.includes(input.clubId)) {
       throw new Error("User is not a member of this club.");
     }
 

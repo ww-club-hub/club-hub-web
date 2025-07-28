@@ -71,7 +71,7 @@ async function createMeeting(meeting: ClubMeeting) {
     lastUpdated: Timestamp.now()
   };
 
-  meetings.addMeeting(meetingDoc);
+  meetings.addMeeting(meetingDoc, props.club.id);
 
   showModal.value = false;
 }
@@ -112,6 +112,16 @@ async function handleRsvp(meeting: DocWithId<ClubMeeting>, canAttend: boolean) {
   });
 }
 
+/*
+ * Get the dot color for the given meeting
+*/
+function getMeetingAttendanceColor(meetingId: string) {
+  const attendancestatus = meetings.meetingAttendance.get(meetingId);
+  if (attendancestatus === null) return "gray";
+  if (attendancestatus) return "green";
+  return "red";
+}
+
 // Initial meeting dialog open by query param
 if (route.query.meetingId) {
   const meeting = activeMeetings.value.find(el => el.id === route.query.meetingId);
@@ -124,8 +134,9 @@ if (route.query.meetingId) {
 onMounted(async () => {
   const now = new Date();
 
+  // load current month meetings for calendar
+  await meetings.loadSection([props.club.id, new Date(now.getFullYear(), now.getMonth())]);
 
-  // Wait for monthMeetings to update with correct params
   // Fetch meetings whose endTime is >= 30 minutes ago, order by startTime ascending, limit 6
   const nowMillis = now.getTime();
   const THIRTY_MIN_MS = 30 * 60 * 1000;
@@ -200,7 +211,7 @@ onMounted(async () => {
       <div class="bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700 inline-block p-3">
         <!-- Month view of meetings for the current month using VCalendar -->
         <Calendar
-          :attributes="meetings.meetings.map(meeting => ({
+          :attributes="meetings.meetingsForClub(club.id).map(meeting => ({
             key: meeting.id,
             dates: [meeting.startTime.toDate()],
             highlight: { fillMode: 'light' },
@@ -209,7 +220,7 @@ onMounted(async () => {
               visibility: 'hover'
             },
             dot: {
-              color: 'red',
+              color: getMeetingAttendanceColor(meeting.id)
             },
             customData: meeting,
           }))"
