@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
-import {  makeServiceAccountToken, FIRESTORE_SCOPE, getFirestoreUrl, getFirestoreDocId, parseFirestoreObject, parseFirestoreField } from "../../../firebase";
-import { FirestoreRestDocument, OfficerPermission, QueryResponse } from "../../../types";
+import {  makeServiceAccountToken, FIRESTORE_SCOPE, makeFirestoreDocPath } from "../../../firebase";
+import { AggregationQueryResponse, FirestoreRestDocument, OfficerPermission, QueryResponse } from "../../../types";
 import { authedJsonRequest, authedProcedure } from "../../../utils";
 import { z } from "zod";
 
@@ -29,34 +29,78 @@ export default authedProcedure
 
     const firestoreToken = await makeServiceAccountToken(ctx.env, FIRESTORE_SCOPE);
 
-    const queryResponse = await authedJsonRequest(
+    // count documents that contain this user present
+    const presentQueryResponse = await authedJsonRequest(
       {
-        structuredQuery: {
-          select: {
-            fields: [
-              {
-                fieldPath: "membersPresent"
-              },
-              {
-                fieldPath: "__name__"
+        structuredAggregationQuery: {
+          aggregations: [
+            {
+              count: {},
+              alias: "numPresent"
+            }
+          ],
+          structuredQuery: {
+            from: [{
+              collectionId: `schools/${ctx.user.school}/clubs/${input.clubId}/meeting_attendance`
+            }],
+            where: {
+              fieldFilter: {
+                field: { fieldPath: "membersPresent" },
+                op: "ARRAY_CONTAINS",
+                value: { stringValue: ctx.user.email }
               }
-            ]
-          },
-          from: [{
-            collectionId: `schools/${ctx.user.school}/clubs/${input.clubId}/meeting_attendance`
-          }],
+            }
+          }
         }
       },
       firestoreToken,
-      `${getFirestoreUrl(ctx.env)}/projects/${ctx.env.GCP_PROJECT_ID}/databases/(default)/documents:runQuery`
-    ) as QueryResponse;
+      makeFirestoreDocPath(ctx.env, `:runAggregationQuery`)
+    ) as AggregationQueryResponse;
 
-    const docs = queryResponse.filter(el => el.document).map(el => parseFirestoreObject(el.document!.fields));
+    // count all documents
+    const allQueryResponse = await authedJsonRequest(
+      {
+        structuredAggregationQuery: {
+          aggregations: [
+            {
+              count: {},
+              alias: "numTotal"
+            }
+          ],
+          structuredQuery: {
+            from: [{
+              collectionId: `schools/${ctx.user.school}/clubs/${input.clubId}/meetings`
+            }],
+            where: {
+              fieldFilter: {
+                field: { fieldPath: "startTime" },
+                op: "LESS_THAN_OR_EQUAL",
+                value: { timestampValue: new Date().toISOString() }
+              }
+            }
+          }
+        }
+      },
+      firestoreToken,
+      makeFirestoreDocPath(ctx.env, `:runAggregationQuery`)
+    ) as AggregationQueryResponse;
 
-    const numPresent = docs.filter(el => memberId in (el.membersPresent as Record<string, string>)).length;
+    // Extract numPresent from presentQueryResponse
+    let numPresent = 0;
+    const numPresentValue = presentQueryResponse[0]?.result?.aggregateFields?.numPresent?.integerValue;
+    if (numPresentValue) {
+      numPresent = parseInt(numPresentValue);
+    }
+
+    // Extract numMeetings from allQueryResponse
+    let numMeetings = 0;
+    const numMeetingsValue = allQueryResponse[0]?.result?.aggregateFields?.numTotal?.integerValue;
+    if (numMeetingsValue) {
+      numMeetings = parseInt(numMeetingsValue);
+    }
 
     return {
-      numMeetings: docs.length,
+      numMeetings,
       numPresent
     };
   });

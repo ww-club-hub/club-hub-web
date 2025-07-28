@@ -63,9 +63,8 @@ const membersAttending = computedAsync(async () => {
 
 const membersPresent = computedAsync(async () => {
   if (!meetingAttendance.value || !meetingAttendance.value.membersPresent) return [];
-  const emails = Object.keys(meetingAttendance.value.membersPresent);
   const profiles = await Promise.all(
-    emails.map(async (email) => {
+    meetingAttendance.value.membersPresent.map(async (email) => {
       const profile = await getCachedProfile(email);
       return { email, profile };
     })
@@ -84,7 +83,7 @@ async function initAttendance() {
   const code = generateAttendanceCode();
   const doc: ClubMeetingAttendance = {
     code,
-    membersPresent: {},
+    membersPresent: [],
     membersAttending: []
   };
   const result = await setDoc(docRef, doc);

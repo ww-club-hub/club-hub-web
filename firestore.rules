@@ -25,10 +25,6 @@ service cloud.firestore {
       let set2 = list2.toSet();
       return set1.difference(set2).hasOnly(targetDiff) && set2.difference(set1).hasOnly(targetDiff);
     }
-    function mapDiffHasOnly(map1, map2, targetKey, targetValue) {
-      let diff = debug(map1.diff(map2));
-      return debug(diff.affectedKeys()) == debug([targetKey].toSet()) && diff.addedKeys() == [targetKey].toSet() && debug(map1)[targetKey] == targetValue;
-    }
     //match /user_data/{user_id} {
       // token can only be refreshed on the backend (requires OAuth client secret)
       // allow read: if request.auth.token.uid == user_id;
@@ -68,14 +64,12 @@ service cloud.firestore {
         match /meeting_attendance/{meeting_id} {
           // permission bit 2 - Meetings
           // officers must initialize membersPresent and membersAttending
-          allow create: if student(school_id) && officer(club_id, 2) && request.resource.data.keys().toSet() == ["code", "membersPresent", "membersAttending"].toSet() && request.resource.data.membersPresent == {} && request.resource.data.membersAttending == [];
+          allow create: if student(school_id) && officer(club_id, 2) && request.resource.data.keys().toSet() == ["code", "membersPresent", "membersAttending"].toSet() && request.resource.data.membersPresent == [] && request.resource.data.membersAttending == [];
           allow read: if student(school_id) && officer(club_id, 2);
           // officers can only update code
           allow update: if student(school_id) && officer(club_id, 2) && onlyChanged(["code"]);
           // members can add/remove themselves from membersAttending
           allow update: if student(school_id) && member(club_id) && onlyChanged(["membersAttending"]) && listDiffHasOnly(request.resource.data.membersAttending, resource.data.membersAttending, [request.auth.token.email]);
-          // members can add themselves to membersPresent if they have the correct code
-          allow update: if student(school_id) && member(club_id) && onlyChanged(["membersPresent"]) && mapDiffHasOnly(request.resource.data.membersPresent, resource.data.membersPresent, request.auth.token.email, resource.data.code);
         }
 
         match /forms/{form_id} {

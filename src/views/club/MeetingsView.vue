@@ -12,6 +12,7 @@ import TakeAttendanceDialog from '@/components/TakeAttendanceDialog.vue';
 import { useRoute, useRouter } from 'vue-router';
 import type { FirebaseError } from '@firebase/util';
 import { useMeetings } from '@/meeting-store';
+import api, { isTRPCClientError } from '@/api';
 
 const router = useRouter();
 const route = useRoute();
@@ -58,7 +59,7 @@ async function createMeeting(meeting: ClubMeeting) {
   const code = generateAttendanceCode();
   const attendanceDoc: ClubMeetingAttendance = {
     code,
-    membersPresent: {},
+    membersPresent: [],
     membersAttending: []
   };
   await setDoc(attendanceRef, attendanceDoc);
@@ -80,12 +81,16 @@ async function takeAttendance(code: string) {
   try {
     attendanceError.value = "";
 
-    await updateDoc(doc(props.clubDoc, "meeting_attendance", currentAttendanceMeeting.value!.id), new FieldPath("membersPresent", auth.currentUser.email!), code);
+    await api.club.attendance.take.mutate({
+      clubId: props.club.id,
+      code,
+      meetingId: currentAttendanceMeeting.value!.id
+    });
 
     showAttendanceDialog.value = false;
     currentAttendanceMeeting.value = null;
   } catch (err) {
-    if ((err as FirebaseError).code === "permission-denied") {
+    if (isTRPCClientError(err) && err.data?.code === "UNAUTHORIZED") {
       attendanceError.value = "Incorrect code";
     } else {
       attendanceError.value = parseError(err as Error);

@@ -120,8 +120,8 @@ export interface ClubMeeting {
 export interface ClubMeetingAttendance {
   // current code
   code: string,
-  // map of email to code used
-  membersPresent: Record<string, string>,
+  // lists of email
+  membersPresent:string[],
   membersAttending: string[]
 }
 

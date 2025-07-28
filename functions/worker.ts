@@ -12,6 +12,8 @@ import clubMembers from "./api/club/members";
 import clubOfficers from "./api/club/officers";
 import { removeAdmin, addAdmin, transferOwnership } from "./api/school/admin";
 import authorizeGoogle from "./api/user/google/authorize";
+import memberAttendanceStatistics from "./api/club/attendance/member-statistics";
+import takeAttendance from "./api/club/attendance/take";
 
 const appRouter = router({
   user: router({
@@ -34,7 +36,11 @@ const appRouter = router({
   }),
   club: router({
     members: clubMembers,
-    officers: clubOfficers
+    officers: clubOfficers,
+    attendance: router({
+      memberStatistics: memberAttendanceStatistics,
+      take: takeAttendance
+    })
   })
 });
 
