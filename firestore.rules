@@ -41,7 +41,8 @@ service cloud.firestore {
         // stuco can create, edit, and delete
         allow delete: if admin() && student(school_id);
         allow create: if admin() && student(school_id) &&
-          request.resource.data.keys().toSet() == ["name", "description", "contact", "signup"].toSet();
+          request.resource.data.keys().toSet() == ["name", "description", "contact", "signup", "numMembers", "attendanceRequirements"].toSet() &&
+          request.resource.data.numMembers == 1 && ;
         // officers can edit fields (permission bit 5 - ClubDetails)
         allow update: if student(school_id) && (admin() || officer(club_id, 5)) &&
           onlyChanged(["name", "description", "contact", "logoUrl", "topics", "meetings", "signup"]);

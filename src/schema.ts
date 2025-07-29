@@ -55,6 +55,11 @@ export interface Club {
   // map of email to name, role
   // this is the best way to do security rules queries
   officers: Officers,
+  numMembers: number;
+  attendanceRequirements: {
+    memberPercentage: number;
+    officerPercentage: number;
+  };
   contact: {
     // Contact email
     email?: string,

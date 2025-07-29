@@ -57,6 +57,29 @@ onMounted(async () => {
     <FormInput label="Sponsor:" type="email" required v-model="club.contact.sponsor" />
     <FormInput label="Logo URL:" type="url" v-model="club.logoUrl" />
 
+    <div class="flex flex-col md:flex-row gap-4">
+      <FormInput
+        label="Member Attendance Requirement (%):"
+        type="number"
+        min="0"
+        max="100"
+        required
+        v-model.number="club.attendanceRequirements.memberPercentage"
+      />
+      <FormInput
+        label="Officer Attendance Requirement (%):"
+        type="number"
+        min="0"
+        max="100"
+        required
+        v-model.number="club.attendanceRequirements.officerPercentage"
+      />
+
+      <div class="md:col-span-2 text-xs text-gray-500 dark:text-gray-400 mt-1">
+        Percentage of meetings a member or officer must attend to meet attendance requirements.
+      </div>
+    </div>
+
     <div class="flex items-start gap-3">
       <FormSelect
         class="max-w-md grow"

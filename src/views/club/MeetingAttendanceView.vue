@@ -191,6 +191,52 @@ async function initAttendance() {
       </Collapse>
 
       <Collapse label="Members present" class="flex-1" :default-active="meetingStatus === MeetingStatus.Past">
+        <div class="flex flex-col items-center mb-4">
+          <div class="relative w-24 h-24 mb-2">
+            <svg class="w-full h-full" viewBox="0 0 100 100">
+              <circle
+                class="text-orange-200"
+                stroke="currentColor"
+                stroke-width="10"
+                fill="transparent"
+                r="45"
+                cx="50"
+                cy="50"
+              />
+              <circle
+                class="text-orange-500"
+                stroke="currentColor"
+                stroke-width="10"
+                fill="transparent"
+                r="45"
+                cx="50"
+                cy="50"
+                :stroke-dasharray="2 * Math.PI * 45"
+                :stroke-dashoffset="2 * Math.PI * 45 * (1 - (club.numMembers ? membersPresent.length / club.numMembers : 0))"
+                stroke-linecap="round"
+                style="transition: stroke-dashoffset 0.6s cubic-bezier(.4,2,.6,1);"
+              />
+              <text
+                x="50"
+                y="54"
+                text-anchor="middle"
+                class="fill-orange-600 dark:fill-orange-400 font-bold text-2xl"
+                font-size="2rem"
+                dominant-baseline="middle"
+              >
+                {{
+                  club.numMembers
+                    ? Math.round((membersPresent.length / club.numMembers) * 100)
+                    : 0
+                }}%
+              </text>
+            </svg>
+          </div>
+          <div class="text-orange-700 dark:text-orange-400 font-semibold text-lg">
+            {{ membersPresent.length }}<span class="mx-1 text-gray-400 dark:text-gray-500">/</span>{{ club.numMembers }} present
+          </div>
+        </div>
+
         <div class="space-y-3 divide-gray-500">
           <div v-if="membersPresent.length === 0" class="text-gray-500 italic">
             No members present

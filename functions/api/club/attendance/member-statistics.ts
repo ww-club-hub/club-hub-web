@@ -100,7 +100,7 @@ export default authedProcedure
     }
 
     return {
-      numMeetings,
-      numPresent
+      total: numMeetings,
+      attended: numPresent
     };
   });

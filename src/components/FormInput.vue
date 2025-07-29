@@ -1,7 +1,7 @@
 <script setup lang="ts">
 defineProps<{
   label: string,
-  type: "text" | "email" | "url" | "date",
+  type: "text" | "email" | "url" | "date" | "number",
   required?: boolean,
   // when labelStyle is placeholder, the `label` is shown as the placeholder, unless an explicit placeholder is given
   labelStyle?: "placeholder" | "normal",

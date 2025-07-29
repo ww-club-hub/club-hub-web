@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { AUTH_SCOPE, FIRESTORE_SCOPE, makeFirestoreDocPath, getIdentityToolkitUrl, makeServiceAccountToken, updateUserRoles, parseFirestoreObject, makeFirestoreField } from "../../firebase";
-import { FirestoreRestDocument, OfficerPermission } from "../../types";
+import { FirestoreRestDocument, OfficerPermission, UserClaims } from "../../types";
 import { authedJsonRequest, authedProcedure, checkOfficerPermission } from "../../utils";
 import { TRPCError } from "@trpc/server";
 
@@ -54,8 +54,9 @@ export default authedProcedure
     await Promise.all(allOfficerEmails.map(async email => {
       const userDetails = officerUsers.users.find(u => u.email === email);
       // if the user doesn't exist, or if they're int he wrong school, remove from officer list
-      const attrs = JSON.parse(userDetails?.customAttributes!) ?? null;
-      if (attrs?.school !== ctx.user.school) {
+      const attrs = (JSON.parse(userDetails?.customAttributes!) ?? null) as UserClaims | null;
+      // they also need to be a member of the club
+      if (attrs?.school !== ctx.user.school || !attrs.memberOf.includes(input.clubId)) {
         delete input.officers[email];
         return;
       }

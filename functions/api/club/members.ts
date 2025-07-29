@@ -85,15 +85,26 @@ export default authedProcedure
     // update the doc member list
     await authedJsonRequest(
       {
-        writes: [{
-          transform: {
-            document: makeFirestoreDocPath(ctx.env, `/schools/${ctx.user.school}/clubs_private/${input.clubId}`, false),
-            fieldTransforms: [{
-              fieldPath: "members",
-              appendMissingElements: makeFirestoreField([userEmail]).arrayValue
-            }]
+        writes: [
+          {
+            transform: {
+              document: makeFirestoreDocPath(ctx.env, `/schools/${ctx.user.school}/clubs_private/${input.clubId}`, false),
+              fieldTransforms: [{
+                fieldPath: "members",
+                appendMissingElements: makeFirestoreField([userEmail]).arrayValue
+              }]
+            }
+          },
+          {
+            transform: {
+              document: makeFirestoreDocPath(ctx.env, `/schools/${ctx.user.school}/clubs/${input.clubId}`, false),
+              fieldTransforms: [{
+                fieldPath: "numMembers",
+                increment: { integerValue: "1" }
+              }]
+            }
           }
-        }]
+        ]
       },
       firestoreToken,
       makeFirestoreDocPath(ctx.env, `:batchWrite`)
