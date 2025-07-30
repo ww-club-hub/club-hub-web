@@ -81,7 +81,7 @@ export default authedProcedure
     // update the doc officer list
     await authedJsonRequest(
       makeFirestoreField({
-        officers: Object.fromEntries(Object.entries(input.officers).map(([k, v]) => [btoa(k), v]))
+        officers: input.officers
       }).mapValue,
       firestoreToken,
       makeFirestoreDocPath(ctx.env, `/schools/${ctx.user.school}/clubs/${input.clubId}?updateMask.fieldPaths=officers`),

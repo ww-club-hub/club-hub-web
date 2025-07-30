@@ -1,13 +1,14 @@
 import { z } from "zod";
 import { AUTH_SCOPE, FIRESTORE_SCOPE, getFirestoreUrl, getIdentityToolkitUrl, makeServiceAccountToken, parseFirestoreObject, makeFirestoreField, updateUserRoles, lookupUser, getUserAttributes, makeFirestoreDocPath } from "../../firebase";
-import { ClubSignupType, FirestoreFieldObject, FirestoreRestDocument, OfficerPermission, UserClaims } from "../../types";
+import { BeginTransactionResponse, Club, ClubSignupType, FirestoreFieldObject, FirestoreRestDocument, OfficerPermission, RawFirestoreFieldObject, UserClaims } from "../../types";
 import { authedJsonRequest, authedProcedure, checkOfficerPermission } from "../../utils";
 import { TRPCError } from "@trpc/server";
 
 const AddRemoveMemberReq = z.object({
   clubId: z.string(),
   // if this is present, an officer is adding/removing a member
-  memberEmail: z.optional(z.string().email())
+  memberEmail: z.optional(z.string().email()),
+  removeMember: z.optional(z.boolean())
 });
 
 export default authedProcedure
@@ -55,8 +56,8 @@ export default authedProcedure
       ) as FirestoreRestDocument;
 
       const doc = parseFirestoreObject(queryResponse.fields);
-      // make sure signup is open
-      if ((doc.signup as FirestoreFieldObject).type !== ClubSignupType.Open) {
+      // make sure signup is open if they are joining
+      if ((doc.signup as FirestoreFieldObject).type !== ClubSignupType.Open && !input.removeMember) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "You must apply to join this club"
@@ -68,49 +69,125 @@ export default authedProcedure
       userEmail = ctx.user.email;
     }
 
-    // don't re-add existing members
-    if (userAttrs.memberOf?.includes(input.clubId)) {
-      throw new TRPCError({
-        code: "CONFLICT",
-        message: "User is already a member of this club"
+    if (input.removeMember) {
+      // don't remove non members
+      if (!userAttrs.memberOf?.includes(input.clubId)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "User is not a member of this club"
+        });
+      }
+
+      // update user roles
+      userAttrs.memberOf.splice(userAttrs.memberOf.indexOf(input.clubId), 1);
+
+      const { transaction } = await authedJsonRequest<BeginTransactionResponse>(
+        {},
+        firestoreToken,
+        makeFirestoreDocPath(ctx.env, `:beginTransaction`)
+      );
+
+      // fields to update in the club doc
+      let updateFields: RawFirestoreFieldObject = {};
+
+      // this user is an officer, so extra steps need to be taken
+      if (input.clubId in userAttrs.officerOf) {
+        // remove officer role
+        delete userAttrs.officerOf[input.clubId];
+
+        // fetch club officers
+        const { officers } = await authedJsonRequest<FirestoreRestDocument>(
+          null,
+          firestoreToken,
+          makeFirestoreDocPath(ctx.env, `/schools/${ctx.user.school}/clubs/${input.clubId}?mask.fieldPaths=name&mask.fieldPaths=officers&transaction=${transaction}`),
+          "GET"
+        ).then(r => parseFirestoreObject(r.fields) as Pick<Club, "officers">);
+        // remove officer from club
+        delete officers[userEmail];
+        updateFields.officers = makeFirestoreField(officers);
+      }
+
+      // commit update to user roles
+      await updateUserRoles(ctx.env, authToken, userId, userAttrs, {
+        memberOf: userAttrs.memberOf,
+        officerOf: userAttrs.officerOf
       });
-    }
-    // update user roles
-    if (!userAttrs.memberOf) userAttrs.memberOf = [];
-    userAttrs.memberOf.push(input.clubId);
-    await updateUserRoles(ctx.env, authToken, userId, userAttrs, {
-      memberOf: userAttrs.memberOf
-    });
 
-    // update the doc member list
-    await authedJsonRequest(
-      {
-        writes: [
-          {
-            transform: {
-              document: makeFirestoreDocPath(ctx.env, `/schools/${ctx.user.school}/clubs_private/${input.clubId}`, false),
-              fieldTransforms: [{
-                fieldPath: "members",
-                appendMissingElements: makeFirestoreField([userEmail]).arrayValue
-              }]
-            }
-          },
-          {
-            transform: {
-              document: makeFirestoreDocPath(ctx.env, `/schools/${ctx.user.school}/clubs/${input.clubId}`, false),
-              fieldTransforms: [{
+      // update club doc - numMembers + officers? and clubs_private - just members
+      await authedJsonRequest(
+        {
+          writes: [
+            {
+              update: {
+                name: makeFirestoreDocPath(ctx.env, `/schools/${ctx.user.school}/clubs/${input.clubId}`, false),
+                fields: updateFields
+              },
+              updateTransforms: [{
                 fieldPath: "numMembers",
-                increment: { integerValue: "1" }
+                increment: makeFirestoreField(-1)
               }]
-            }
-          }
-        ]
-      },
-      firestoreToken,
-      makeFirestoreDocPath(ctx.env, `:batchWrite`)
-    );
+            },
+            {
+              transform: {
+                document: makeFirestoreDocPath(ctx.env, `/schools/${ctx.user.school}/clubs_private/${input.clubId}`, false),
+                fieldTransforms: [{
+                  fieldPath: "members",
+                  removeAllFromArray: makeFirestoreField([userEmail]).arrayValue
+                }]
+              }
+            },
+          ],
+          // commit transaction
+          transaction
+        },
+        firestoreToken,
+        makeFirestoreDocPath(ctx.env, `:commit`)
+      );
+    } else {
+      // don't re-add existing members
+      if (userAttrs.memberOf?.includes(input.clubId)) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "User is already a member of this club"
+        });
+      }
+      // update user roles
+      if (!userAttrs.memberOf) userAttrs.memberOf = [];
+      userAttrs.memberOf.push(input.clubId);
+      await updateUserRoles(ctx.env, authToken, userId, userAttrs, {
+        memberOf: userAttrs.memberOf
+      });
 
-    return {
-      success: true
-    };
+      // update the doc member list
+      await authedJsonRequest(
+        {
+          writes: [
+            {
+              transform: {
+                document: makeFirestoreDocPath(ctx.env, `/schools/${ctx.user.school}/clubs_private/${input.clubId}`, false),
+                fieldTransforms: [{
+                  fieldPath: "members",
+                  appendMissingElements: makeFirestoreField([userEmail]).arrayValue
+                }]
+              }
+            },
+            {
+              transform: {
+                document: makeFirestoreDocPath(ctx.env, `/schools/${ctx.user.school}/clubs/${input.clubId}`, false),
+                fieldTransforms: [{
+                  fieldPath: "numMembers",
+                  increment: makeFirestoreField(1)
+                }]
+              }
+            }
+          ]
+        },
+        firestoreToken,
+        makeFirestoreDocPath(ctx.env, `:commit`)
+      );
+
+      return {
+        success: true
+      };
+    }
   });

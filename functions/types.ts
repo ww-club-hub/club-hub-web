@@ -56,6 +56,10 @@ export interface QueryResponseItem {
 
 export type QueryResponse = QueryResponseItem[];
 
+export interface BeginTransactionResponse {
+  transaction: string;
+};
+
 export interface FirebaseJwtPayload {
   name: string;
   email: string;

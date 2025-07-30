@@ -28,9 +28,8 @@ const club = await typedGetDoc<Club>(clubDoc);
 async function checkAuthClaimDesync() {
   // TODO: 404 errors
   if (!club || !auth.currentUser) return;
-  const emailKey = btoa(auth.currentUser.email!);
 
-  if (club.officers[emailKey]?.permissions !== role.officer) {
+  if (club.officers[auth.currentUser.email!]?.permissions !== role.officer) {
     // refresh token
     await getIdToken(auth.currentUser, true);
     location.reload();
