@@ -30,16 +30,17 @@ export default authedProcedure
     if (!user) {
       throw new TRPCError({
         code: "NOT_FOUND",
-        message: "user not found"
+        message: "User not found"
       });
     }
 
     const attrs = JSON.parse(user.customAttributes) as UserClaims;
 
+    // return not found here to prevent email enumeration between schools
     if (attrs.school !== ctx.user.school) {
       throw new TRPCError({
-        code: "UNAUTHORIZED",
-        message: "You are not authorized to view this user's profile"
+        code: "NOT_FOUND",
+        message: "User not found"
       });
     }
 

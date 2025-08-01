@@ -14,7 +14,6 @@ import type { FirebaseError } from '@firebase/util';
 import { useMeetings } from '@/meeting-store';
 import api, { isTRPCClientError } from '@/api';
 
-const router = useRouter();
 const route = useRoute();
 
 const props = defineProps<{

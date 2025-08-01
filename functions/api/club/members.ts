@@ -38,7 +38,7 @@ export default authedProcedure
       // make sure the user exists and they are part of this school
       if (!userDetails || attrs?.school !== ctx.user.school) {
         throw new TRPCError({
-          code: "BAD_REQUEST",
+          code: "NOT_FOUND",
           message: "This user does not exist"
         });
       }
@@ -73,7 +73,7 @@ export default authedProcedure
       // don't remove non members
       if (!userAttrs.memberOf?.includes(input.clubId)) {
         throw new TRPCError({
-          code: "BAD_REQUEST",
+          code: "NOT_FOUND",
           message: "User is not a member of this club"
         });
       }

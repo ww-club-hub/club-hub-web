@@ -196,6 +196,15 @@ const router = createRouter({
             authRequired: true,
             title: "Club Officer Permissions"
           }
+        },
+        {
+          name: 'club-members',
+          path: '/members',
+          component: () => import("@/views/club/MembersView.vue"),
+          meta: {
+            authRequired: true,
+            title: "Club Members"
+          }
         }
       ]
     },

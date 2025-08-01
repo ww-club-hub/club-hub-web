@@ -6,7 +6,7 @@ async function getProfile(email: string) {
 
 const PROFILE_CACHE_KEY = "userProfileCache";
 
-export async function getCachedProfile(email: string) {
+export async function getCachedProfile(email: string, bypassCache = false) {
   // Get cache from sessionStorage
   const cacheRaw = sessionStorage.getItem(PROFILE_CACHE_KEY);
   let cache: Record<string, {
@@ -22,7 +22,7 @@ export async function getCachedProfile(email: string) {
   }
 
   // Return cached profile if exists
-  if (cache[email]) {
+  if (!bypassCache && cache[email]) {
     const profile =  cache[email];
     if (!profile.photoUrl) profile.photoUrl = "/icons/icon.svg";
     return profile;
