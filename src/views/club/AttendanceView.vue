@@ -4,18 +4,20 @@ import {
   type Club,
   type ClubRole,
   OfficerPermission,
+  type ClubPrivate,
 } from "@/schema";
-import { getClaims } from "@/utils";
+import { getClaims, typedGetDoc, type DocWithId } from "@/utils";
 import {
-  DocumentReference,
+  DocumentReference, collection, query, where, getCountFromServer, doc
 } from "firebase/firestore";
+import { ref } from "vue";
 import { computed } from "vue";
 import { onMounted } from "vue";
 
 const props = defineProps<{
   role: ClubRole;
   school: string;
-  club: Club;
+  club: DocWithId<Club>;
   clubDoc: DocumentReference;
 }>();
 
@@ -24,6 +26,20 @@ const canManageAttendance = computed(() => props.role.officer & OfficerPermissio
 const memberStatistics = await api.club.attendance.memberStatistics.query({
   clubId: props.club.id
 });
+
+const numMeetings = ref(0);
+const totalClubAttendance = ref(0);
+
+if (canManageAttendance.value) {
+  numMeetings.value = await getCountFromServer(query(
+    collection(props.clubDoc, "meetings"),
+    where("startTime", "<=", new Date())
+  )).then(res => res.data().count);
+
+  const clubsPrivateDocRef = doc(props.clubDoc.parent.parent!, "clubs_private", props.club.id);
+  const clubsPrivateDocSnap = await typedGetDoc<ClubPrivate>(clubsPrivateDocRef);
+  totalClubAttendance.value = clubsPrivateDocSnap?.totalAttendance ?? 0;
+}
 </script>
 
 <template>
@@ -87,5 +103,33 @@ const memberStatistics = await api.club.attendance.memberStatistics.query({
     </div>
 
     <!-- TODO: global club statistics (if canManageAttendance) -->
+    <div
+      v-if="canManageAttendance && numMeetings > 0 && club.numMembers > 0"
+      class="flex-1 bg-orange-50 dark:bg-orange-950 rounded-xl shadow p-6 flex flex-col items-center justify-center border-2 border-orange-300 dark:border-orange-700 mt-6"
+    >
+      <div class="text-2xl font-semibold text-orange-700 dark:text-orange-200 mb-2">
+        Club-wide Attendance
+      </div>
+      <div class="text-4xl font-bold text-orange-600 dark:text-orange-100 mb-1">
+        {{
+          totalClubAttendance
+        }}
+        /
+        {{
+          numMeetings * club.numMembers
+        }}
+      </div>
+      <div class="text-lg text-orange-700 dark:text-orange-200 mb-2">
+        Average Attendance Rate:
+        <span class="font-bold text-orange-700 dark:text-orange-200">
+          {{
+            Math.round((totalClubAttendance / (numMeetings * club.numMembers)) * 100)
+          }}%
+        </span>
+      </div>
+      <div class="text-md text-orange-600 dark:text-orange-300">
+        (Total attendance records / total possible attendance)
+      </div>
+    </div>
   </div>
 </template>

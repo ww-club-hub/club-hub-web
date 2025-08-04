@@ -79,6 +79,14 @@ export interface Club {
 export interface ClubPrivate {
   // emails
   members: string[],
+
+  // total number of present members across all meetings. this divided by member count * num meetings is the average attendance
+  totalAttendance: number,
+  memberAttendance: Record<string, {
+    meetingsAttended: number,
+    totalMeetings: number,
+    lastComputed: Timestamp
+  }>
 }
 
 export enum OfficerPermission {

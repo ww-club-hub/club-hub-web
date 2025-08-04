@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { authedJsonRequest, authedProcedure } from "../../../utils";
-import { FIRESTORE_SCOPE, makeFirestoreDocPath, makeServiceAccountToken, parseFirestoreObject } from "../../../firebase";
+import { FIRESTORE_SCOPE, makeFirestoreDocPath, makeFirestoreField, makeServiceAccountToken, parseFirestoreObject } from "../../../firebase";
 import { ClubMeetingAttendance, FirestoreRestDocument } from "../../../types";
 import { TRPCError } from "@trpc/server";
 
@@ -38,24 +38,42 @@ export default authedProcedure
       });
     }
 
+    if (doc.membersPresent.includes(ctx.user.email)) {
+      throw new TRPCError({
+        message: "Attendance already taken",
+        code: "CONFLICT"
+      });
+    }
+
     // update the membersPresent array
     const batchWriteBody = {
-      writes: [{
-        transform: {
-          document: attendanceDocResp.name,
-          fieldTransforms: [{
-            fieldPath: "membersPresent",
-            appendMissingElements: {
-              values: [{ stringValue: ctx.user.email }]
-            }
-          }]
+      writes: [
+        {
+          transform: {
+            document: attendanceDocResp.name,
+            fieldTransforms: [{
+              fieldPath: "membersPresent",
+              appendMissingElements: {
+                values: [{ stringValue: ctx.user.email }]
+              }
+            }]
+          }
+        },
+        {
+          transform: {
+            document: makeFirestoreDocPath(ctx.env, `/schools/${ctx.user.school}/clubs_private/${input.clubId}`),
+            fieldTransforms: [{
+              fieldPath: "totalAttendance",
+              increment: makeFirestoreField(1)
+            }]
+          }
         }
-      }]
+      ]
     };
     await authedJsonRequest(
       batchWriteBody,
       firestoreToken,
-      makeFirestoreDocPath(ctx.env, `:batchWrite`)
+      makeFirestoreDocPath(ctx.env, `:ommit`)
     );
 
     return { success: true };

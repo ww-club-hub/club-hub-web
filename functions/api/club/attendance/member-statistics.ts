@@ -99,6 +99,8 @@ export default authedProcedure
       numMeetings = parseInt(numMeetingsValue);
     }
 
+    // update the cached member statistics
+
     return {
       total: numMeetings,
       attended: numPresent
