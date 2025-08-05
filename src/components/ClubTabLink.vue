@@ -8,8 +8,8 @@ defineProps<{
   to: RouteLocationAsPathGeneric | RouteLocationAsRelativeGeneric
 }>();
 
-const inactiveClass = "inline-flex items-center justify-center p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300 group gap-3";
-const activeClass = "inline-flex items-center justify-center p-4 text-orange-600 border-b-2 border-orange-600 rounded-t-lg active dark:text-orange-500 dark:border-orange-500 group gap-3"
+const inactiveClass = "inline-flex items-center justify-center p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300 group gap-2";
+const activeClass = "inline-flex items-center justify-center p-4 text-orange-600 border-b-2 border-orange-600 rounded-t-lg active dark:text-orange-500 dark:border-orange-500 group gap-2"
 </script>
 
 <template>

@@ -190,7 +190,7 @@ const router = createRouter({
         },
         {
           name: 'club-permission',
-          path: '/permissions',
+          path: 'permissions',
           component: () => import("@/views/club/PermissionView.vue"),
           meta: {
             authRequired: true,
@@ -199,7 +199,7 @@ const router = createRouter({
         },
         {
           name: 'club-members',
-          path: '/members',
+          path: 'members',
           component: () => import("@/views/club/MembersView.vue"),
           meta: {
             authRequired: true,
