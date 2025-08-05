@@ -145,3 +145,12 @@ export interface ClubForm {
   // used for determining which OAuth key to use
   officerId: string
 }
+
+// Private user data
+export interface UserData {
+  google?: {
+    refreshToken: string;
+    // right now we're forcing this to be the same as the account email
+    email: string;
+  }
+}

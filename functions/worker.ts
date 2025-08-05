@@ -12,10 +12,12 @@ import clubMembers from "./api/club/members";
 import clubOfficers from "./api/club/officers";
 import { removeAdmin, addAdmin, transferOwnership } from "./api/school/admin";
 import authorizeGoogle from "./api/user/google/authorize";
+import getGoogleToken from "./api/user/google/getToken";
 import memberAttendanceStatistics from "./api/club/attendance/member-statistics";
 import clubAttendanceStatistics from "./api/club/attendance/club-statistics";
 import takeAttendance from "./api/club/attendance/take";
 import queryAttendance from "./api/club/attendance/query";
+import handleFormPush from "./api/club/forms/push";
 
 const appRouter = router({
   user: router({
@@ -23,7 +25,8 @@ const appRouter = router({
     gradYear: userGradYear,
     interests: userInterests,
     google: router({
-      authorize: authorizeGoogle
+      authorize: authorizeGoogle,
+      getToken: getGoogleToken
     })
   }),
   school: router({
@@ -48,12 +51,21 @@ const appRouter = router({
   })
 });
 
+async function handlePublicRoutes(req: Request, env: Env): Promise<Response | null> {
+  const url = new URL(req.url);
+  if (url.pathname === "/api/club/forms/push") {
+    return await handleFormPush(req, env);
+  }
+  // handle with TRPC
+  return null;
+}
+
 export default {
   async fetch(req, env): Promise<Response> {
     const origin = req.headers.get("Origin");
 
+    // handle cors preflight
     if (req.method === "OPTIONS" && env.USE_EMULATOR) {
-      // handle cors preflight
       const headers = new Headers();
       if (origin === "http://localhost:5173") {
         headers.append("Access-Control-Allow-Origin", origin);
@@ -64,15 +76,21 @@ export default {
         headers
       });
     }
-    const res = await fetchRequestHandler({
-      endpoint: "/api",
-      req,
-      router: appRouter,
-      createContext: async ({ req, resHeaders }: FetchCreateContextFnOptions) => {
-        const user = await getUserFromReq(env, caches.default, req);
-        return { req, resHeaders, env, user };
-      }
-    });
+
+    // Other routes
+    let res = await handlePublicRoutes(req, env);
+
+    // TRPC
+    if (res == null)
+      res = await fetchRequestHandler({
+        endpoint: "/api",
+        req,
+        router: appRouter,
+        createContext: async ({ req, resHeaders }: FetchCreateContextFnOptions) => {
+          const user = await getUserFromReq(env, caches.default, req);
+          return { req, resHeaders, env, user };
+        }
+      });
 
     // non-preflight cors
     if (env.USE_EMULATOR && origin === "http://localhost:5173")
