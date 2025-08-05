@@ -211,7 +211,7 @@ export async function lookupUser(email: string, authToken: string, env: Env) {
   }
 
   // no users
-  if (userResult.users.length === 0) return null;
+  if (!userResult.users?.length) return null;
 
   return userResult.users[0];
 }

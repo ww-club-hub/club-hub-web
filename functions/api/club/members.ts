@@ -78,6 +78,14 @@ export default authedProcedure
         });
       }
 
+      // officers cannot be removed from this api req
+      if (input.clubId in userAttrs.officerOf) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Officers cannot be removed on this page"
+        });
+      }
+
       // update user roles
       userAttrs.memberOf.splice(userAttrs.memberOf.indexOf(input.clubId), 1);
 
@@ -89,23 +97,6 @@ export default authedProcedure
 
       // fields to update in the club doc
       let updateFields: RawFirestoreFieldObject = {};
-
-      // this user is an officer, so extra steps need to be taken
-      if (input.clubId in userAttrs.officerOf) {
-        // remove officer role
-        delete userAttrs.officerOf[input.clubId];
-
-        // fetch club officers
-        const { officers } = await authedJsonRequest<FirestoreRestDocument>(
-          null,
-          firestoreToken,
-          makeFirestoreDocPath(ctx.env, `/schools/${ctx.user.school}/clubs/${input.clubId}?mask.fieldPaths=name&mask.fieldPaths=officers&transaction=${transaction}`),
-          "GET"
-        ).then(r => parseFirestoreObject(r.fields) as Pick<Club, "officers">);
-        // remove officer from club
-        delete officers[userEmail];
-        updateFields.officers = makeFirestoreField(officers);
-      }
 
       // commit update to user roles
       await updateUserRoles(ctx.env, authToken, userId, userAttrs, {

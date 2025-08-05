@@ -27,8 +27,7 @@ service cloud.firestore {
     }
     match /user_data/{user_id} {
       // can only be accessed by backend
-      // allow read: if request.auth.token.uid == user_id;
-
+      allow read, write: if false;
     }
     match /schools/{school_id} {
       // schools can only be created/deleted from the admin API
@@ -41,10 +40,10 @@ service cloud.firestore {
         allow delete: if admin() && student(school_id);
         allow create: if admin() && student(school_id) &&
           request.resource.data.keys().toSet() == ["name", "description", "contact", "signup", "numMembers", "attendanceRequirements"].toSet() &&
-          request.resource.data.numMembers == 1 && ;
+          request.resource.data.numMembers == 0;
         // officers can edit fields (permission bit 5 - ClubDetails)
         allow update: if student(school_id) && (admin() || officer(club_id, 5)) &&
-          onlyChanged(["name", "description", "contact", "logoUrl", "topics", "meetings", "signup"]);
+          onlyChanged(["name", "description", "contact", "logoUrl", "topics", "meetings", "signup", "attendanceRequirements"]);
         // signup.type == 0 indicates private
         allow read: if student(school_id) && (("signup" in resource.data && resource.data.signup.type != 0) || request.auth.token.email.toUtf8().toBase64() in resource.data.officers || admin());
 

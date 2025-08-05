@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import api, { isTRPCClientError } from '@/api';
+import FormInput from '@/components/FormInput.vue';
 import { db } from '@/firebase';
 import { getCachedProfile } from '@/profiles';
 import { type ClubPrivate, type Club, type ClubRole, OfficerPermission, ClubSignupType } from '@/schema';
@@ -80,8 +81,9 @@ async function addMember(email: string) {
     if (isTRPCClientError(e)) {
       if (e.data!.code === "NOT_FOUND") {
         showErrorToast(`User does not exist`, context, 3000);
+      } else {
+        showErrorToast(`An error occurred while adding this member: ${e.message}`, context, 3000);
       }
-      showErrorToast(`An error occurred while removing this member: ${e.message}`, context, 3000);
     } else {
       throw e;
     }
@@ -114,21 +116,22 @@ const users = computedAsync(() =>
 
   <div class="max-w-(--breakpoint-2xl) mx-auto p-4">
     <div v-for="(user, i) in users" :key="user.email" class="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-sm grow flex items-center gap-3 mb-2">
-      <img :src="user.photoUrl ?? '/icons/icon.svg'" alt="user photo" class="w-6 h-6" />
-      <div class="flex flex-col gap-1 grow">
-        <span class="text-black dark:text-white">{{ user.displayName }}</span>
-        <span class="font-sm text-gray-700 dark:text-gray-300">{{ user.email }}</span>
+      <img :src="user.photoUrl ?? '/icons/icon.svg'" alt="user photo" class="h-8" />
+      <div class="grow">
+        <p class="text-black dark:text-white mb-1 leading-tight">{{ user.displayName }}</p>
+        <p class="font-sm text-gray-700 dark:text-gray-300 leading-tight">{{ user.email }}</p>
       </div>
-      <button type="button" class="focus:outline-hidden text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-3 py-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900"
+      <button type="button" class="focus:outline-hidden text-red-700 border border-red-700 hover:bg-red-200 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-3 py-2 bg-transparent dark:text-red-400 dark:border-red-400 dark:hover:bg-red-900 dark:focus:ring-red-900 inline-flex gap-2 items-center"
         @click="removeMember(i)">
-        <span class="sr-only">Remove member</span>
-        <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" clip-rule="evenodd" d="M6.293 7.293a1 1 0 011.414 0L10 9.586l2.293-2.293a1 1 0 111.414 1.414L11.414 11l2.293 2.293a1 1 0 01-1.414 1.414L10 12.414l-2.293 2.293a1 1 0 01-1.414-1.414L8.586 11 6.293 8.707a1 1 0 010-1.414z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4">
+          <path d="M10.375 2.25a4.125 4.125 0 1 0 0 8.25 4.125 4.125 0 0 0 0-8.25ZM10.375 12a7.125 7.125 0 0 0-7.124 7.247.75.75 0 0 0 .363.63 13.067 13.067 0 0 0 6.761 1.873c2.472 0 4.786-.684 6.76-1.873a.75.75 0 0 0 .364-.63l.001-.12v-.002A7.125 7.125 0 0 0 10.375 12ZM16 9.75a.75.75 0 0 0 0 1.5h6a.75.75 0 0 0 0-1.5h-6Z" />
+        </svg>
+        <span>Remove</span>
       </button>
     </div>
 
-    <form @submit.prevent="addMember(newMemberEmail)" class="flex items-end gap-3 max-w-screen-sm mt-4">
-      <input type="email" v-model="newMemberEmail" placeholder="New member email" required
-        class="grow px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm dark:bg-gray-900 dark:text-white" />
+    <form @submit.prevent="addMember(newMemberEmail)" class="flex gap-3 max-w-screen-sm mt-4 items-stretch">
+      <FormInput v-model="newMemberEmail" type="email" label="Member email" required labelStyle="placeholder" class="grow" />
       <button type="submit" class="flex items-center justify-center text-white bg-orange-700 hover:bg-orange-800 focus:ring-4 focus:ring-orange-300 font-medium rounded-lg text-sm px-4 py-3 dark:bg-orange-600 dark:hover:bg-orange-700 focus:outline-hidden dark:focus:ring-orange-800">
         <svg class="h-3.5 w-3.5 mr-2" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
           <path clip-rule="evenodd" fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" />

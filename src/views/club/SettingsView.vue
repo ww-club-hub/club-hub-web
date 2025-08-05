@@ -8,6 +8,8 @@ import { onMounted } from "vue";
 import FormInput from "@/components/FormInput.vue";
 import GeneralMeetingTimeSelection from "@/components/GeneralMeetingTimeSelection.vue";
 import FormSelect from "@/components/FormSelect.vue";
+import { showSuccessToast } from "@/toast";
+import { getCurrentInstance } from "vue";
 
 const props = defineProps<{
   role: ClubRole,
@@ -26,12 +28,14 @@ if (!(props.role.stuco || (props.role.officer & OfficerPermission.ClubDetails)))
 
 const club = ref<Club | null>(null);
 
+const context = getCurrentInstance()?.appContext;
+
 async function onFormSubmit() {
   await setDoc(doc(db, "schools", props.school, "clubs", clubId), club.value, {
-    mergeFields: ['name', 'description', 'contact', 'logoUrl', 'signup', 'meetings']
+    mergeFields: ['name', 'description', 'contact', 'logoUrl', 'signup', 'meetings', 'attendanceRequirements']
   });
 
-  router.push({ name: "club-list" });
+  showSuccessToast("Club Settings saved", context, 3000);
 }
 
 function addMeetingTime() {
@@ -58,25 +62,33 @@ onMounted(async () => {
     <FormInput label="Logo URL:" type="url" v-model="club.logoUrl" />
 
     <div class="flex flex-col md:flex-row gap-4">
-      <FormInput
-        label="Member Attendance Requirement (%):"
-        type="number"
-        min="0"
-        max="100"
-        required
-        v-model.number="club.attendanceRequirements.memberPercentage"
-      />
-      <FormInput
-        label="Officer Attendance Requirement (%):"
-        type="number"
-        min="0"
-        max="100"
-        required
-        v-model.number="club.attendanceRequirements.officerPercentage"
-      />
-
-      <div class="md:col-span-2 text-xs text-gray-500 dark:text-gray-400 mt-1">
-        Percentage of meetings a member or officer must attend to meet attendance requirements.
+      <div>
+        <FormInput
+          label="Member Attendance Requirement (%):"
+          type="number"
+          min="0"
+          max="100"
+          required
+          v-model.number="club.attendanceRequirements.memberPercentage"
+          class="mb-3"
+        />
+        <div class="md:col-span-2 text-xs text-gray-500 dark:text-gray-400 mt-1">
+          Percentage of meetings a member must attend to retain membership in the club.
+        </div>
+      </div>
+      <div>
+        <FormInput
+          label="Officer Attendance Requirement (%):"
+          type="number"
+          min="0"
+          max="100"
+          required
+          v-model.number="club.attendanceRequirements.officerPercentage"
+          class="mb-3"
+        />
+        <div class="md:col-span-2 text-xs text-gray-500 dark:text-gray-400 mt-1">
+          Percentage of meetings a member must attend to be eligible to run for an officer position.
+        </div>
       </div>
     </div>
 

@@ -1,5 +1,5 @@
 <template>
-  <div :class="isHidden ? 'opacity-0' : 'opacity-100'" class="mt-3 transition-opacity flex items-center w-screen max-w-xs p-4 text-gray-500 bg-white rounded-lg shadow dark:text-gray-400 dark:bg-gray-800" role="alert">
+<div :class="isHidden ? 'opacity-0' : 'opacity-100'" class="mt-3 transition-opacity flex items-center w-screen max-w-xs p-4 text-gray-500 bg-white rounded-lg shadow dark:border dark:text-gray-400 dark:bg-gray-800 dark:border-gray-700" role="alert">
     <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-lg" :class="colorVariants[iconColor]">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4" v-if="iconColor === 'green'">
         <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />

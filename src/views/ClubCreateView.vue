@@ -50,8 +50,11 @@ async function onFormSubmit() {
       signup: {
         type: ClubSignupType.Private
       },
-      // the officer is initially a member
-      numMembers: 1
+      numMembers: 0,
+      attendanceRequirements: {
+        memberPercentage: 0,
+        officerPercentage: 0
+      }
     };
 
     const doc = await addDoc(collection(db, "schools", claims.school, "clubs"), club);
@@ -67,10 +70,9 @@ async function onFormSubmit() {
     if (isTRPCClientError(err)) {
       if (err.data?.code === "NOT_FOUND")
         errorMessage.value = `The president email ${president.value} is not associated with any ClubHub account.`;
-
-      // else, generic error
-      else errorMessage.value = err.message;
     }
+    // else, generic error
+    else errorMessage.value = (err as Error).message;
   }
 }
 </script>

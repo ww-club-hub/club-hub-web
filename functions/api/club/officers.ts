@@ -25,6 +25,17 @@ export default authedProcedure
       });
     }
 
+    // Ensure at least one officer has the Officers permission
+    const hasOfficerWithPermission = Object.values(input.officers).some(
+      officer => (officer.permissions & OfficerPermission.Officers) !== 0
+    );
+    if (!hasOfficerWithPermission) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "At least one officer must have the Officers permission."
+      });
+    }
+
     const firestoreToken = await makeServiceAccountToken(ctx.env, FIRESTORE_SCOPE);
     const authToken = await makeServiceAccountToken(ctx.env, AUTH_SCOPE);
 
