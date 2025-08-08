@@ -31,3 +31,5 @@ coverage
 .wrangler/
 
 .firebase-emulator-data/
+
+.dev.vars

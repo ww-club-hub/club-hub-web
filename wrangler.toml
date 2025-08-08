@@ -1,3 +1,7 @@
 name = "club-hub-web"
 compatibility_date = "2024-09-02"
 pages_build_output_dir = "./dist"
+
+[env.dev]
+USE_EMULATOR = "true"
+GCP_PROJECT_ID = "ww-club-hub"
