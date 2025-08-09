@@ -18,6 +18,7 @@ import clubAttendanceStatistics from "./api/club/attendance/club-statistics";
 import takeAttendance from "./api/club/attendance/take";
 import queryAttendance from "./api/club/attendance/query";
 import handleFormPush from "./api/club/forms/push";
+import { WorkerEntrypoint } from "cloudflare:workers";
 
 const appRouter = router({
   user: router({
@@ -60,25 +61,10 @@ async function handlePublicRoutes(req: Request, env: Env): Promise<Response | nu
   return null;
 }
 
-export default {
-  async fetch(req, env): Promise<Response> {
-    const origin = req.headers.get("Origin");
-
-    // handle cors preflight
-    if (req.method === "OPTIONS" && env.USE_EMULATOR) {
-      const headers = new Headers();
-      if (origin === "http://localhost:5173") {
-        headers.append("Access-Control-Allow-Origin", origin);
-        headers.append("Access-Control-Allow-Headers", "authorization,content-type");
-      }
-      return new Response(null, {
-        status: 204,
-        headers
-      });
-    }
-
+export default class extends WorkerEntrypoint<Env> {
+  async fetch(req: Request<unknown, CfProperties<unknown>>): Promise<Response> {
     // Other routes
-    let res = await handlePublicRoutes(req, env);
+    let res = await handlePublicRoutes(req, this.env);
 
     // TRPC
     if (res == null)
@@ -87,17 +73,13 @@ export default {
         req,
         router: appRouter,
         createContext: async ({ req, resHeaders }: FetchCreateContextFnOptions) => {
-          const user = await getUserFromReq(env, caches.default, req);
-          return { req, resHeaders, env, user };
+          const user = await getUserFromReq(this.env, caches.default, req);
+          return { req, resHeaders, env: this.env, user };
         }
       });
 
-    // non-preflight cors
-    if (env.USE_EMULATOR && origin === "http://localhost:5173")
-      res.headers.append("Access-Control-Allow-Origin", origin);
-
     return res;
   }
-} satisfies ExportedHandler<Env>;
+};
 
 export type AppRouter = typeof appRouter;

@@ -4,14 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --host",
+    "dev": "CLOUDFLARE_ENV=dev vite --host",
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "build": "vite build",
-    "build:cf": "cp functions/_routes.json dist/ && esbuild functions/worker.ts --bundle --minify --platform=browser --target=es2022 --format=esm --outfile=dist/_worker.js",
-    "dev:cf": "npm run build:cf -- --watch=forever --sourcemap & wrangler pages dev ./dist",
     "dev:firebase": "firebase emulators:start --import .firebase-emulator-data --export-on-exit",
-    "dev:all": "npm run dev & npm run dev:cf & npm run dev:firebase",
+    "dev:all": "npm run dev & npm run dev:firebase",
     "deploy:firebase": "firebase deploy --only firestore",
     "deploy:cf": "npm run clean && npm run build && npm run build:cf && wrangler pages deploy"
   },
@@ -20,6 +18,7 @@
     "vue-router": "^4.3.3"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.11.2",
     "@cloudflare/workers-types": "^4.20241112.0",
     "@googleworkspace/drive-picker-element": "^0.4.1",
     "@popperjs/core": "^2.11.8",
