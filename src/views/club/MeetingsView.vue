@@ -93,6 +93,7 @@ async function takeAttendance(code: string) {
       attendanceError.value = "Incorrect code";
     } else {
       attendanceError.value = parseError(err as Error);
+      console.error(err);
     }
   }
 }
