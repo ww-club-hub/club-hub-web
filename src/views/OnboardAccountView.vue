@@ -76,7 +76,7 @@ async function verifyEmail() {
 
 async function refreshEmailVerification() {
   if (!user.value) return;
-  
+
   // need to refresh to register email verification
   await reload(user.value);
   await getIdToken(user.value, true);
@@ -91,8 +91,6 @@ async function refreshEmailVerification() {
 async function search() {
   if (!user.value) return;
 
-  // refresh just in case
-  await getIdToken(user.value, true);
   // fetch schools starting with searchQuery
   try {
     const { schools } = await api.school.search.query({
@@ -200,7 +198,7 @@ async function setInterests() {
                       @click="verifyEmail">Send verification email</button>
             </template>
           </OnboardingStep>
-          
+
           <OnboardingStep :active="currentStep == OnboardingStepType.JoinSchool" name="Join a school"
             :done="currentStep > OnboardingStepType.JoinSchool">
             <!-- search box -->

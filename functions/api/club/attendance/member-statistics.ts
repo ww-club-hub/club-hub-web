@@ -41,7 +41,7 @@ export default authedProcedure
           ],
           structuredQuery: {
             from: [{
-              collectionId: `schools/${ctx.user.school}/clubs/${input.clubId}/meeting_attendance`
+              collectionId: `meeting_attendance`
             }],
             where: {
               fieldFilter: {
@@ -54,7 +54,7 @@ export default authedProcedure
         }
       },
       firestoreToken,
-      makeFirestoreDocPath(ctx.env, `:runAggregationQuery`)
+      makeFirestoreDocPath(ctx.env, `/schools/${ctx.user.school}/clubs/${input.clubId}:runAggregationQuery`)
     ) as AggregationQueryResponse;
 
     // count all documents
@@ -69,7 +69,7 @@ export default authedProcedure
           ],
           structuredQuery: {
             from: [{
-              collectionId: `schools/${ctx.user.school}/clubs/${input.clubId}/meetings`
+              collectionId: `meetings`
             }],
             where: {
               fieldFilter: {
@@ -82,7 +82,7 @@ export default authedProcedure
         }
       },
       firestoreToken,
-      makeFirestoreDocPath(ctx.env, `:runAggregationQuery`)
+      makeFirestoreDocPath(ctx.env, `/schools/${ctx.user.school}/clubs/${input.clubId}:runAggregationQuery`)
     ) as AggregationQueryResponse;
 
     // Extract numPresent from presentQueryResponse

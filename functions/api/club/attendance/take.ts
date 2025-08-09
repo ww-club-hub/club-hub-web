@@ -54,14 +54,14 @@ export default authedProcedure
             fieldTransforms: [{
               fieldPath: "membersPresent",
               appendMissingElements: {
-                values: [{ stringValue: ctx.user.email }]
+                values: [makeFirestoreField(ctx.user.email)]
               }
             }]
           }
         },
         {
           transform: {
-            document: makeFirestoreDocPath(ctx.env, `/schools/${ctx.user.school}/clubs_private/${input.clubId}`),
+            document: makeFirestoreDocPath(ctx.env, `/schools/${ctx.user.school}/clubs_private/${input.clubId}`, false),
             fieldTransforms: [{
               fieldPath: "totalAttendance",
               increment: makeFirestoreField(1)
@@ -73,7 +73,7 @@ export default authedProcedure
     await authedJsonRequest(
       batchWriteBody,
       firestoreToken,
-      makeFirestoreDocPath(ctx.env, `:ommit`)
+      makeFirestoreDocPath(ctx.env, `:commit`)
     );
 
     return { success: true };

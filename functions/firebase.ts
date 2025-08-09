@@ -146,8 +146,11 @@ export function parseFirestoreField(field: RawFirestoreField): FirestoreField {
     return new Date(Date.parse(field.timestampValue));
   } else if ("mapValue" in field && field.mapValue) {
     return parseFirestoreObject(field.mapValue.fields || {});
-  } else if ("arrayValue" in field && field.arrayValue && Array.isArray(field.arrayValue.values)) {
-    return field.arrayValue.values.map(parseFirestoreField);
+  } else if ("arrayValue" in field && field.arrayValue) {
+    if (Array.isArray(field.arrayValue.values))
+      return field.arrayValue.values.map(parseFirestoreField);
+    else
+      return [];
   }
   return null;
 }
@@ -251,6 +254,8 @@ export async function exchangeOauthToken(env: Env, oauthToken: string) {
   body.set("client_secret", env.OAUTH_CLIENT_SECRET);
   body.set("code", oauthToken);
   body.set("grant_type", "authorization_code");
+  // https://stackoverflow.com/a/55222567
+  body.set("redirect_uri", "postmessage");
 
   const res = await fetch(config.token_endpoint, {
     method: "POST",
@@ -258,12 +263,18 @@ export async function exchangeOauthToken(env: Env, oauthToken: string) {
     headers: {
       "Content-Type": "application/x-www-form-urlencoded"
     }
-  }).then(r => r.ok ? r.json<{
-    access_token: string,
-    expires_in: number,
-    refresh_token: string,
-    scope: string,
-  }>() : null);
+  }).then(async r => {
+    if (r.ok) {
+      return await r.json<{
+        access_token: string,
+        expires_in: number,
+        refresh_token: string,
+        scope: string,
+      }>();
+    } else {
+      throw new Error(await r.text());
+    }
+  });
 
   return res;
 }

@@ -22,10 +22,6 @@ const code = ref("");
 async function tryCode() {
   emit("enter-code", code.value);
 }
-
-watch(show, () => {
-  console.log(show.value);
-});
 </script>
 
 <template>
