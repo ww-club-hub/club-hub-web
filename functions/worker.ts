@@ -13,6 +13,7 @@ import clubOfficers from "./api/club/officers";
 import { removeAdmin, addAdmin, transferOwnership } from "./api/school/admin";
 import authorizeGoogle from "./api/user/google/authorize";
 import getGoogleToken from "./api/user/google/getToken";
+import revokeGoogleToken from "./api/user/google/revoke";
 import memberAttendanceStatistics from "./api/club/attendance/member-statistics";
 import clubAttendanceStatistics from "./api/club/attendance/club-statistics";
 import takeAttendance from "./api/club/attendance/take";
@@ -27,7 +28,8 @@ const appRouter = router({
     interests: userInterests,
     google: router({
       authorize: authorizeGoogle,
-      getToken: getGoogleToken
+      getToken: getGoogleToken,
+      revokeToken: revokeGoogleToken
     })
   }),
   school: router({
