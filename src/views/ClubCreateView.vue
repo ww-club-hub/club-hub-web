@@ -9,6 +9,7 @@ import { addDoc, collection } from "firebase/firestore";
 import { api, isTRPCClientError } from "@/api";
 import FormInput from "@/components/FormInput.vue";
 import { getCachedProfile } from "@/profiles";
+import ButtonLoader from "@/components/ButtonLoader.vue";
 
 const claims = (await getIdTokenResult(auth.currentUser!)).claims as UserClaims;
 const stuco = claims.role == "owner" || claims.role == "admin";
@@ -28,8 +29,12 @@ const president = ref("");
 const sponsor = ref("");
 const errorMessage = ref("");
 
+const loading = ref(false);
+
 async function onFormSubmit() {
   errorMessage.value = "";
+
+  loading.value = true;
 
   try {
     // fetch president name
@@ -73,6 +78,8 @@ async function onFormSubmit() {
     }
     // else, generic error
     else errorMessage.value = (err as Error).message;
+  } finally {
+    loading.value = false;
   }
 }
 </script>
@@ -92,7 +99,7 @@ async function onFormSubmit() {
 
         <p v-if="errorMessage" class="mb-2 text-rose-600 dark:text-rose-400 italic">{{ errorMessage }}</p>
 
-        <button type="submit" class="w-full text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800">Create</button>
+        <ButtonLoader type="submit" class="w-full text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800" :loading="loading">Create</ButtonLoader>
       </form>
     </div>
   </section>

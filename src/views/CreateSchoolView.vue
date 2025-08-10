@@ -5,6 +5,7 @@ import { computed } from "vue";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { api, isTRPCClientError } from "@/api";
+import ButtonLoader from "@/components/ButtonLoader.vue";
 
 const user = ref<User | null>(null);
 const schoolName = ref("");
@@ -12,6 +13,7 @@ const website = ref("");
 const domainRestriction = ref(false);
 const domains = ref<string[]>([]);
 const errorMessage = ref("");
+const loading = ref(false);
 
 const router = useRouter();
 
@@ -36,7 +38,9 @@ function removeDomain(i: number) {
  */
 async function onFormSubmit() {
   if (!user.value) return;
-  
+
+  loading.value = true;
+
   // remove duplicates
   const dr = domainRestriction.value ? [
     ...new Set([...domains.value, userEmailDomain.value!])
@@ -46,7 +50,7 @@ async function onFormSubmit() {
     website: website.value,
     domainRestriction : dr
   };
-  
+
   try {
     // create school
     await api.school.create.mutate(body);
@@ -58,6 +62,8 @@ async function onFormSubmit() {
   } catch (err) {
     if (isTRPCClientError(err))
       errorMessage.value = err.message;
+  } finally {
+    loading.value = false;
   }
 }
 
@@ -134,7 +140,7 @@ onAuthStateChanged(auth, async currentUser => {
 
           <p v-if="errorMessage" class="mb-2 text-rose-600 dark:text-rose-400 italic">{{ errorMessage }}</p>
 
-          <button type="submit" class="focus:outline-hidden text-white bg-emerald-700 hover:bg-emerald-800 focus:ring-4 focus:ring-emerald-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-emerald-600 dark:hover:bg-emerald-700 dark:focus:ring-emerald-800">Create</button>
+          <ButtonLoader :loading="loading" type="submit" class="focus:outline-hidden text-white bg-emerald-700 hover:bg-emerald-800 focus:ring-4 focus:ring-emerald-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-emerald-600 dark:hover:bg-emerald-700 dark:focus:ring-emerald-800 inline-flex gap-3 items-center">Create</ButtonLoader>
         </form>
       </div>
     </div>

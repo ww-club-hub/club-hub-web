@@ -8,6 +8,7 @@ import { typedGetDocs, type DocWithId, injectScript } from '@/utils';
 import "@googleworkspace/drive-picker-element";
 import { FORMS_CLIENT_ID, API_KEY, DRIVE_APP_ID } from "@/google-drive";
 import api, { isTRPCClientError } from '@/api';
+import ButtonLoader from '@/components/ButtonLoader.vue';
 
 const FORM_MIME_TYPE = "application/vnd.google-apps.form";
 
@@ -17,7 +18,7 @@ const props = defineProps<{
   club: Club
 }>();
 
-const scopes = ["openid", "email", "https://www.googleapis.com/auth/drive.file"];
+const scopes = ["openid", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/drive.file"];
 
 const canManageForms = computed(() => props.role.stuco || (props.role.officer & OfficerPermission.Forms));
 const formsCollection = collection(db, "schools", props.school, "clubs", props.club.id, "forms");
@@ -27,6 +28,13 @@ const googleAccessToken = ref<{ token: string, expiresAt: number, email: string 
 const showModal = ref(false);
 const showPicker = ref(false);
 const errorMessage = ref("");
+const pickedForm = ref<google.picker.DocumentObject | null>(null);
+const loading = ref({
+  addForm: false,
+  authGoogle: false,
+  revokeGoogle: false,
+  pickForm: false
+});
 
 let googleAuthClient: google.accounts.oauth2.CodeClient | null = null;
 
@@ -52,13 +60,18 @@ onMounted(async () => {
           expiresAt: exchangeResult.expiresAt,
           email: exchangeResult.email
         };
+
+        errorMessage.value = "";
       } catch (e) {
         if (isTRPCClientError(e)) {
           errorMessage.value = `Authorization error: ${e.message}`;
         }
+      } finally {
+        loading.value.authGoogle = false;
       }
     },
     error_callback: e => {
+      loading.value.authGoogle = false;
       errorMessage.value = `Prompt error: ${e.message}`;
     },
     include_granted_scopes: true,
@@ -67,7 +80,16 @@ onMounted(async () => {
 })
 
 watch(showModal, v => {
-  if (!v) showPicker.value = false;
+  if (!v) {
+    showPicker.value = false;
+    loading.value = {
+      addForm: false,
+      authGoogle: false,
+      revokeGoogle: false,
+      pickForm: false
+    };
+    pickedForm.value = null;
+  }
 });
 
 async function handleFilePicked(event: CustomEvent<google.picker.ResponseObject>) {
@@ -76,14 +98,18 @@ async function handleFilePicked(event: CustomEvent<google.picker.ResponseObject>
 
   if (event.detail.action === "picked" && event.detail.docs) {
     const form = event.detail.docs.find(d => d.mimeType === FORM_MIME_TYPE);
-    if (!form) return;
+    if (!form || form.mimeType !== FORM_MIME_TYPE) return;
 
-    console.log(form);
+    pickedForm.value = form;
+
+    loading.value.pickForm = false;
   }
 }
 
 async function handlePickerError(event: CustomEvent<unknown>) {
   showPicker.value = false;
+
+  loading.value.pickForm = false;
 
   // Picker error
   errorMessage.value = `File picker error: ${String(event.detail)}`;
@@ -112,12 +138,42 @@ async function needsGoogleAuthorization() {
 }
 
 async function openFormModal() {
+  loading.value.addForm = true;
   if (await needsGoogleAuthorization()) {
     // we can't show the picker yet - show the authz prompt
     googleAccessToken.value = null;
   }
+  loading.value.addForm = false;
   errorMessage.value = "";
   showModal.value = true;
+}
+
+/**
+ * open the Google authorization prompt
+ */
+async function openGoogleAuthorization() {
+  if (googleAuthClient) {
+    loading.value.authGoogle = true;
+    googleAuthClient.requestCode();
+  }
+}
+
+/**
+ * revoke the currently stored Google OAuth refresh token
+ */
+async function revokeGoogleAuthorization() {
+  loading.value.revokeGoogle = true;
+  await api.user.google.revokeToken.mutate();
+  googleAccessToken.value = null;
+  showModal.value = false;
+  loading.value.revokeGoogle = false;
+}
+/**
+ * show the Google Docs file picker
+ */
+function openFilePicker() {
+  showPicker.value = true;
+  loading.value.pickForm = true;
 }
 </script>
 
@@ -125,7 +181,7 @@ async function openFormModal() {
   <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
     Forms:
   </h2>
-  <button v-if="canManageForms" type="button" class=" my-3 text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800 block" @click="openFormModal">Add form</button>
+  <ButtonLoader :loading="loading.addForm" v-if="canManageForms" type="button" class=" my-3 text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800 inline-flex items-center gap-3" @click="openFormModal">Add form</ButtonLoader>
 
   <div v-if="forms.length > 0" class="flex gap-3 flex-row flex-wrap">
     <div v-for="form in forms" :key="form.id" class="max-w-sm py-4 px-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700 flex flex-col">
@@ -139,7 +195,7 @@ async function openFormModal() {
     v-if="showPicker && googleAccessToken"
     :client-id="FORMS_CLIENT_ID"
     :app-id="DRIVE_APP_ID"
-    :oauth-token="googleAccessToken"
+    :oauth-token="googleAccessToken.token"
     :developer-key="API_KEY"
     @picker:picked="handleFilePicked"
     @picker:canceled="showModal = false"
@@ -166,71 +222,103 @@ async function openFormModal() {
         </div>
         <!-- Modal body -->
         <form class="p-4 md:p-5 space-y-4 dark:bg-gray-800 rounded-b">
-          <div v-if="!googleAccessToken" class="bg-yellow-50 dark:bg-yellow-900 border-l-4 border-yellow-400 dark:border-yellow-600 p-4 rounded-lg mb-4 flex items-start gap-4 shadow-sm">
-            <svg class="w-6 h-6 text-yellow-400 dark:text-yellow-300 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <!-- authorization prompt -->
+          <div v-if="!googleAccessToken" class="flex items-start gap-4 p-4 mb-4 text-sm text-yellow-800 border border-yellow-300 rounded-lg bg-yellow-50 dark:bg-yellow-950/50 dark:text-yellow-300 dark:border-yellow-800" role="alert">
+            <svg class="w-6 h-6 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z"/>
             </svg>
+            <span class="sr-only">Info</span>
             <div>
               <h4 class="font-semibold text-yellow-800 dark:text-yellow-200 mb-1">Google Authorization Required</h4>
               <p class="text-yellow-700 dark:text-yellow-100 mb-2">
                 To select a Google Form, you need to authorize access to your Google account. Club Hub will only have access to the specific files which you select.
               </p>
-              <button
-                type="button"
-                @click="googleAuthClient?.requestCode()"
-                class="inline-flex items-center px-4 py-2 bg-yellow-500 dark:bg-yellow-700 hover:bg-yellow-600 dark:hover:bg-yellow-800 text-white text-sm font-medium rounded shadow focus:outline-none focus:ring-2 focus:ring-yellow-400 dark:focus:ring-yellow-600"
-              >
-                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M21.35 11.1h-9.17v2.97h5.27c-.23 1.22-1.38 3.58-5.27 3.58-3.17 0-5.76-2.62-5.76-5.85s2.59-5.85 5.76-5.85c1.81 0 3.02.77 3.72 1.43l2.54-2.47C16.44 3.94 14.56 3 12.18 3 6.98 3 2.77 7.22 2.77 12.01s4.21 9.01 9.41 9.01c5.43 0 9.02-3.81 9.02-9.18 0-.62-.07-1.09-.15-1.74z"/>
-                </svg>
-                Authorize with Google
-              </button>
+              <ButtonLoader :loading="loading.authGoogle" type="button" class="text-white bg-[#4285F4] hover:bg-[#4285F4]/90 focus:ring-4 focus:outline-none focus:ring-[#4285F4]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-[#4285F4]/55" @click="openGoogleAuthorization">
+                <template v-slot:icon>
+                  <svg class="w-4 h-4 me-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 19">
+                    <path fill-rule="evenodd" d="M8.842 18.083a8.8 8.8 0 0 1-8.65-8.948 8.841 8.841 0 0 1 8.8-8.652h.153a8.464 8.464 0 0 1 5.7 2.257l-2.193 2.038A5.27 5.27 0 0 0 9.09 3.4a5.882 5.882 0 0 0-.2 11.76h.124a5.091 5.091 0 0 0 5.248-4.057L14.3 11H9V8h8.34c.066.543.095 1.09.088 1.636-.086 5.053-3.463 8.449-8.4 8.449l-.186-.002Z" clip-rule="evenodd"/>
+                  </svg>
+                </template>
+                Continue with Google
+              </ButtonLoader>
             </div>
           </div>
+
+
           <template v-else>
             <!-- google account connection info -->
-            <div class="bg-orange-50 dark:bg-orange-900 border-l-4 border-orange-400 dark:border-orange-600 p-4 rounded-lg mb-4 flex items-start gap-4 shadow-sm">
-              <svg class="w-6 h-6 text-orange-400 dark:text-orange-300 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 01-8 0m8 0a4 4 0 00-8 0m8 0V8a4 4 0 00-8 0v4m8 0v4a4 4 0 01-8 0v-4"/>
-              </svg>
+            <div class="flex items-start gap-4 p-4 mb-4 text-sm text-orange-800 border border-orange-300 rounded-lg bg-orange-50 dark:bg-orange-950/50 dark:text-orange-300 dark:border-orange-800" role="alert">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
               <div>
-                <h4 class="font-semibold text-orange-800 dark:text-orange-200 mb-1">Google Account Connected</h4>
-                <p class="text-orange-700 dark:text-orange-100 mb-2">
+                <h4 class="font-semibold mb-1">Google Account Connected</h4>
+                <p class="mb-2">
                   Signed in as <span class="font-mono font-semibold">{{ googleAccessToken.email }}</span>
                 </p>
 
-                <button
-                  type="button"
-                  class="inline-flex items-center px-4 py-2 bg-rose-500 dark:bg-rose-700 hover:bg-rose-600 dark:hover:bg-rose-800 text-white text-sm font-medium rounded shadow focus:outline-none focus:ring-2 focus:ring-rose-400 dark:focus:ring-rose-600"
-                >
-                  <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-                  </svg>
+                <ButtonLoader :loading="loading.revokeGoogle" @click="revokeGoogleAuthorization" type="button" class="text-rose-700 border-2 border-rose-700 hover:bg-rose-200 focus:outline-none focus:ring-4 focus:ring-rose-300 font-medium rounded-full text-sm px-5 py-2.5 text-center me-2 mb-2 bg-transparent dark:text-rose-300 dark:border-rose-600 dark:hover:bg-rose-900/50 dark:focus:ring-rose-900 inline-flex items-center gap-3">
                   Revoke Access
-                </button>
-                <div class="mt-3 text-xs text-yellow-600 dark:text-yellow-200 bg-yellow-100 dark:bg-yellow-900 rounded p-2">
-                  <strong>Disclaimer:</strong> Other club officers with the Forms permission will be able to view responses from any forms you select.
+                </ButtonLoader>
+
+                <div class="mt-3 text-xs text-yellow-600 dark:text-yellow-200 bg-yellow-100 dark:bg-yellow-900 rounded p-3 shadow">
+                  <strong>Warning:</strong> Other club officers with the Forms permission will be able to view responses from any forms you select.
                 </div>
               </div>
             </div>
 
             <!-- form picker -->
-            <div class="flex flex-col items-center justify-center gap-2 py-6">
-              <button
-                type="button"
-                @click="showPicker = true"
-                class="flex items-center gap-2 px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-lg shadow transition-colors focus:outline-none focus:ring-2 focus:ring-orange-400 dark:bg-orange-700 dark:hover:bg-orange-800 dark:focus:ring-orange-600"
-              >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <rect x="3" y="7" width="18" height="13" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
-                  <path d="M8 7V5a4 4 0 018 0v2" stroke="currentColor" stroke-width="2" fill="none"/>
-                  <path d="M12 13v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                  <path d="M9 16h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-                Choose a Google Form
-              </button>
-              <div class="text-sm text-orange-700 dark:text-orange-200 bg-orange-50 dark:bg-orange-900 rounded px-4 py-2 mt-2 w-full max-w-md text-center shadow">
-                Select a Google Form from your Drive to link it to this club. Only forms you own or have access to will appear.
+            <!-- File Picker UI -->
+            <div class="mb-6">
+              <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-200">
+                Google Form:
+              </label>
+              <div class="flex flex-col gap-3">
+                <ButtonLoader
+                  type="button"
+                  class="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 dark:bg-orange-700 dark:hover:bg-orange-800 dark:focus:ring-orange-900 transition"
+                  :loading="loading.pickForm"
+                  @click="showPicker = true"
+                >
+                  <template v-slot:icon>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                    </svg>
+                  </template>
+                  Pick a Google Form
+                </ButtonLoader>
+
+                <!-- Show picked form details if available -->
+                <div
+                  v-if="pickedForm"
+                  class="flex flex-col gap-2 p-4 border border-orange-200 bg-orange-50 rounded-lg shadow-sm dark:bg-gray-900/60 dark:border-orange-700"
+                >
+                  <div class="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-orange-600 dark:text-orange-400"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+
+                    <span class="font-semibold text-gray-900 dark:text-gray-100">{{ pickedForm.name }}</span>
+                  </div>
+                  <div class="text-sm text-gray-700 dark:text-gray-300">
+                    <span class="font-medium me-1">Last modified:</span>
+                    <span>{{ pickedForm.lastEditedUtc ? new Date(pickedForm.lastEditedUtc).toLocaleString() : 'Unknown' }}</span>
+                  </div>
+                  <div>
+                    <a
+                      :href="pickedForm.url"
+                      target="_blank"
+                      rel="noopener"
+                      class="inline-flex items-center gap-1 text-orange-700 hover:underline dark:text-orange-300"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+                      Open Form
+                    </a>
+                  </div>
+                </div>
+                <div
+                  v-else
+                  class="flex items-center gap-2 p-3 border border-gray-200 bg-gray-50 rounded-lg dark:bg-gray-800 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-sm">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 p-0.5 text-gray-400 dark:text-gray-500"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+
+                  No form selected yet.
+                </div>
               </div>
             </div>
           </template>

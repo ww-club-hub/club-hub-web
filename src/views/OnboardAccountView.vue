@@ -11,6 +11,7 @@ import { api, isTRPCClientError } from "@/api";
 import { nextTick } from "vue";
 import { showSuccessToast, showWarningToast } from "@/toast";
 import { getCurrentInstance } from "vue";
+import ButtonLoader from "@/components/ButtonLoader.vue";
 
 // TYPES
 
@@ -39,6 +40,15 @@ const gradYear = ref("");
 const interests = ref(new Set<number>());
 const emailVerificationSent = ref(false);
 
+const loading = ref({
+  sendEmailVerification: false,
+  verifyEmail: false,
+  search: false,
+  joinSchool: false,
+  setGradYear: false,
+  setInterests: false
+});
+
 const router = useRouter();
 
 const context = getCurrentInstance()?.appContext;
@@ -66,16 +76,23 @@ const currentStep = computed(() => {
 
 async function verifyEmail() {
   if (!user.value) return;
+
+  loading.value.sendEmailVerification = true;
+
   await sendEmailVerification(user.value);
 
   emailVerificationSent.value = true;
 
   // show toast
   showSuccessToast("Verification email sent.", context, 1000);
+
+  loading.value.sendEmailVerification = false;
 }
 
 async function refreshEmailVerification() {
   if (!user.value) return;
+
+  loading.value.verifyEmail = true;
 
   // need to refresh to register email verification
   await reload(user.value);
@@ -86,10 +103,14 @@ async function refreshEmailVerification() {
 
   if (user.value?.emailVerified) emailVerificationSent.value = false;
   else showWarningToast("Email not verified!", context, 1000);
+
+  loading.value.verifyEmail = false;
 }
 
 async function search() {
   if (!user.value) return;
+
+  loading.value.search = true;
 
   // fetch schools starting with searchQuery
   try {
@@ -102,11 +123,15 @@ async function search() {
     if (isTRPCClientError(err)) {
       message.value = err.message;
     }
+  } finally {
+    loading.value.search = false;
   }
 }
 
 async function joinSchool(id: string) {
   if (!user.value) return;
+
+  loading.value.joinSchool = true;
 
   try {
     await api.school.join.mutate({
@@ -121,11 +146,15 @@ async function joinSchool(id: string) {
     if (isTRPCClientError(err)) {
       message.value = err.message;
     }
+  } finally {
+    loading.value.joinSchool = false;
   }
 }
 
 async function setGradYear() {
   if (!user.value) return;
+
+  loading.value.setGradYear = true;
 
   try {
     await api.user.gradYear.mutate({
@@ -140,11 +169,15 @@ async function setGradYear() {
     if (isTRPCClientError(err)) {
       message.value = err.message;
     }
+  } finally {
+    loading.value.setGradYear = false;
   }
 }
 
 async function setInterests() {
   if (!user.value) return;
+
+  loading.value.setInterests = true;
 
   try {
     await api.user.interests.mutate({
@@ -159,6 +192,8 @@ async function setInterests() {
     if (isTRPCClientError(err)) {
       message.value = err.message;
     }
+  } finally {
+    loading.value.setInterests = false;
   }
 }
 </script>
@@ -179,23 +214,23 @@ async function setInterests() {
               <p class="mb-2 text-gray-700 dark:text-gray-200">Verification email sent! Click the button below when you're done.</p>
 
               <div class="flex gap-3 items-center">
-                <button type="button"
+                <ButtonLoader :loading="loading.verifyEmail" type="button"
                         class="w-full text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800"
-                        @click="refreshEmailVerification">Check verification</button>
+                        @click="refreshEmailVerification">Check verification</ButtonLoader>
 
                 <!-- TODO: make this outlined to de-emphasize it -->
-                <button type="button"
+                <ButtonLoader :loading="loading.sendEmailVerification" type="button"
                         class="w-full text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800"
-                        @click="verifyEmail">Resend email</button>
+                        @click="verifyEmail">Resend email</ButtonLoader>
               </div>
             </template>
             <template v-else>
               <!-- initial verification prompt -->
               <p class="mb-3">You'll need to verify your email before you can use this site</p>
 
-              <button type="button"
+              <ButtonLoader :loading="loading.sendEmailVerification" type="button"
                       class="w-full text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800"
-                      @click="verifyEmail">Send verification email</button>
+                      @click="verifyEmail">Send verification email</ButtonLoader>
             </template>
           </OnboardingStep>
 
@@ -213,8 +248,8 @@ async function setInterests() {
               <input type="search" v-model="searchQuery"
                 class="block w-full p-4 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-orange-500 dark:focus:border-orange-500"
                 placeholder="Search for your school..." required />
-              <button type="button" @click="search"
-                class="text-white absolute end-2.5 bottom-2.5 bg-orange-700 hover:bg-orange-800 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800">Search</button>
+              <ButtonLoader :loading="loading.search" type="button" @click="search"
+                class="text-white absolute end-2.5 bottom-2.5 bg-orange-700 hover:bg-orange-800 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800">Search</ButtonLoader>
             </div>
 
             <div class="mb-3">
@@ -228,8 +263,8 @@ async function setInterests() {
                   </a>
                   <p class="font-normal text-gray-700 dark:text-gray-400">{{ school.website }}</p>
                 </div>
-                <button type="button"
-                  class="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-orange-700 hover:text-white border-2 border-orange-700 hover:bg-orange-800 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg dark:border-orange-500 dark:text-orange-300 dark:hover:text-white dark:hover:bg-orange-500 dark:focus:ring-orange-800"
+                <ButtonLoader :loading="loading.joinSchool" type="button"
+                  class="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-orange-700 hover:text-white border-2 border-orange-700 hover:bg-orange-800 focus:ring-4 focus:outline-hidden focus:ring-orange-300 not-only-of-type:rounded-lg dark:border-orange-500 dark:text-orange-300 dark:hover:text-white dark:hover:bg-orange-500 dark:focus:ring-orange-800"
                   @click="joinSchool(school.id)">
                   Join
                   <svg class="rtl:rotate-180 w-3.5 h-3.5 ms-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
@@ -237,7 +272,7 @@ async function setInterests() {
                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M1 5h12m0 0L9 1m4 4L9 9" />
                   </svg>
-                </button>
+                </ButtonLoader>
               </div>
             </div>
 
@@ -263,9 +298,9 @@ async function setInterests() {
               </div>
             </div>
 
-            <button type="button"
+            <ButtonLoader :loading="loading.setGradYear" type="button"
               class="w-full text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800"
-              @click="setGradYear">Next</button>
+              @click="setGradYear">Next</ButtonLoader>
           </OnboardingStep>
           <OnboardingStep :active="currentStep == OnboardingStepType.SetInterests" name="Set your interests"
             :done="currentStep > OnboardingStepType.SetInterests">
@@ -282,9 +317,9 @@ async function setInterests() {
               </div>
             </div>
 
-            <button type="button"
+            <ButtonLoader :loading="loading.setInterests" type="button"
               class="w-full text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800"
-              @click="setInterests">Done</button>
+              @click="setInterests">Done</ButtonLoader>
           </OnboardingStep>
         </ul>
 
