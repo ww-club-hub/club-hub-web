@@ -324,7 +324,7 @@ export async function fetchGoogleUserInfo(accessToken: string) {
 }
 
 /**
- * Revokes the given OAuth token.
+ * Revokes the given OAuth refresh token.
  */
 export async function revokeOauthToken(token: string) {
   const config = await getGoogleOpenIDConfiguration();

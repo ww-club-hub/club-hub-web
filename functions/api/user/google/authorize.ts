@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { FIRESTORE_SCOPE, exchangeOauthToken, fetchGoogleUserInfo, makeFirestoreDocPath, makeFirestoreField, makeServiceAccountToken, parseFirestoreObject, revokeOauthToken } from "../../../firebase";
-import { authedJsonRequest, authedProcedure } from "../../../utils";
+import { RequestError, authedJsonRequest, authedProcedure } from "../../../utils";
 import { TRPCError } from "@trpc/server";
 import { FirestoreRestDocument, UserData } from "../../../types";
 
@@ -23,7 +23,7 @@ export default authedProcedure
     }
 
     // make sure we can fetch user email
-    const requiredScopes = ["openid", "email"];
+    const requiredScopes = ["openid", "https://www.googleapis.com/auth/userinfo.email"];
     const scopes = token.scope.split(" ");
     if (requiredScopes.some(scope => !scopes.includes(scope))) {
       throw new TRPCError({
@@ -33,25 +33,32 @@ export default authedProcedure
     }
 
     const userInfo = await fetchGoogleUserInfo(token.access_token);
-    if (!userInfo?.email_verified || userInfo?.email !== ctx.user.email) {
-      // TODO: should this really be required?
+    if (!userInfo?.email_verified) {
       throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "Your account email does not match the Google account you authorized"
+        code: "UNAUTHORIZED",
+        message: "Could not fetch Google account email"
       });
     }
 
-    // fetch old token config
-    const tokenConfig = await authedJsonRequest<FirestoreRestDocument>(
-      null,
-      firestoreToken,
-      makeFirestoreDocPath(ctx.env, `/user_data/${ctx.user.id}?mask.fieldPaths=google`),
-      "GET"
-    ).then(r => r.name ? parseFirestoreObject(r.fields) as unknown as Pick<UserData, "google"> : null);
+    try {
+      // fetch old token config
+      const tokenConfig = await authedJsonRequest<FirestoreRestDocument>(
+        null,
+        firestoreToken,
+        makeFirestoreDocPath(ctx.env, `/user_data/${ctx.user.user_id}/?mask.fieldPaths=google`),
+        "GET"
+      ).then(r => r.name ? parseFirestoreObject(r.fields ?? {}) as unknown as Pick<UserData, "google"> : null);
 
-    // revoke old token
-    if (tokenConfig?.google) {
-      await revokeOauthToken(tokenConfig.google.refreshToken);
+      // revoke old token
+      if (tokenConfig?.google) {
+        await revokeOauthToken(tokenConfig.google.refreshToken);
+      }
+    } catch (err) {
+      if (err instanceof RequestError) {
+        // not found - ignore
+      } else {
+        throw err;
+      }
     }
 
     // write token to db
@@ -63,7 +70,8 @@ export default authedProcedure
         }
       }).mapValue,
       firestoreToken,
-      makeFirestoreDocPath(ctx.env, `/user_data/${ctx.user.id}?updateMask.fieldPaths=google`)
+      makeFirestoreDocPath(ctx.env, `/user_data/${ctx.user.user_id}?updateMask.fieldPaths=google`),
+      "PATCH"
     );
 
     return {

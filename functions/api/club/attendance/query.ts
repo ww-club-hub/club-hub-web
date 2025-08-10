@@ -46,7 +46,7 @@ export default authedProcedure
     ) as {
       found?: FirestoreRestDocument,
       missing?: string
-      }[];
+    }[];
 
     // Find meetings where user is present
     const presentMeetings: string[] = [];

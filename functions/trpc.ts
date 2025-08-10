@@ -4,7 +4,7 @@ import { Context } from "./types";
 const t = initTRPC.context<Context>().create({
   errorFormatter({ shape, error, path }) {
     if (error.code === "INTERNAL_SERVER_ERROR") {
-      console.error(`An error occurred while handling \`${path}\`:\n\t${error.message}`);
+      console.error(`An error occurred while handling \`${path}\`:\n${error.stack}`);
     }
 
     return {

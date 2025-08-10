@@ -2,6 +2,19 @@ import { publicProcedure } from "./trpc";
 import { TRPCError } from "@trpc/server";
 import type { OfficerPermission, UserClaims } from "./types";
 
+export class RequestError extends Error {
+  url: string;
+  response: Response;
+  method: string;
+
+  constructor(reqBody: string, resBody: string, url: string, response: Response, method: string) {
+    super(`[${method} ${url}]: ${response.status} ${response.statusText}\n\tReq: ${reqBody}\n\tRes: ${resBody}`)
+    this.url = url;
+    this.response = response;
+    this.method = method;
+  }
+}
+
 export async function authedJsonRequest<T = unknown>(body: any, token: string, url: string, method = "POST") {
   return await fetch(url, {
     method,
@@ -10,7 +23,13 @@ export async function authedJsonRequest<T = unknown>(body: any, token: string, u
       "Content-Type": "application/json"
     },
     body: method === "GET" ? undefined : JSON.stringify(body)
-  }).then(r => r.json<T>());
+  }).then(async r => {
+    if (!r.ok) {
+      throw new RequestError(JSON.stringify(body), await r.text(), url, r, method);
+    }
+    const response = await r.json<T>();
+    return response;
+  });
 }
 
 export const authedProcedure = publicProcedure.use(async({ ctx, next }) => {
