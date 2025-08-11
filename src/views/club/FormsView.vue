@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { OfficerPermission, type Club, type ClubForm, type ClubRole, type ClubUpdate } from '@/schema';
 import { onMounted, ref, computed, type Ref, watch } from 'vue';
-import { collection } from "@firebase/firestore";
+import { doc, collection, Timestamp, setDoc } from "@firebase/firestore";
 import { db, auth } from "@/firebase";
 import FormInput from '@/components/FormInput.vue';
 import { typedGetDocs, type DocWithId, injectScript } from '@/utils';
@@ -9,6 +9,7 @@ import "@googleworkspace/drive-picker-element";
 import { FORMS_CLIENT_ID, API_KEY, DRIVE_APP_ID } from "@/google-drive";
 import api, { isTRPCClientError } from '@/api';
 import ButtonLoader from '@/components/ButtonLoader.vue';
+import DateTimeInput from '@/components/DateTimeInput.vue';
 
 const FORM_MIME_TYPE = "application/vnd.google-apps.form";
 
@@ -22,13 +23,14 @@ const scopes = ["openid", "https://www.googleapis.com/auth/userinfo.email", "htt
 
 const canManageForms = computed(() => props.role.stuco || (props.role.officer & OfficerPermission.Forms));
 const formsCollection = collection(db, "schools", props.school, "clubs", props.club.id, "forms");
-const forms = ref(await typedGetDocs<ClubForm>(formsCollection));
+const forms = ref<ClubForm[]>(await typedGetDocs<ClubForm>(formsCollection));
 
 const googleAccessToken = ref<{ token: string, expiresAt: number, email: string } | null>(null);
 const showModal = ref(false);
 const showPicker = ref(false);
 const errorMessage = ref("");
 const pickedForm = ref<google.picker.DocumentObject | null>(null);
+const dueDate = ref<Date | undefined>();
 const loading = ref({
   addForm: false,
   authGoogle: false,
@@ -93,7 +95,6 @@ watch(showModal, v => {
 });
 
 async function handleFilePicked(event: CustomEvent<google.picker.ResponseObject>) {
-  //showModal.value = false;
   errorMessage.value = "";
 
   if (event.detail.action === "picked" && event.detail.docs) {
@@ -101,15 +102,13 @@ async function handleFilePicked(event: CustomEvent<google.picker.ResponseObject>
     if (!form || form.mimeType !== FORM_MIME_TYPE) return;
 
     pickedForm.value = form;
-
-    loading.value.pickForm = false;
   }
+
+  closeFilePicker();
 }
 
 async function handlePickerError(event: CustomEvent<unknown>) {
-  showPicker.value = false;
-
-  loading.value.pickForm = false;
+  closeFilePicker();
 
   // Picker error
   errorMessage.value = `File picker error: ${String(event.detail)}`;
@@ -175,6 +174,98 @@ function openFilePicker() {
   showPicker.value = true;
   loading.value.pickForm = true;
 }
+
+function closeFilePicker() {
+  showPicker.value = false;
+  loading.value.pickForm = false;
+}
+
+async function onAddFormSubmit() {
+  if (!pickedForm.value || !googleAccessToken.value || !auth.currentUser) {
+    showModal.value = false;
+    return;
+  };
+
+  const watchId = `watch-${pickedForm.value.id.replace("_", "-")}`;
+
+  // check for existing watches
+  const listResponse = await fetch(`https://forms.googleapis.com/v1/forms/${pickedForm.value.id}/watches`, {
+    headers: {
+      Authorization: `Bearer ${googleAccessToken.value?.token}`
+    },
+    method: "GET"
+  }).then(r => r.json()) as {
+    error: {
+      message: string;
+    }
+  } | {
+    watches: {
+      id: string;
+      // ISO timestamp
+      expireTime: string;
+    }[]
+  };
+
+  if (!("watches" in listResponse)) {
+    errorMessage.value = `Could not connect form: ${listResponse.error.message}`;
+    return;
+  }
+
+  // check for existing expiry
+  let watchExpiry = listResponse.watches.find(w => w.id === watchId)?.expireTime;
+
+  if (!watchExpiry) {
+    // new watch needed
+    const response = await fetch(`https://forms.googleapis.com/v1/forms/${pickedForm.value.id}/watches`, {
+      body: JSON.stringify({
+        watch: {
+          target: {
+            topic: {
+              topicName: "projects/ww-club-hub/topics/FormResponses"
+            }
+          },
+          // watch for responses
+          eventType: "RESPONSES"
+        },
+        watchId
+      }),
+      headers: {
+        Authorization: `Bearer ${googleAccessToken.value?.token}`
+      },
+      method: "POST"
+    }).then(r => r.json()) as {
+      error: { message: string; }
+    } | {
+      expireTime: string;
+    };
+
+    if ("error" in response) {
+      // could be because of a weird preexisting watch that didn't get caught above
+      errorMessage.value = `Could not connect form: ${response.error.message}`;
+      return;
+    }
+
+    watchExpiry = response.expireTime;
+  }
+
+  // update firebase
+  const form: ClubForm = {
+    formId: pickedForm.value.id,
+    url: pickedForm.value.url!,
+    name: pickedForm.value.name!,
+    officerId: auth.currentUser.uid,
+    watchExpiry: Timestamp.fromDate(new Date(Date.parse(watchExpiry))),
+    dueDate: Timestamp.fromDate(dueDate.value!)
+  };
+
+  const formDoc = doc(formsCollection, form.formId);
+  await setDoc(formDoc, form);
+
+  // remove any existing forms that have this id
+  forms.value = forms.value.filter(f => f.formId !== form.formId);
+
+  forms.value.push(form);
+}
 </script>
 
 <template>
@@ -184,8 +275,8 @@ function openFilePicker() {
   <ButtonLoader :loading="loading.addForm" v-if="canManageForms" type="button" class=" my-3 text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800 inline-flex items-center gap-3" @click="openFormModal">Add form</ButtonLoader>
 
   <div v-if="forms.length > 0" class="flex gap-3 flex-row flex-wrap">
-    <div v-for="form in forms" :key="form.id" class="max-w-sm py-4 px-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700 flex flex-col">
-      <h3 class="mb-2 text-2xl font-bold text-gray-900 dark:text-white">{{ form.description }}</h3>
+    <div v-for="form in forms" :key="form.formId" class="max-w-sm py-4 px-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700 flex flex-col">
+      <h3 class="mb-2 text-2xl font-bold text-gray-900 dark:text-white">{{ form.name }}</h3>
     </div>
   </div>
   <p v-else class="italic text-black dark:text-white">No forms configured yet...</p>
@@ -198,7 +289,7 @@ function openFilePicker() {
     :oauth-token="googleAccessToken.token"
     :developer-key="API_KEY"
     @picker:picked="handleFilePicked"
-    @picker:canceled="showModal = false"
+    @picker:canceled="closeFilePicker"
     @picker:error="handlePickerError"
   >
     <drive-picker-docs-view mime-types="application/vnd.google-apps.form"></drive-picker-docs-view>
@@ -221,7 +312,7 @@ function openFilePicker() {
           </button>
         </div>
         <!-- Modal body -->
-        <form class="p-4 md:p-5 space-y-4 dark:bg-gray-800 rounded-b">
+        <form class="p-4 md:p-5 space-y-4 dark:bg-gray-800 rounded-b" @submit.prevent="onAddFormSubmit">
           <!-- authorization prompt -->
           <div v-if="!googleAccessToken" class="flex items-start gap-4 p-4 mb-4 text-sm text-yellow-800 border border-yellow-300 rounded-lg bg-yellow-50 dark:bg-yellow-950/50 dark:text-yellow-300 dark:border-yellow-800" role="alert">
             <svg class="w-6 h-6 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -276,7 +367,7 @@ function openFilePicker() {
                   type="button"
                   class="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 dark:bg-orange-700 dark:hover:bg-orange-800 dark:focus:ring-orange-900 transition"
                   :loading="loading.pickForm"
-                  @click="showPicker = true"
+                  @click="openFilePicker"
                 >
                   <template v-slot:icon>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -322,6 +413,8 @@ function openFilePicker() {
               </div>
             </div>
           </template>
+
+          <DateTimeInput v-if="pickedForm" v-model="dueDate" label="Due Date:" required />
 
           <p v-if="errorMessage" class="mb-3 text-rose-500 italic">{{ errorMessage }}</p>
 

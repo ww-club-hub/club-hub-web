@@ -60,3 +60,17 @@ export function checkOfficerPermission(user: UserClaims, clubId: string, permiss
   const permissions = user.officerOf[clubId];
   return (permissions & permission) !== 0;
 }
+
+
+const authBearerRe = /Bearer (.*)/;
+
+/**
+ * Parse the Bearer token from the Authorization header of the request
+ */
+export function getBearerToken(req: Request) {
+  const header = req.headers.get("authorization");
+  if (!header) return null;
+  const token = header.match(authBearerRe)?.[1];
+  if (!token) return null;
+  return token;
+}

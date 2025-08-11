@@ -1,8 +1,9 @@
 import { z } from "zod";
-import { FIRESTORE_SCOPE, exchangeOauthToken, fetchGoogleUserInfo, makeFirestoreDocPath, makeFirestoreField, makeServiceAccountToken, parseFirestoreObject, revokeOauthToken } from "../../../firebase";
+import { FIRESTORE_SCOPE, makeFirestoreDocPath, makeFirestoreField, makeServiceAccountToken, parseFirestoreObject } from "../../../firebase";
 import { RequestError, authedJsonRequest, authedProcedure } from "../../../utils";
 import { TRPCError } from "@trpc/server";
 import { FirestoreRestDocument, UserData } from "../../../types";
+import { exchangeOauthToken, fetchGoogleUserInfo, revokeOauthToken } from "../../../google-oauth";
 
 const AuthorizeGoogleReq = z.object({
   token: z.string()

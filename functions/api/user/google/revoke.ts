@@ -1,7 +1,8 @@
 import { z } from "zod";
-import { FIRESTORE_SCOPE, exchangeOauthToken, makeFirestoreDocPath, makeFirestoreField, makeServiceAccountToken, parseFirestoreObject, refreshAccessToken, revokeOauthToken } from "../../../firebase";
+import { FIRESTORE_SCOPE, makeFirestoreDocPath, makeFirestoreField, makeServiceAccountToken, parseFirestoreObject } from "../../../firebase";
 import { RequestError, authedJsonRequest, authedProcedure } from "../../../utils";
 import { FirestoreRestDocument, UserData } from "../../../types";
+import { revokeOauthToken } from "../../../google-oauth";
 
 export default authedProcedure
   .mutation(async ({ ctx, input }) => {

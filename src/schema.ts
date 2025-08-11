@@ -140,10 +140,13 @@ export interface ClubMeetingAttendance {
 
 export interface ClubForm {
   formId: string,
-  description: string,
+  url: string,
+  name: string,
   // ID of officer who manages this form
   // used for determining which OAuth key to use
-  officerId: string
+  officerId: string,
+  watchExpiry: Timestamp,
+  dueDate: Timestamp
 }
 
 // Private user data

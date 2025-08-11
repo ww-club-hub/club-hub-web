@@ -1,7 +1,8 @@
 import { z } from "zod";
-import { FIRESTORE_SCOPE, exchangeOauthToken, makeFirestoreDocPath, makeServiceAccountToken, parseFirestoreObject, refreshAccessToken } from "../../../firebase";
+import { FIRESTORE_SCOPE, makeFirestoreDocPath, makeServiceAccountToken, parseFirestoreObject } from "../../../firebase";
 import { RequestError, authedJsonRequest, authedProcedure } from "../../../utils";
 import { FirestoreRestDocument, UserData } from "../../../types";
+import { refreshAccessToken } from "../../../google-oauth";
 
 const GetTokenReq = z.object({
   // required scopes

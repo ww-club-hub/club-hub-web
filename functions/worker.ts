@@ -75,7 +75,7 @@ export default class extends WorkerEntrypoint<Env> {
         req,
         router: appRouter,
         createContext: async ({ req, resHeaders }: FetchCreateContextFnOptions) => {
-          const user = await getUserFromReq(this.env, caches.default, req);
+          const user = await getUserFromReq(this.env, req);
           return { req, resHeaders, env: this.env, user };
         }
       });
