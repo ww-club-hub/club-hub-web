@@ -23,7 +23,7 @@ const scopes = ["openid", "https://www.googleapis.com/auth/userinfo.email", "htt
 
 const canManageForms = computed(() => props.role.stuco || (props.role.officer & OfficerPermission.Forms));
 const formsCollection = collection(db, "schools", props.school, "clubs", props.club.id, "forms");
-const forms = ref<ClubForm[]>(await typedGetDocs<ClubForm>(formsCollection));
+const forms = ref<DocWithId<ClubForm>[]>(await typedGetDocs<ClubForm>(formsCollection));
 
 const googleAccessToken = ref<{ token: string, expiresAt: number, email: string } | null>(null);
 const showModal = ref(false);
@@ -184,68 +184,50 @@ async function onAddFormSubmit() {
   if (!pickedForm.value || !googleAccessToken.value || !auth.currentUser) {
     showModal.value = false;
     return;
-  };
+  }
 
-  const watchId = `watch-${pickedForm.value.id.replace("_", "-")}`;
+  // TODO: right now, it still works if two different users attempt to add the same form
+  // disallow this
 
-  // check for existing watches
-  const listResponse = await fetch(`https://forms.googleapis.com/v1/forms/${pickedForm.value.id}/watches`, {
+  // everything needed to identify this doc from just the watch id and form id
+  const watchId = `${props.school}-${props.club.id}`;
+
+  // delete existing watches (response doesn't matter)
+  await fetch(`https://forms.googleapis.com/v1/forms/${pickedForm.value.id}/watches/${watchId}`, {
     headers: {
       Authorization: `Bearer ${googleAccessToken.value?.token}`
     },
-    method: "GET"
+    method: "DELETE"
+  })
+
+  // create new watch
+  const response = await fetch(`https://forms.googleapis.com/v1/forms/${pickedForm.value.id}/watches`, {
+    body: JSON.stringify({
+      watch: {
+        target: {
+          topic: {
+            topicName: "projects/ww-club-hub/topics/FormResponses"
+          }
+        },
+        // watch for responses
+        eventType: "RESPONSES"
+      },
+      watchId
+    }),
+    headers: {
+      Authorization: `Bearer ${googleAccessToken.value?.token}`
+    },
+    method: "POST"
   }).then(r => r.json()) as {
-    error: {
-      message: string;
-    }
+    error: { message: string; }
   } | {
-    watches: {
-      id: string;
-      // ISO timestamp
-      expireTime: string;
-    }[]
+    expireTime: string;
   };
 
-  if (!("watches" in listResponse)) {
-    errorMessage.value = `Could not connect form: ${listResponse.error.message}`;
+  if ("error" in response) {
+    // could be because of a weird preexisting watch
+    errorMessage.value = `Could not connect form: ${response.error.message}`;
     return;
-  }
-
-  // check for existing expiry
-  let watchExpiry = listResponse.watches.find(w => w.id === watchId)?.expireTime;
-
-  if (!watchExpiry) {
-    // new watch needed
-    const response = await fetch(`https://forms.googleapis.com/v1/forms/${pickedForm.value.id}/watches`, {
-      body: JSON.stringify({
-        watch: {
-          target: {
-            topic: {
-              topicName: "projects/ww-club-hub/topics/FormResponses"
-            }
-          },
-          // watch for responses
-          eventType: "RESPONSES"
-        },
-        watchId
-      }),
-      headers: {
-        Authorization: `Bearer ${googleAccessToken.value?.token}`
-      },
-      method: "POST"
-    }).then(r => r.json()) as {
-      error: { message: string; }
-    } | {
-      expireTime: string;
-    };
-
-    if ("error" in response) {
-      // could be because of a weird preexisting watch that didn't get caught above
-      errorMessage.value = `Could not connect form: ${response.error.message}`;
-      return;
-    }
-
-    watchExpiry = response.expireTime;
   }
 
   // update firebase
@@ -254,17 +236,22 @@ async function onAddFormSubmit() {
     url: pickedForm.value.url!,
     name: pickedForm.value.name!,
     officerId: auth.currentUser.uid,
-    watchExpiry: Timestamp.fromDate(new Date(Date.parse(watchExpiry))),
+    watchExpiry: Timestamp.fromDate(new Date(Date.parse(response.expireTime))),
     dueDate: Timestamp.fromDate(dueDate.value!)
   };
 
-  const formDoc = doc(formsCollection, form.formId);
+  const formDoc = doc(formsCollection, pickedForm.value.id);
   await setDoc(formDoc, form);
 
   // remove any existing forms that have this id
   forms.value = forms.value.filter(f => f.formId !== form.formId);
 
-  forms.value.push(form);
+  forms.value.push({
+    ...form,
+    id: formDoc.id
+  });
+
+  showModal.value = false;
 }
 </script>
 
@@ -275,7 +262,7 @@ async function onAddFormSubmit() {
   <ButtonLoader :loading="loading.addForm" v-if="canManageForms" type="button" class=" my-3 text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800 inline-flex items-center gap-3" @click="openFormModal">Add form</ButtonLoader>
 
   <div v-if="forms.length > 0" class="flex gap-3 flex-row flex-wrap">
-    <div v-for="form in forms" :key="form.formId" class="max-w-sm py-4 px-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700 flex flex-col">
+    <div v-for="form in forms" :key="form.id" class="max-w-sm py-4 px-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700 flex flex-col">
       <h3 class="mb-2 text-2xl font-bold text-gray-900 dark:text-white">{{ form.name }}</h3>
     </div>
   </div>

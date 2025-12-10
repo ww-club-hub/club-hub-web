@@ -16,14 +16,11 @@ const dateInputString = computed({
     // subtract timezone offset because the datetime picker operates in UTC
     const adjustedDate = new Date(model.value.getTime() - model.value.getTimezoneOffset() * 60 * 1000);
 
-    return adjustedDate.toISOString();
+    return adjustedDate.toISOString().slice(0, 16);
   },
   set: (value: string) => {
-    const adjustedDate = new Date(Date.parse(value));
-    // add back the timezone offset
-    adjustedDate.setMinutes(adjustedDate.getMinutes() + adjustedDate.getTimezoneOffset());
-
-    model.value = adjustedDate;
+    // for some reason this parses through correctly
+    model.value = new Date(Date.parse(value));
   }
 });
 </script>

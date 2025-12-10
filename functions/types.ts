@@ -2,7 +2,7 @@ import { JWTPayload } from "jose";
 // imports from frontend
 import type { UserClaims } from "../src/utils";
 export type { UserClaims };
-export { type Club, ClubSignupType, OfficerPermission, type ClubMeeting, type ClubMeetingAttendance, type UserData } from "../src/schema";
+export { type Club, ClubSignupType, OfficerPermission, type ClubMeeting, type ClubMeetingAttendance, type UserData, type ClubForm } from "../src/schema";
 export interface Env {
   SERVICE_ACCOUNT_EMAIL: string;
   SERVICE_ACCOUNT_KEY: string;

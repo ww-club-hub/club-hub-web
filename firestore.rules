@@ -74,7 +74,7 @@ service cloud.firestore {
         match /forms/{form_id} {
           allow read: if student(school_id) && member(club_id);
           // permission bit 4 - forms
-          allow create: if student(school_id) && officer(club_id, 4) && request.resource.data.keys().toSet() == ["formId", "description", "officerId"].toSet() && request.resource.data.officerId == request.auth.uid;
+          allow create: if student(school_id) && officer(club_id, 4) && request.resource.data.keys().toSet() == ["formId", "name", "officerId", "url", "watchExpiry", "dueDate"].toSet() && request.resource.data.officerId == request.auth.uid;
           allow delete: if student(school_id) && officer(club_id, 4);
           allow update: if student(school_id) && officer(club_id, 4) && onlyChanged(["description"]);
         }
