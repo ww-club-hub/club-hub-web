@@ -9,4 +9,4 @@ run_worker_first = [ "/api/*" ]
 
 [env.dev.vars]
 USE_EMULATOR = "true"
-GCP_PROJECT_ID = "ww-club-hub"
+GCP_PROJECT_ID = "note-pedia"

@@ -95,7 +95,7 @@ async function verifyParseFirebaseAuthToken(token: string, env: Env) {
       return firebasePubkeys[header.kid!];
     });
     // verify project id
-    if (result.payload.iss !== "https://securetoken.google.com/ww-club-hub") {
+    if (result.payload.iss !== `https://securetoken.google.com/${env.GCP_PROJECT_ID}`) {
       throw new Error("invalid jwt issuer");
     }
     return result.payload as FirestoreUser;
@@ -122,7 +122,7 @@ export async function updateUserRoles(env: Env, token: string, userId: string, o
       memberOf: oldAttrs.memberOf,
       ...roles
     })
-  }, token, `${getIdentityToolkitUrl(env)}/projects/ww-club-hub/accounts:update`);
+  }, token, `${getIdentityToolkitUrl(env)}/projects/${env.GCP_PROJECT_ID}/accounts:update`);
 }
 
 export function getFirestoreDocId(doc: FirestoreRestDocument) {

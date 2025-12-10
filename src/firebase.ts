@@ -4,12 +4,12 @@ import { connectFirestoreEmulator, type DocumentData, type DocumentReference, ty
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyDxJBMjG56CZmrfpSzyAxS7OWGaUwzwJ0w",
-  authDomain: "ww-club-hub.firebaseapp.com",
-  projectId: "ww-club-hub",
-  storageBucket: "ww-club-hub.firebasestorage.app",
-  messagingSenderId: "77266016451",
-  appId: "1:77266016451:web:caedaaced91a1136486a76"
+  apiKey: "AIzaSyCgpTpwvUqdCW8cjLBdcR6EI-ge-nJ0zLg",
+  authDomain: "note-pedia.firebaseapp.com",
+  projectId: "note-pedia",
+  storageBucket: "note-pedia.appspot.com",
+  messagingSenderId: "533987855609",
+  appId: "1:533987855609:web:145196736b9f95f8cf2628"
 };
 
 // Initialize Firebase
