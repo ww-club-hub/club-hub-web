@@ -64,11 +64,9 @@ async function onFormSubmit() {
 
     const doc = await addDoc(collection(db, "schools", claims.school, "clubs"), club);
 
-    // update officers and members (batch operation)
-    await Promise.all([
-      api.club.members.mutate({ clubId: doc.id, memberEmail: president.value }),
-      api.club.officers.mutate({ clubId: doc.id, officers })
-    ]);
+    // update members
+    await api.club.members.mutate({ clubId: doc.id, memberEmail: president.value });
+    await api.club.officers.mutate({ clubId: doc.id, officers });
 
     router.push({ name: "club-list" });
   } catch (err) {

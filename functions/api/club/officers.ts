@@ -68,6 +68,7 @@ export default authedProcedure
       const attrs = (JSON.parse(userDetails?.customAttributes!) ?? null) as UserClaims | null;
       // they also need to be a member of the club
       if (attrs?.school !== ctx.user.school || !attrs.memberOf.includes(input.clubId)) {
+        console.warn(`Removing officer ${email} because they are either not a member of the club or the school`);
         delete input.officers[email];
         return;
       }
