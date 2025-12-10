@@ -76,13 +76,13 @@ export default async function handleFormPush(req: Request, env: Env): Promise<Re
 
   const firestoreToken = await makeServiceAccountToken(env, FIRESTORE_SCOPE);
 
-  const formDoc = await authedJsonRequest<FirestoreRestDocument>(
+  /*const formDoc = await authedJsonRequest<FirestoreRestDocument>(
     null,
     firestoreToken,
     makeFirestoreDocPath(env, `/schools/${`),
     "GET"
   );
-  const doc = parseFirestoreObject(attendanceDocResp.fields) as unknown as ClubMeetingAttendance;
+  const doc = parseFirestoreObject(attendanceDocResp.fields) as unknown as ClubMeetingAttendance;*/
   //const newResponses =
 
   return new Response("ACK", {
