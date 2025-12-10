@@ -11,7 +11,7 @@ const app = createApp(App)
 
 app.use(router)
 app.use(GoogleSignInPlugin, {
-  clientId: '533987855609-l0hjd5m836lk8c1qm21ujmcbai58m0rj.apps.googleusercontent.com'
+  clientId: '533987855609-91ki2jja41pephnck8f32288hlipa7kh.apps.googleusercontent.com'
 })
 app.use(createPinia());
 app.use(setupCalendar, {});
