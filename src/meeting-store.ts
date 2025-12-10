@@ -1,11 +1,12 @@
 import { defineStore } from "pinia";
 import { getClaims, typedGetDocs, type DocWithId } from "./utils";
 import type { ClubMeeting } from "./schema";
-import { openDB, type DBSchema } from "idb";
+import { openDB, unwrap, type DBSchema } from "idb";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "./firebase";
 import { Timestamp, collection, query, where } from "firebase/firestore";
 import api from "./api";
+import { unref } from "vue";
 
 type MeetingSection = [clubId: string, month: Date];
 type ClubMeetingWithId = DocWithId<ClubMeeting> & { clubId: string };
@@ -230,7 +231,7 @@ const meetingStore = defineStore("meetings", {
         ...meeting,
         clubId
       };
-      this.meetings.push(meetingWithId);
+      this.meetings.push(unref(meetingWithId));
       const db = await getDB();
       await db.put("meetings", meetingWithId);
     },

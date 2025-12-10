@@ -29,7 +29,7 @@ async function checkAuthClaimDesync() {
   // TODO: 404 errors
   if (!club || !auth.currentUser) return;
 
-  if (club.officers[auth.currentUser.email!]?.permissions !== role.officer) {
+  if ((club.officers[auth.currentUser.email!]?.permissions ?? 0) !== role.officer) {
     // refresh token
     await getIdToken(auth.currentUser, true);
     location.reload();
