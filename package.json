@@ -11,7 +11,7 @@
     "dev:firebase": "firebase emulators:start --import .firebase-emulator-data --export-on-exit",
     "dev:all": "npm run dev & npm run dev:firebase",
     "deploy:firebase": "firebase deploy --only firestore",
-    "deploy:cf": "npm run clean && npm run build && npm run build:cf && wrangler pages deploy"
+    "deploy:cf": "npm run build && wrangler deploy --env=\"\""
   },
   "dependencies": {
     "vue": "^3.5.25",

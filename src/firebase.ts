@@ -2,12 +2,13 @@ import { FirebaseError, initializeApp } from "firebase/app";
 import { getAuth, connectAuthEmulator } from "firebase/auth";
 import { connectFirestoreEmulator, type DocumentData, type DocumentReference, type DocumentSnapshot, getDocFromCache, getDocFromServer, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, enablePersistentCacheIndexAutoCreation, getPersistentCacheIndexManager } from "firebase/firestore";
 
+export const GCP_PROJECT_ID = "note-pedia";
+
 // Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyCgpTpwvUqdCW8cjLBdcR6EI-ge-nJ0zLg",
-  authDomain: "note-pedia.firebaseapp.com",
-  projectId: "note-pedia",
-  storageBucket: "note-pedia.appspot.com",
+  authDomain: `${GCP_PROJECT_ID}.firebaseapp.com`,
+  projectId: GCP_PROJECT_ID,
   messagingSenderId: "533987855609",
   appId: "1:533987855609:web:145196736b9f95f8cf2628"
 };

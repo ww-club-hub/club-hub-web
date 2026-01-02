@@ -2,8 +2,7 @@
 import { OfficerPermission, type Club, type ClubForm, type ClubRole, type ClubUpdate } from '@/schema';
 import { onMounted, ref, computed, type Ref, watch } from 'vue';
 import { doc, collection, Timestamp, setDoc } from "@firebase/firestore";
-import { db, auth } from "@/firebase";
-import FormInput from '@/components/FormInput.vue';
+import { db, auth, GCP_PROJECT_ID } from "@/firebase";
 import { typedGetDocs, type DocWithId, injectScript } from '@/utils';
 import "@googleworkspace/drive-picker-element";
 import { FORMS_CLIENT_ID, API_KEY, DRIVE_APP_ID } from "@/google-drive";
@@ -206,7 +205,7 @@ async function onAddFormSubmit() {
       watch: {
         target: {
           topic: {
-            topicName: "projects/ww-club-hub/topics/FormResponses"
+            topicName: `projects/${GCP_PROJECT_ID}/topics/FormResponses`
           }
         },
         // watch for responses
