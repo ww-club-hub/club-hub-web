@@ -19,6 +19,11 @@ const emit = defineEmits<{
 
 const code = ref("");
 
+function formatCode() {
+  code.value = code.value.toUpperCase().trim();
+  console.log(code)
+}
+
 async function tryCode() {
   emit("enter-code", code.value);
 }
@@ -48,7 +53,7 @@ async function tryCode() {
             {{ meeting.startTime.toDate().toLocaleTimeString() }} - {{ meeting.endTime.toDate().toLocaleTimeString() }}
           </p>
 
-          <FormInput label="Attendance code:" type="text" required v-model="code" />
+          <FormInput label="Attendance code:" type="text" required v-model="code" @input-change="formatCode" />
 
           <p v-if="error" class="text-red-500 mb-3">{{ error }}</p>
 
