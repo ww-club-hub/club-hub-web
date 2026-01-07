@@ -45,7 +45,7 @@ async function reauthPassword(password: string) {
     <div class="max-w-(--breakpoint-2xl) mx-auto p-4">
       <div class="flex items-center gap-3 pb-3 mb-3 border-b border-gray-300 dark:border-gray-700">
         <template v-if="auth.currentUser?.photoURL">
-          <img :src="auth.currentUser.photoURL" class="align-self-stretch" />
+          <img :src="auth.currentUser.photoURL" class="align-self-stretch rounded-full" />
         </template>
         <h1 class="text-2xl text-black dark:text-white font-semibold">Welcome, {{ auth.currentUser?.displayName }}</h1>
       </div>

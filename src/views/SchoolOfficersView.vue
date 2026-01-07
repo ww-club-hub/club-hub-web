@@ -117,7 +117,7 @@ async function transferOwnership(i: number) {
       <h2 class="text-lg text-black dark:text-white font-semibold mb-2">Owner:</h2>
 
       <div class="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-sm grow flex items-center gap-3 mb-3" v-if="owner">
-        <img :src="owner.photoUrl ?? '/icons/icon.svg'" alt="user photo" class="w-6 h-6" />
+        <img :src="owner.photoUrl ?? '/icons/icon.svg'" alt="user photo" class="w-6 h-6 rounded-full" />
         <div class="flex flex-col gap-1">
           <span class="text-black dark:text-white">{{ owner.displayName }}</span>
           <span class="font-sm text-gray-700 dark:text-gray-300">{{ owner.email }}</span>
@@ -127,7 +127,7 @@ async function transferOwnership(i: number) {
       <h2 class="text-lg text-black dark:text-white font-semibold mb-2">Admins:</h2>
 
       <div class="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-sm grow flex items-center gap-3 mb-2" v-for="admin, i in admins" :key="admin.email">
-        <img :src="admin.photoUrl ?? '/icons/icon.svg'" alt="user photo" class="w-6 h-6" />
+        <img :src="admin.photoUrl ?? '/icons/icon.svg'" alt="user photo" class="w-6 h-6 rounded-full" />
         <div class="flex flex-col gap-1">
           <span class="text-black dark:text-white">{{ admin.displayName }}</span>
           <span class="font-sm text-gray-700 dark:text-gray-300">{{ admin.email }}</span>

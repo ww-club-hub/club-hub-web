@@ -116,7 +116,7 @@ const users = computedAsync(() =>
 
   <div class="max-w-(--breakpoint-2xl) mx-auto p-4">
     <div v-for="(user, i) in users" :key="user.email" class="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-sm grow flex items-center gap-3 mb-2">
-      <img :src="user.photoUrl ?? '/icons/icon.svg'" alt="user photo" class="h-8" />
+      <img :src="user.photoUrl ?? '/icons/icon.svg'" alt="user photo" class="h-8 rounded-full" />
       <div class="grow">
         <p class="text-black dark:text-white mb-1 leading-tight">{{ user.displayName }}</p>
         <p class="font-sm text-gray-700 dark:text-gray-300 leading-tight">{{ user.email }}</p>
