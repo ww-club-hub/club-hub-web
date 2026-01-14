@@ -21,7 +21,6 @@ const code = ref("");
 
 function formatCode() {
   code.value = code.value.toUpperCase().trim();
-  console.log(code)
 }
 
 async function tryCode() {

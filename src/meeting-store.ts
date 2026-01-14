@@ -158,7 +158,8 @@ const meetingStore = defineStore("meetings", {
       // Get last sync times for all sections to load
       for (const section of sectionsToLoad) {
         let lastSync = await syncTimes.get(section);
-        if (!lastSync) lastSync = new Date(0);
+        // TODO: temporarily disabled to force fetch
+        if (true || !lastSync) lastSync = new Date(0);
 
         // more than two days ago
         if (lastSync < twoDaysAgo) {
@@ -176,16 +177,19 @@ const meetingStore = defineStore("meetings", {
           // update sync time
           await syncTimes.put(now, section);
         }
-
-        // load old meetings
-        const monthStart = new Date(section[1].getFullYear(), section[1].getMonth()).getTime() / 1000;
-        // start of the next month
-        const monthEnd = new Date(section[1].getFullYear(), section[1].getMonth() + 1).getTime() / 1000;
-        // [monthStart, monthEnd)
-        const range = IDBKeyRange.bound(monthStart, monthEnd, false, true);
-        const oldMeetings = await meetings.index("endTime").getAll(range);
-        oldMeetings.forEach(fixMeetingTimestamps);
-        this.meetings.push(...oldMeetings);
+        
+        // TODO: temporarily disabled to force fetch
+        if (false) {
+          // load old meetings
+          const monthStart = new Date(section[1].getFullYear(), section[1].getMonth()).getTime() / 1000;
+          // start of the next month
+          const monthEnd = new Date(section[1].getFullYear(), section[1].getMonth() + 1).getTime() / 1000;
+          // [monthStart, monthEnd)
+          const range = IDBKeyRange.bound(monthStart, monthEnd, false, true);
+          const oldMeetings = await meetings.index("endTime").getAll(range);
+          oldMeetings.forEach(fixMeetingTimestamps);
+          this.meetings.push(...oldMeetings);
+        }
 
         // Mark all loaded sections as loaded
         this.loadedSections.add(JSON.stringify(section));
