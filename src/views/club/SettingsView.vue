@@ -46,6 +46,7 @@ function addMeetingTime() {
 onMounted(async () => {
   // init club
   club.value = props.club;
+  if (!club.value!.meetings) club.value!.meetings = [];
   if (!club.value.logoUrl) club.value.logoUrl = "";
 });
 

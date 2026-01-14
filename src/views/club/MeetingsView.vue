@@ -182,7 +182,7 @@ onMounted(async () => {
         v-for="meeting in activeMeetings" :key="meeting.id" :meeting="meeting"
         :active-meeting="true"
         :can-rsvp="false"
-        :can-manage-attendance="(props.role.officer & (1 << OfficerPermission.Meetings)) > 0"
+        :can-manage-attendance="(role.officer & (1 << OfficerPermission.Meetings)) > 0 || role.stuco"
         :club="club"
         @open-attendance-modal="handleMeetingAttendance(meeting)"
       />
@@ -197,7 +197,7 @@ onMounted(async () => {
           v-for="meeting in upcomingMeetings" :key="meeting.id" :meeting="meeting"
           :can-take-attendance="false"
           :can-rsvp="true"
-          :can-manage-attendance="(props.role.officer & (1 << OfficerPermission.Meetings)) > 0"
+          :can-manage-attendance="(role.officer & (1 << OfficerPermission.Meetings)) > 0 || role.stuco"
           :club="club"
           @rsvp="canAttend => handleRsvp(meeting, canAttend)"
         />

@@ -140,37 +140,53 @@ onUnmounted(() => {
                 <!-- todo: better way of finding president -->
                 <td class="px-4 py-3">{{ getClubPresidentName(club.officers) }}</td>
                 <td class="px-4 py-3">{{ clubMeetingTimesToString(club.meetings) }}</td>
-                <td class="px-4 py-3 flex items-center justify-end absolute">
-                  <button
-                    class="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-hidden dark:text-gray-400 dark:hover:text-gray-100"
-                    type="button"
-                    @click.stop="clubDetailsDropdown === club.id ? clubDetailsDropdown = null : clubDetailsDropdown = club.id">
-                    <svg class="w-5 h-5" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"
-                      xmlns="http://www.w3.org/2000/svg">
-                      <path
-                        d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
-                    </svg>
-                  </button>
+                <td class="px-4 py-3 flex items-center justify-end">
+                  <router-link
+                    class="w-auto me-12 inline-flex items-center p-0.5 text-sm justify-center text-white bg-orange-700 hover:bg-orange-800 focus:ring-4 focus:ring-orange-300 font-medium rounded-lg  px-4 py-2 dark:bg-orange-600 dark:hover:bg-orange-700 focus:outline-hidden dark:focus:ring-orange-800"
+                    :to="`/clubs/${club.id}`" v-if="stuco || claims.memberOf?.includes(club.id) || (club.id in (claims.officerOf ?? {}))">
+                    View Dashboard
+                  </router-link>
+                  <router-link
+                    class="w-auto me-12 inline-flex items-center p-0.5 text-sm justify-center text-white bg-orange-700 hover:bg-orange-800 focus:ring-4 focus:ring-orange-300 font-medium rounded-lg  px-4 py-2 dark:bg-orange-600 dark:hover:bg-orange-700 focus:outline-hidden dark:focus:ring-orange-800"
+                    :to="`/clubs/${club.id}/info`" v-else>
+                    Details
+                  </router-link>
 
-                  <div :hidden="clubDetailsDropdown !== club.id"
-                    class="z-10 w-44 bg-white rounded-sm divide-y divide-gray-100 shadow-sm dark:bg-gray-700 dark:divide-gray-600 absolute left-0 top-9"
-                    @click.stop>
-                    <ul class="py-1 text-sm text-gray-700 dark:text-gray-200">
-                      <li>
-                        <router-link :to="`/clubs/${club.id}/info`"
-                          class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Details</router-link>
-                      </li>
-                      <li v-if="stuco || auth.currentUser!.email! in club.officers">
-                        <router-link :to="`/clubs/${club.id}/edit`"
-                          class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Edit</router-link>
-                      </li>
-                    </ul>
+                  <div class="absolute">
 
-                    <div class="py-1" v-if="stuco">
-                      <a href="#"
-                        class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white">Delete</a>
+                    <button
+                      class="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-hidden dark:text-gray-400 dark:hover:text-gray-100"
+                      type="button"
+                      @click.stop="clubDetailsDropdown === club.id ? clubDetailsDropdown = null : clubDetailsDropdown = club.id">
+                      <svg class="w-5 h-5" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path
+                          d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
+                      </svg>
+                    </button>
+
+                    <div :hidden="clubDetailsDropdown !== club.id"
+                      class="z-40 w-44 bg-white rounded-sm divide-y divide-gray-100 shadow-sm dark:bg-gray-700 dark:divide-gray-600 absolute right-0 top-9"
+                      @click.stop>
+                      <ul class="py-1 text-sm text-gray-700 dark:text-gray-200">
+                        <li>
+                          <router-link :to="`/clubs/${club.id}/info`"
+                            class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Details</router-link>
+                        </li>
+                        <li v-if="stuco || auth.currentUser!.email! in club.officers">
+                          <router-link :to="`/clubs/${club.id}/edit`"
+                            class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Edit</router-link>
+                        </li>
+                      </ul>
+
+                      <div class="py-1" v-if="stuco">
+                        <a href="#"
+                          class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white">Delete</a>
+                      </div>
                     </div>
+
                   </div>
+
                 </td>
               </tr>
             </tbody>
