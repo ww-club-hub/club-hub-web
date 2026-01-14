@@ -12,7 +12,7 @@ type UpdateItem = {
 // get all messages
 const claims = (await getClaims(auth))!;
 
-const clubs = [...claims.memberOf, ...Object.keys(claims.officerOf)];
+const clubs = [...(claims.memberOf ?? []), ...Object.keys(claims.officerOf ?? {})];
 
 const myClubs = await Promise.all(clubs.map(async club => {
   const clubDoc = await typedGetDoc<Club>(doc(db, "schools", claims.school, "clubs", club));
@@ -42,7 +42,7 @@ const messages = (await Promise.all(clubs.map(async club => {
     <div class="min-h-screen bg-gray-100 dark:bg-gray-900 p-4">
 
       <section class="grid grid-cols-5 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        <!-- Messages --> 
+        <!-- Messages -->
        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow col-span-2">
             <div class="flex justify-between items-center mb-4">
               <h2 class="text-xl font-semibold text-gray-700 dark:text-white">Recent Messages</h2>
@@ -76,7 +76,7 @@ const messages = (await Promise.all(clubs.map(async club => {
               </div>
             </div>
         </div>
-      
+
         <!--  My Clubs -->
         <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow col-span-3">
           <h2 class="text-xl font-semibold text-gray-700 dark:text-white">My Clubs</h2>

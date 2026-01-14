@@ -1,18 +1,15 @@
 <script setup lang="ts">
 import NavbarLink from "./NavbarLink.vue";
 import { auth } from "../firebase";
-import { onAuthStateChanged, signOut, type User } from "firebase/auth";
+import { signOut } from "firebase/auth";
 import { ref, onMounted, onUnmounted } from "vue";
 import { useRoute } from "vue-router";
+import { useAuthStore } from "@/auth-store";
 
-const currentUser = ref<User | null>(null);
+const authStore = useAuthStore();
 const navbarExpanded = ref(false);
 const route = useRoute();
 const accountMenuExpanded = ref(false);
-
-onAuthStateChanged(auth, user => {
-  currentUser.value = user;
-});
 
 async function logOut() {
   await signOut(auth);
@@ -28,7 +25,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  document.body.removeEventListener("click", hideMenus);  
+  document.body.removeEventListener("click", hideMenus);
 });
 </script>
 
@@ -48,23 +45,23 @@ onUnmounted(() => {
             d="M1 1h15M1 7h15M1 13h15" />
         </svg>
       </button>
-      <button type="button" class="flex text-sm md:order-2 ms-3 md:ms-6 bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600" id="user-menu-button" aria-expanded="false" v-if="!!currentUser" @click="accountMenuExpanded = !accountMenuExpanded">
+      <button type="button" class="flex text-sm md:order-2 ms-3 md:ms-6 bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600" id="user-menu-button" aria-expanded="false" v-if="!!authStore.user" @click="accountMenuExpanded = !accountMenuExpanded">
         <span class="sr-only">Open user menu</span>
-        <img class="w-8 h-8 rounded-full" :src="currentUser?.photoURL ?? '/icons/icon.svg'" alt="user photo">
+        <img class="w-8 h-8 rounded-full" :src="authStore.user?.photoURL ?? '/icons/icon.svg'" alt="user photo">
       </button>
       <div :class="{ 'hidden': !navbarExpanded }" class="md:ms-auto me-0 w-full md:block md:w-auto" id="navbar-default">
         <ul
           class="font-medium flex flex-col p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 md:bg-white dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700">
           <NavbarLink url="/" name="Home" :active="route.name === 'home'" />
           <NavbarLink url="/clubs/" name="Explore Clubs" :active="route.name === 'club-list'" />
-          <NavbarLink url="/dashboard/" name="Dashboard" v-if="currentUser" :active="route.name === 'dash'" />
-          <NavbarLink url="/login/" name="Log In" v-if="!currentUser" :active="route.name === 'login'" />
+          <NavbarLink url="/dashboard/" name="Dashboard" v-if="authStore.user" :active="route.name === 'dash'" />
+          <NavbarLink url="/login/" name="Log In" v-if="!authStore.user" :active="route.name === 'login'" />
         </ul>
       </div>
-      <div :class="{ 'hidden': !accountMenuExpanded }" class="z-50 my-4 w-56 text-base list-none bg-white rounded-sm divide-y divide-gray-100 shadow-sm dark:bg-gray-700 dark:divide-gray-600 absolute right-0 top-12" v-if="currentUser">
+      <div :class="{ 'hidden': !accountMenuExpanded }" class="z-50 my-4 w-56 text-base list-none bg-white rounded-sm divide-y divide-gray-100 shadow-sm dark:bg-gray-700 dark:divide-gray-600 absolute right-0 top-12" v-if="authStore.user">
         <div class="py-3 px-4">
-          <span class="block text-sm font-semibold text-gray-900 dark:text-white">{{ currentUser.displayName  }}</span>
-          <span class="block text-sm text-gray-500 truncate dark:text-gray-400">{{ currentUser.email }}</span>
+          <span class="block text-sm font-semibold text-gray-900 dark:text-white">{{ authStore.user.displayName  }}</span>
+          <span class="block text-sm text-gray-500 truncate dark:text-gray-400">{{ authStore.user.email }}</span>
         </div>
         <ul class="py-1 text-gray-500 dark:text-gray-400" aria-labelledby="dropdown">
           <li>

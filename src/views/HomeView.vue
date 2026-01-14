@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { useAuthStore } from '@/auth-store';
 import type { RouterLink } from 'vue-router';
 
+const authStore = useAuthStore();
 </script>
 
 <template>
@@ -11,7 +13,10 @@ import type { RouterLink } from 'vue-router';
 
       <p class="pt-12 pb-6 font-bold text-4xl">Welcome to your clubs.</p>
       <div class="flex items-center gap-3">
-        <RouterLink to="/login"
+        <RouterLink to="/dashboard" v-if="authStore.user"
+          class="text-white bg-orange-700 hover:bg-orange-800 focus:ring-4 focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-orange-600 dark:hover:bg-orange-700 focus:outline-hidden dark:focus:ring-orange-800">
+          Go to Dashboard</RouterLink>
+        <RouterLink to="/login" v-else
           class="text-white bg-orange-700 hover:bg-orange-800 focus:ring-4 focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-orange-600 dark:hover:bg-orange-700 focus:outline-hidden dark:focus:ring-orange-800">
           Log in</RouterLink>
 
@@ -40,11 +45,14 @@ import type { RouterLink } from 'vue-router';
           <p class="mb-4">Club Hub aims to simplify the administrative tasks involved with managing clubs at schools, for both club officers and school administrators. It also makes it easier for students to find and manage their own clubs.</p>
 
           <div class="flex items-center gap-3 md:mb-16">
-            <RouterLink to="/login"
+            <RouterLink to="/dashboard" v-if="authStore.user"
+              class="text-white bg-orange-700 hover:bg-orange-800 focus:ring-4 focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-orange-600 dark:hover:bg-orange-700 focus:outline-hidden dark:focus:ring-orange-800">
+              Go to Dashboard</RouterLink>
+            <RouterLink to="/login" v-else
               class="text-white bg-orange-700 hover:bg-orange-800 focus:ring-4 focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-orange-600 dark:hover:bg-orange-700 focus:outline-hidden dark:focus:ring-orange-800">
               Log in</RouterLink>
 
-            <RouterLink to="/explore"
+            <RouterLink to="/clubs"
               class="text-gray-900 bg-white border border-gray-300 focus:outline-hidden hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700">
               Explore clubs</RouterLink>
           </div>
