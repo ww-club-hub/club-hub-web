@@ -30,8 +30,30 @@ const meetings = useMeetings();
 const meetingsCollection = collection(props.clubDoc, "meetings");
 
 // Refs for active and upcoming meetings
-const activeMeetings = ref<DocWithId<ClubMeeting>[]>([]);
-const upcomingMeetings = ref<DocWithId<ClubMeeting>[]>([]);
+const fetchedMeetings = ref<DocWithId<ClubMeeting>[]>([]);
+// Fetch meetings whose endTime is >= 30 minutes ago, order by startTime ascending, limit 6
+const nowMillis = new Date().getTime();
+const THIRTY_MIN_MS = 30 * 60 * 1000;
+const thirtyMinAgo = new Date(nowMillis - THIRTY_MIN_MS);
+
+// Active meetings: ended up to 30min ago, start up to 30min from now, or ongoing
+const activeMeetings = computed(() => fetchedMeetings.value.filter(m => {
+  const start = m.startTime.toMillis();
+  const end = m.endTime.toMillis();
+  return (
+    end >= nowMillis - THIRTY_MIN_MS &&
+    start <= nowMillis + THIRTY_MIN_MS
+  );
+}));
+
+// Upcoming meetings: future meetings in the same month that are not active
+const upcomingMeetings = computed(() => fetchedMeetings.value.filter(m => {
+  const start = m.startTime.toMillis();
+  // Not in activeMeetings and in the future
+  return (
+    start > nowMillis + THIRTY_MIN_MS
+  );
+}));
 
 const currentAttendanceMeeting = ref<DocWithId<ClubMeeting> | null>(null);
 
@@ -71,6 +93,7 @@ async function createMeeting(meeting: ClubMeeting) {
   };
 
   meetings.addMeeting(meetingDoc, props.club.id);
+  fetchedMeetings.value.push(meetingDoc);
 
   showModal.value = false;
 }
@@ -85,6 +108,9 @@ async function takeAttendance(code: string) {
       code,
       meetingId: currentAttendanceMeeting.value!.id
     });
+
+    // mark present
+    await meetings.setAttendance(currentAttendanceMeeting.value!.id, true);
 
     showAttendanceDialog.value = false;
     currentAttendanceMeeting.value = null;
@@ -132,17 +158,10 @@ if (route.query.meetingId) {
 }
 
 onMounted(async () => {
-  const now = new Date();
-
   // load current month meetings for calendar
-  await meetings.loadSection([props.club.id, new Date(now.getFullYear(), now.getMonth())]);
+  await meetings.loadSection([props.club.id, new Date(new Date().getFullYear(), new Date().getMonth())]);
 
-  // Fetch meetings whose endTime is >= 30 minutes ago, order by startTime ascending, limit 6
-  const nowMillis = now.getTime();
-  const THIRTY_MIN_MS = 30 * 60 * 1000;
-  const thirtyMinAgo = new Date(nowMillis - THIRTY_MIN_MS);
-
-  const fetchedMeetings = await typedGetDocs<ClubMeeting>(
+  fetchedMeetings.value = await typedGetDocs<ClubMeeting>(
     query(
       meetingsCollection,
       where("endTime", ">=", thirtyMinAgo),
@@ -150,25 +169,6 @@ onMounted(async () => {
       limit(6)
     )
   );
-
-  // Active meetings: ended up to 30min ago, start up to 30min from now, or ongoing
-  activeMeetings.value = fetchedMeetings.filter(m => {
-    const start = m.startTime.toMillis();
-    const end = m.endTime.toMillis();
-    return (
-      end >= nowMillis - THIRTY_MIN_MS &&
-      start <= nowMillis + THIRTY_MIN_MS
-    );
-  });
-
-  // Upcoming meetings: future meetings in the same month that are not active
-  upcomingMeetings.value = fetchedMeetings.filter(m => {
-    const start = m.startTime.toMillis();
-    // Not in activeMeetings and in the future
-    return (
-      start > nowMillis + THIRTY_MIN_MS
-    );
-  });
 });
 </script>
 
@@ -182,6 +182,7 @@ onMounted(async () => {
         v-for="meeting in activeMeetings" :key="meeting.id" :meeting="meeting"
         :active-meeting="true"
         :can-rsvp="false"
+        :attendance-taken="meetings.meetingAttendance.get(meeting.id)"
         :can-manage-attendance="(role.officer & (1 << OfficerPermission.Meetings)) > 0 || role.stuco"
         :club="club"
         @open-attendance-modal="handleMeetingAttendance(meeting)"

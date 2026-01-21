@@ -7,6 +7,7 @@ const props = defineProps<{
   meeting: ClubMeeting & { id: string },
   activeMeeting?: boolean,
   canManageAttendance?: boolean,
+  attendanceTaken?: boolean,
   canRsvp?: boolean,
   club: Club
 }>();
@@ -71,12 +72,14 @@ onMounted(loadRsvp);
       :class="{ 'ms-auto rounded-full': activeMeeting, 'rounded-lg': !activeMeeting }"
     >Manage attendance</router-link>
     <button
-      v-if="activeMeeting"
-      type="button"
-      class="text-white bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-orange-300 dark:focus:ring-orange-800 shadow-lg shadow-orange-500/50 dark:shadow-lg dark:shadow-orange-800/80 font-medium rounded-full text-sm px-5 py-2.5 text-center me-2 mb-2 block"
+      v-if="activeMeeting" type="button" :disabled="attendanceTaken"
+      class="text-white bg-linear-to-r from-orange-400 via-orange-500 to-orange-600 shadow-lg shadow-orange-500/50 dark:shadow-lg dark:shadow-orange-800/80 font-medium rounded-full text-sm px-5 py-2.5 text-center me-2 mb-2 block"
+      :class="{
+        'hover:bg-linear-to-br focus:ring-4 focus:outline-none focus:ring-orange-300 dark:focus:ring-orange-800': !attendanceTaken
+      }"
       @click="$emit('open-attendance-modal')"
     >
-      Take attendance
+      {{ attendanceTaken ? 'Attendance Taken' : 'Take attendance' }}
     </button>
 
     <!-- only for non-active meetings -->
