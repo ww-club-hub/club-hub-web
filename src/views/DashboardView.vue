@@ -26,14 +26,17 @@ onMounted(async () => {
       return;
     }
 
-    const clubs = [...(claims.memberOf ?? []), ...Object.keys(claims.officerOf ?? {})];
+    const clubs = new Set<string>();
+    claims.memberOf?.forEach(c => clubs.add(c));
+    if (claims.offerOf) Object.keys(claims.offerOf).forEach(c => clubs.add(c));
+    const clubsList = [...clubs];
 
-    myClubs.value = await Promise.all(clubs.map(async club => {
+    myClubs.value = await Promise.all(clubsList.map(async club => {
       const clubDoc = await typedGetDoc<Club>(doc(db, "schools", claims.school, "clubs", club));
-      return clubDoc;
+      return clubDoc!;
     }));
 
-    messages.value = (await Promise.all(clubs.map(async club => {
+    messages.value = (await Promise.all(clubsList.map(async club => {
       // get most recent message
       const docs = await typedGetDocs<ClubUpdate>(
         query(
@@ -60,8 +63,9 @@ onMounted(async () => {
 });
 </script>
 
-  <template>
-    <div class="min-h-screen bg-gray-100 dark:bg-gray-900 p-4">
+<template>
+  <div class="min-h-screen bg-gray-100 dark:bg-gray-900 p-4">
+    <div class="max-w-screen-xl mx-auto">
       <!-- Loading State -->
       <div v-if="loading" class="flex items-center justify-center min-h-[400px]">
         <div class="text-center">
@@ -80,7 +84,7 @@ onMounted(async () => {
       <!-- Dashboard Content -->
       <section v-else class="grid grid-cols-5 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <!-- Messages -->
-       <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow col-span-2">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow col-span-2">
             <div class="flex justify-between items-center mb-4">
               <h2 class="text-xl font-semibold text-gray-700 dark:text-white">Recent Messages</h2>
               <a href="#" class="text-blue-500 dark:text-blue-300">All Messages</a>
@@ -102,10 +106,10 @@ onMounted(async () => {
                   </div>
                   <div class="flex items-center space-x-2">
                     <button class=" text-gray-700 dark:text-white">
-                   envelope
+                    envelope
                     </button>
                     <button class=" text-gray-700 dark:text-white">
-                       X
+                        X
                     </button>
                   </div>
                 </div>
@@ -155,4 +159,5 @@ onMounted(async () => {
 
       </section>
     </div>
-  </template>
+  </div>
+</template>
