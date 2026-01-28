@@ -82,7 +82,7 @@ onMounted(async () => {
       </div>
 
       <!-- Dashboard Content -->
-      <section v-else class="grid grid-cols-5 md:grid-cols-2 lg:grid-cols-5 gap-6">
+      <section v-else class="grid grid-cols-5 md:grid-cols-2 lg:grid-cols-5 gap-y-6">
         <!-- Messages -->
         <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow col-span-2">
             <div class="flex justify-between items-center mb-4">
