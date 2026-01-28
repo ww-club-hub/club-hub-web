@@ -14,7 +14,9 @@ type UpdateItem = {
 const myClubs = ref<DocWithId<Club>[]>([]);
 const messages = ref<UpdateItem[]>([]);
 const loading = ref(true);
-const error = ref<string | null>(null);
+const error = ref<string | null>(null);\
+
+const hiddenMessages = ref<string[]>([])
 
 onMounted(async () => {
   try {
@@ -92,7 +94,7 @@ onMounted(async () => {
 
           <!--  Messages from club officers: placeholders -->
             <div class="space-y-4">
-              <div class="bg-white dark:bg-gray-700 p-4 rounded-lg shadow" v-for="message in messages">
+              <div class="bg-white dark:bg-gray-700 p-4 rounded-lg shadow" v-for="message in messages.filter((m) => !hiddenMessages.includes(m.update.id))">
                 <div class="flex justify-between items-center">
                   <div>
                     <div class="flex items-center">
@@ -105,10 +107,7 @@ onMounted(async () => {
                     </div>
                   </div>
                   <div class="flex items-center space-x-2">
-                    <button class=" text-gray-700 dark:text-white">
-                    envelope
-                    </button>
-                    <button class=" text-gray-700 dark:text-white">
+                    <button class=" text-gray-700 dark:text-white" @click="hiddenMessages.push(m.update.id)">
                         X
                     </button>
                   </div>
