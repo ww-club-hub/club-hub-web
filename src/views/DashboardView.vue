@@ -14,7 +14,7 @@ type UpdateItem = {
 const myClubs = ref<DocWithId<Club>[]>([]);
 const messages = ref<UpdateItem[]>([]);
 const loading = ref(true);
-const error = ref<string | null>(null);\
+const error = ref<string | null>(null);
 
 const hiddenMessages = ref<string[]>([])
 
@@ -107,8 +107,10 @@ onMounted(async () => {
                     </div>
                   </div>
                   <div class="flex items-center space-x-2">
-                    <button class=" text-gray-700 dark:text-white" @click="hiddenMessages.push(m.update.id)">
-                        X
+                    <button class="rounded-full text-gray-700 dark:text-white hover:bg-gray-500 p-3" @click="hiddenMessages.push(message.update.id)">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                      </svg>
                     </button>
                   </div>
                 </div>
