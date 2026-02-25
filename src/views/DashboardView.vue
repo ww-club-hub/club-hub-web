@@ -2,13 +2,18 @@
 import { ref, onMounted } from 'vue';
 import { RouterLink } from 'vue-router';
 import { auth, db } from '@/firebase';
+import { getCachedProfile } from  "@/profiles";
 import type { Club, ClubMeeting, ClubUpdate } from '@/schema';
 import { type DocWithId, getClaims, typedGetDocs, typedGetDoc } from '@/utils';
 import { collection, doc, limit, orderBy, query, where } from 'firebase/firestore';
 
 type UpdateItem = {
   update: DocWithId<ClubUpdate>,
-  club: DocWithId<Club>
+  club: DocWithId<Club>,
+  profile: {
+    displayName: string;
+    photoUrl: string;
+  }
 }
 
 const myClubs = ref<{ club: DocWithId<Club>, activeMeeting: DocWithId<ClubMeeting> | null }[]>([]);
@@ -36,8 +41,11 @@ onMounted(async () => {
     const theTime = Date.now();
     const THIRTY_MIN_MS = 30 * 60 * 1000;
 
-    myClubs.value = await Promise.all(clubsList.map(async club => {
+    myClubs.value = (await Promise.all(clubsList.map(async club => {
       const clubRef = doc(db, "schools", claims.school, "clubs", club);
+      const clubDoc = await typedGetDoc<Club>(clubRef);
+
+      if (!clubDoc) return [];
       const meetingsCollection = collection(clubRef, "meetings");
       //const meetingsCollection = collection(db, "schools", claims.school, "clubs", club, "meetings");
 
@@ -51,18 +59,16 @@ onMounted(async () => {
         )
       );
 
-      console.log(activeMeetings);
-
       let activeMeeting = null;
       if (activeMeetings.length > 0) {
         activeMeeting = activeMeetings[0];
       }
-      const clubDoc = await typedGetDoc<Club>(clubRef);
-      return {
+
+      return [{
         club: clubDoc!,
         activeMeeting
-      };
-    }));
+      }];
+    }))).flat();
 
     messages.value = (await Promise.all(clubsList.map(async club => {
       // get most recent message
@@ -74,10 +80,15 @@ onMounted(async () => {
         )
       );
 
-      return docs.map(u => ({
+      if (docs.length === 0) return [];
+
+      const u = docs[0];
+
+      return {
         update: u,
+        profile: await getCachedProfile(u.creator),
         club: myClubs.value.find(c => c.club.id == club)!.club
-      }));
+      };
     }))).flat();
 
     loading.value = false;
@@ -110,12 +121,12 @@ onMounted(async () => {
       </div>
 
       <!-- Dashboard Content -->
-      <section v-else class="grid grid-cols-5 md:grid-cols-2 lg:grid-cols-5 gap-y-6">
+      <section v-else class="grid grid-cols-5 md:grid-cols-2 lg:grid-cols-5 gap-y-6 gap-x-6">
         <!-- Messages -->
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow col-span-2 space-x-2">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow col-span-2">
             <div class="flex justify-between items-center mb-4">
               <h2 class="text-xl font-semibold text-gray-700 dark:text-white">Recent Messages</h2>
-              <a href="#" class="text-blue-500 dark:text-blue-300">All Messages</a>
+              <!---<a href="#" class="text-blue-500 dark:text-blue-300 hover:underline">All Messages</a>-->
             </div>
 
           <!--  Messages from club officers: placeholders -->
@@ -124,10 +135,12 @@ onMounted(async () => {
                 <div class="flex justify-between items-center">
                   <div>
                     <div class="flex items-center">
-                      <img v-if="message.club.logoUrl" :src="message.club.logoUrl" alt="Club icon" class="w-10 h-10 rounded-full mr-4">
+                      <div class="relative mr-4" v-if="message.club.logoUrl">
+                        <img :src="message.club.logoUrl" alt="Club icon" class="w-10 h-10 rounded-full">
+                        <img v-if="message.profile.photoUrl" :src="message.profile.photoUrl" alt="Profile icon" class="w-5 h-5 translate-y-1/2 translate-x-1/2 right-0 bottom-0 rounded-full absolute">
+                      </div>
                       <div>
-                        <!-- TODO: resolve emails to name -->
-                        <h3 class="text-lg font-semibold text-gray-700 dark:text-white">{{ message.club.name }}: {{ message.update.creator }}</h3>
+                        <h3 class="text-lg font-semibold text-gray-700 dark:text-white">{{ message.club.name }}: {{ message.profile.displayName }}</h3>
                         <p class="text-sm text-gray-500 dark:text-gray-400">{{ message.update.timestamp.toDate().toLocaleString() }}</p>
                       </div>
                     </div>
