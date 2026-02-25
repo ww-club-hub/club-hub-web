@@ -2,16 +2,16 @@
 import { ref, onMounted } from 'vue';
 import { RouterLink } from 'vue-router';
 import { auth, db } from '@/firebase';
-import type { Club, ClubUpdate } from '@/schema';
+import type { Club, ClubMeeting, ClubUpdate } from '@/schema';
 import { type DocWithId, getClaims, typedGetDocs, typedGetDoc } from '@/utils';
-import { collection, doc, limit, orderBy, query } from 'firebase/firestore';
+import { collection, doc, limit, orderBy, query, where } from 'firebase/firestore';
 
 type UpdateItem = {
   update: DocWithId<ClubUpdate>,
   club: DocWithId<Club>
 }
 
-const myClubs = ref<DocWithId<Club>[]>([]);
+const myClubs = ref<{ club: DocWithId<Club>[], activeMeeting: DocWithId<ClubMeeting> | null }[]>([]);
 const messages = ref<UpdateItem[]>([]);
 const loading = ref(true);
 const error = ref<string | null>(null);
@@ -20,7 +20,7 @@ const hiddenMessages = ref<string[]>([])
 
 onMounted(async () => {
   try {
-    // get all messages
+    // get all messaged
     const claims = await getClaims(auth);
     if (!claims) {
       error.value = "Unable to load user claims";
@@ -33,9 +33,35 @@ onMounted(async () => {
     if (claims.offerOf) Object.keys(claims.offerOf).forEach(c => clubs.add(c));
     const clubsList = [...clubs];
 
+    const theTime = Date.now();
+    const THIRTY_MIN_MS = 30 * 60 * 1000;
+
     myClubs.value = await Promise.all(clubsList.map(async club => {
-      const clubDoc = await typedGetDoc<Club>(doc(db, "schools", claims.school, "clubs", club));
-      return clubDoc!;
+      const clubRef = doc(db, "schools", claims.school, "clubs", club);
+      const meetingsCollection = collection(clubRef, "meetings");
+      //const meetingsCollection = collection(db, "schools", claims.school, "clubs", club, "meetings");
+
+      const activeMeetings = await typedGetDocs<ClubMeeting>(
+        query(
+          meetingsCollection,
+          where("endTime", ">=", theTime - THIRTY_MIN_MS),
+          where("startTime", "<=", theTime + THIRTY_MIN_MS),
+          orderBy("startTime", "asc"),
+          limit(1)
+        )
+      );
+
+      console.log(activeMeetings);
+
+      let activeMeeting = null;
+      if (activeMeetings.length > 0) {
+        activeMeeting = activeMeetings[0];
+      }
+      const clubDoc = await typedGetDoc<Club>(clubRef);
+      return {
+        club: clubDoc!,
+        activeMeeting
+      };
     }));
 
     messages.value = (await Promise.all(clubsList.map(async club => {
@@ -51,15 +77,17 @@ onMounted(async () => {
       if (docs.length > 0) {
         return {
           update: docs[0],
-          club: myClubs.value.find(c => c.id === club)!
+          club: myClubs.value.find(c => c.club.id == club)!
         }
       } else return null;
     }))).filter((m: UpdateItem | null): m is UpdateItem => !!m);
 
     loading.value = false;
   } catch (e) {
-    console.error("Error loading dashboard:", e);
+    //console.error("Error loading dashboard:", e);
     error.value = "Failed to load dashboard data";
+    throw e;
+  } finally {
     loading.value = false;
   }
 });
@@ -125,7 +153,7 @@ onMounted(async () => {
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <RouterLink
               :to="{ name: 'club-dashboard', params: { clubId: club.id } }"
-              v-for="club in myClubs"
+              v-for="{ club } in myClubs"
               :key="club.id"
               class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow hover:shadow-lg transition-shadow duration-200 flex items-center gap-4 group"
             >
@@ -135,7 +163,7 @@ onMounted(async () => {
                 :alt="club.name + ' logo'"
                 class="w-16 h-16 rounded-full object-cover flex-shrink-0"
               >
-              <div v-else class="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+              <div v-else class="w-16 h-16 rounded-full pg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
                 <span class="text-white text-2xl font-bold">{{ club.name.charAt(0).toUpperCase() }}</span>
               </div>
               <div class="flex-1 min-w-0">

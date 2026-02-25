@@ -8,9 +8,9 @@ import { cloudflare } from '@cloudflare/vite-plugin';
 
 function getFirestoreEmulatorUrl() {
   if (process.env.CODESPACE_NAME) {
-    return `["${process.env.CODESPACE_NAME}-8080.${process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}", 443]`;
+    return `["${process.env.CODESPACE_NAME}-8081.${process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}", 443]`;
   } else {
-    return `["127.0.0.1", 8080]`
+    return `["127.0.0.1", 8081]`
   }
 }
 
