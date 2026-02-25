@@ -11,7 +11,7 @@ type UpdateItem = {
   club: DocWithId<Club>
 }
 
-const myClubs = ref<{ club: DocWithId<Club>[], activeMeeting: DocWithId<ClubMeeting> | null }[]>([]);
+const myClubs = ref<{ club: DocWithId<Club>, activeMeeting: DocWithId<ClubMeeting> | null }[]>([]);
 const messages = ref<UpdateItem[]>([]);
 const loading = ref(true);
 const error = ref<string | null>(null);
@@ -30,7 +30,7 @@ onMounted(async () => {
 
     const clubs = new Set<string>();
     claims.memberOf?.forEach(c => clubs.add(c));
-    if (claims.offerOf) Object.keys(claims.offerOf).forEach(c => clubs.add(c));
+    if (claims.officerOf) Object.keys(claims.officerOf).forEach(c => clubs.add(c));
     const clubsList = [...clubs];
 
     const theTime = Date.now();
@@ -74,13 +74,11 @@ onMounted(async () => {
         )
       );
 
-      if (docs.length > 0) {
-        return {
-          update: docs[0],
-          club: myClubs.value.find(c => c.club.id == club)!
-        }
-      } else return null;
-    }))).filter((m: UpdateItem | null): m is UpdateItem => !!m);
+      return docs.map(u => ({
+        update: u,
+        club: myClubs.value.find(c => c.club.id == club)!.club
+      }));
+    }))).flat();
 
     loading.value = false;
   } catch (e) {
@@ -95,9 +93,9 @@ onMounted(async () => {
 
 <template>
   <div class="min-h-screen bg-gray-100 dark:bg-gray-900 p-4">
-    <div class="max-w-screen-xl mx-auto">
+    <div class="max-w-7xl mx-auto">
       <!-- Loading State -->
-      <div v-if="loading" class="flex items-center justify-center min-h-[400px]">
+      <div v-if="loading" class="flex items-center justify-center min-h-100">
         <div class="text-center">
           <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           <p class="mt-4 text-gray-600 dark:text-gray-400">Loading dashboard...</p>
@@ -105,7 +103,7 @@ onMounted(async () => {
       </div>
 
       <!-- Error State -->
-      <div v-else-if="error" class="flex items-center justify-center min-h-[400px]">
+      <div v-else-if="error" class="flex items-center justify-center min-h-100">
         <div class="text-center">
           <p class="text-red-600 dark:text-red-400">{{ error }}</p>
         </div>
@@ -114,7 +112,7 @@ onMounted(async () => {
       <!-- Dashboard Content -->
       <section v-else class="grid grid-cols-5 md:grid-cols-2 lg:grid-cols-5 gap-y-6">
         <!-- Messages -->
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow col-span-2">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow col-span-2 space-x-2">
             <div class="flex justify-between items-center mb-4">
               <h2 class="text-xl font-semibold text-gray-700 dark:text-white">Recent Messages</h2>
               <a href="#" class="text-blue-500 dark:text-blue-300">All Messages</a>
@@ -161,9 +159,9 @@ onMounted(async () => {
                 v-if="club.logoUrl"
                 :src="club.logoUrl"
                 :alt="club.name + ' logo'"
-                class="w-16 h-16 rounded-full object-cover flex-shrink-0"
+                class="w-16 h-16 rounded-full object-cover shrink-0"
               >
-              <div v-else class="w-16 h-16 rounded-full pg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+              <div v-else class="w-16 h-16 rounded-full pg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shrink-0">
                 <span class="text-white text-2xl font-bold">{{ club.name.charAt(0).toUpperCase() }}</span>
               </div>
               <div class="flex-1 min-w-0">

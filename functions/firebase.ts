@@ -9,7 +9,7 @@ export const AUTH_SCOPE = "https://identitytoolkit.googleapis.com/";
 
 export function getFirestoreUrl(env: Env) {
   if (env.USE_EMULATOR) {
-    return "http://localhost:8080/v1";
+    return "http://localhost:8081/v1";
   } else {
     return "https://firestore.googleapis.com/v1";
   }

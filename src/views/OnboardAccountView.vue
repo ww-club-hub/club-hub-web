@@ -264,7 +264,7 @@ async function setInterests() {
                   <p class="font-normal text-gray-700 dark:text-gray-400">{{ school.website }}</p>
                 </div>
                 <ButtonLoader :loading="loading.joinSchool" type="button"
-                  class="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-orange-700 hover:text-white border-2 border-orange-700 hover:bg-orange-800 focus:ring-4 focus:outline-hidden focus:ring-orange-300 not-only-of-type:rounded-lg dark:border-orange-500 dark:text-orange-300 dark:hover:text-white dark:hover:bg-orange-500 dark:focus:ring-orange-800"
+                  class="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium text-center text-orange-700 hover:text-white border-2 border-orange-700 hover:bg-orange-800 focus:ring-4 focus:outline-hidden focus:ring-orange-300 not-only-of-type:rounded-lg dark:border-orange-500 dark:text-orange-300 dark:hover:text-white dark:hover:bg-orange-500 dark:focus:ring-orange-800"
                   @click="joinSchool(school.id)">
                   Join
                   <svg class="rtl:rotate-180 w-3.5 h-3.5 ms-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
