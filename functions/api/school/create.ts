@@ -7,7 +7,7 @@ import { z } from "zod";
 const CreateSchoolReq = z.object({
   name: z.string(),
   domainRestriction: z.optional(z.array(z.string())),
-  website: z.string().url()
+  website: z.url()
 });
 
 export default authedProcedure

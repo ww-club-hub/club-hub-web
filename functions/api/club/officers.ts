@@ -6,7 +6,7 @@ import { TRPCError } from "@trpc/server";
 
 const UpdateOfficersReq = z.object({
   clubId: z.string(),
-  officers: z.record(z.string().email(), z.object({
+  officers: z.record(z.email(), z.object({
     name: z.string(),
     role: z.string(),
     // bitmask

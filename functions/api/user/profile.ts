@@ -1,12 +1,11 @@
 import { z } from "zod";
 import { AUTH_SCOPE, lookupUser,  makeServiceAccountToken } from "../../firebase";
-import { publicProcedure } from "../../trpc";
 import { TRPCError } from "@trpc/server";
 import { authedProcedure } from "../../utils";
 import { UserClaims } from "../../types";
 
 const GetProfileReq = z.object({
-  email: z.string().email()
+  email: z.email()
 });
 
 // public endpoint to get a user's public profile info

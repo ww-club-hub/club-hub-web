@@ -7,7 +7,7 @@ import { TRPCError } from "@trpc/server";
 const AddRemoveMemberReq = z.object({
   clubId: z.string(),
   // if this is present, an officer is adding/removing a member
-  memberEmail: z.optional(z.string().email()),
+  memberEmail: z.optional(z.email()),
   removeMember: z.optional(z.boolean())
 });
 
