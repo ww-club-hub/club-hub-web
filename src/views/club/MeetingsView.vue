@@ -9,8 +9,7 @@ import { type DocWithId, typedGetDocs, generateAttendanceCode } from '@/utils';
 import 'v-calendar/style.css';
 import { Calendar } from 'v-calendar';
 import TakeAttendanceDialog from '@/components/TakeAttendanceDialog.vue';
-import { useRoute, useRouter } from 'vue-router';
-import type { FirebaseError } from '@firebase/util';
+import { useRoute } from 'vue-router';
 import { useMeetings } from '@/meeting-store';
 import api, { isTRPCClientError } from '@/api';
 

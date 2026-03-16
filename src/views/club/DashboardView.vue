@@ -1,41 +1,63 @@
 <script setup lang="ts">
-import { db } from '@/firebase';
-import type { Club, ClubRole, ClubUpdate } from '@/schema';
-import { typedGetDocs } from '@/utils';
-import { collection, limit, orderBy, query, where } from 'firebase/firestore';
-import { ref } from 'vue';
-import { onMounted } from 'vue';
+import { useMeetings } from '@/meeting-store';
+import router from '@/router';
+import type { Club, ClubMeeting, ClubRole, ClubUpdate } from '@/schema';
+import { type DocWithId, typedGetDocs } from '@/utils';
+import { collection, DocumentReference, limit, orderBy, query, where } from 'firebase/firestore';
 import { useRoute } from 'vue-router';
 
 const route = useRoute();
 const clubId = route.params.clubId as string;
 
+const meetings = useMeetings();
+
 const props = defineProps<{
   role: ClubRole,
   school: string,
-  club: Club
+  club: Club,
+  clubDoc: DocumentReference
 }>();
 
-const updates = ref<ClubUpdate[]>([]);
+const messagesCollection = collection(props.clubDoc, "messages");
+const meetingsCollection = collection(props.clubDoc, "meetings");
 
-const meetings: unknown[] = [];
+const updates = await typedGetDocs<DocWithId<ClubUpdate>>(
+  query(
+    messagesCollection,
+    where("timestamp", ">=", Date.now()),
+    orderBy("timestamp", "desc"),
+    limit(5)
+  )
+);
 
-const messagesCollection = collection(db, "schools", props.school, "clubs", props.club.id, "messages");
-
-onMounted(async () => {
-  // get 5 most recent messages
-  updates.value = await typedGetDocs(
-    query(
-      messagesCollection,
-      where("timestamp", ">=", Date.now()),
-      orderBy("timestamp", "desc"),
-      limit(5)
-    )
-  );
-});
+const nowMillis = new Date().getTime();
+const THIRTY_MIN_MS = 30 * 60 * 1000;
+const activeMeetings = await typedGetDocs<ClubMeeting>(
+  query(
+    meetingsCollection,
+    where("endTime", ">=", nowMillis - THIRTY_MIN_MS),
+    where("startTime", "<=", nowMillis + THIRTY_MIN_MS),
+    orderBy("startTime", "asc"),
+    limit(1)
+  )
+);
 </script>
 
 <template>
+  <div v-if="activeMeetings.length > 0" class="mb-3">
+    <h2 class="text-lg tracking-tight uppercase font-semibold text-gray-800 dark:text-gray-100 mb-2">Active meetings:</h2>
+    <div class="flex gap-3 flex-row flex-wrap md:flex-col">
+      <MeetingCard
+        v-for="meeting in activeMeetings" :key="meeting.id" :meeting="meeting"
+        :active-meeting="true"
+        :can-rsvp="false"
+        :attendance-taken="meetings.meetingAttendance.get(meeting.id)"
+        :club="club"
+        @open-attendance-modal="router.push({ name: 'club-meetings', params: { clubId: club.id }, query: { meetingId: meeting.id } })"
+      />
+    </div>
+  </div>
+
   <div class="md:grid grid-cols-3 gap-4">
     <div>
       <h2 class="text-lg tracking-tight uppercase font-semibold text-gray-800 dark:text-gray-100 mb-2">Officer updates:</h2>
@@ -57,7 +79,7 @@ onMounted(async () => {
     <div>
       <h2 class="text-lg tracking-tight uppercase font-semibold text-gray-800 dark:text-gray-100 mb-2">Upcoming meetings:</h2>
 
-      <div v-if="meetings.length > 0" class="flex gap-3 flex-row flex-wrap md:flex-col">
+      <div v-if="meetings.meetings.length > 0" class="flex gap-3 flex-row flex-wrap md:flex-col">
         <div v-for="meeting, i in meetings" :key="i" class="max-w-sm py-4 px-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
         </div>
       </div>
