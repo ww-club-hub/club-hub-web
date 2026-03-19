@@ -1,6 +1,7 @@
 import { publicProcedure } from "./trpc";
 import { TRPCError } from "@trpc/server";
 import type { OfficerPermission, UserClaims } from "./types";
+import { z } from "zod";
 
 export class RequestError extends Error {
   url: string;
@@ -59,6 +60,21 @@ export function checkOfficerPermission(user: UserClaims, clubId: string, permiss
 
   const permissions = user.officerOf[clubId];
   return (permissions & permission) !== 0;
+}
+
+/**
+ * Returns a procedure that checks officer permissions for a given club and permission.
+ */
+export function officerProcedure(permission: OfficerPermission) {
+  return authedProcedure
+    .input(z.object({ clubId: z.string() }))
+    .use(async ({ ctx, input, next }) => {
+      const { clubId } = input;
+      if (!checkOfficerPermission(ctx.user, clubId, permission)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You do not have permission for this club" });
+      }
+      return next();
+    });
 }
 
 

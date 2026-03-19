@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { AUTH_SCOPE, FIRESTORE_SCOPE, makeFirestoreDocPath, getIdentityToolkitUrl, makeServiceAccountToken, updateUserRoles, parseFirestoreObject, makeFirestoreField } from "../../firebase";
 import { FirestoreRestDocument, OfficerPermission, UserClaims } from "../../types";
-import { authedJsonRequest, authedProcedure, checkOfficerPermission } from "../../utils";
+import { authedJsonRequest, officerProcedure } from "../../utils";
 import { TRPCError } from "@trpc/server";
 
 const UpdateOfficersReq = z.object({
@@ -14,17 +14,9 @@ const UpdateOfficersReq = z.object({
   }))
 });
 
-export default authedProcedure
+export default officerProcedure(OfficerPermission.Officers)
   .input(UpdateOfficersReq)
   .mutation(async ({ ctx, input }) => {
-    // ensure they have permissions to modify officers
-    if (!checkOfficerPermission(ctx.user, input.clubId, OfficerPermission.Officers)) {
-      throw new TRPCError({
-        code: "FORBIDDEN",
-        message: "You do not have permissions to manage this club's officers"
-      });
-    }
-
     // Ensure at least one officer has the Officers permission
     const hasOfficerWithPermission = Object.values(input.officers).some(
       officer => (officer.permissions & OfficerPermission.Officers) !== 0
