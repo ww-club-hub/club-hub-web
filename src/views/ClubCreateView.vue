@@ -8,7 +8,7 @@ import { useRouter } from "vue-router";
 import { addDoc, collection } from "firebase/firestore";
 import { api, isTRPCClientError } from "@/api";
 import FormInput from "@/components/form/FormInput.vue";
-import { getCachedProfile } from "@/profiles";
+import { getCachedProfile } from "@/stores/profiles";
 import ButtonLoader from "@/components/ui/ButtonLoader.vue";
 
 const claims = (await getIdTokenResult(auth.currentUser!)).claims as UserClaims;

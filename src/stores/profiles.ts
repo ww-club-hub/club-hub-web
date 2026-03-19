@@ -1,4 +1,4 @@
-import { api } from "./api";
+import { api } from "@/api";
 
 async function getProfile(email: string) {
   return await api.user.profile.query({ email });

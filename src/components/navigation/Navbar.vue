@@ -4,7 +4,7 @@ import { auth } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { ref, onMounted, onUnmounted } from "vue";
 import { useRoute } from "vue-router";
-import { useAuthStore } from "@/auth-store";
+import { useAuthStore } from "@/stores/auth";
 
 const authStore = useAuthStore();
 const navbarExpanded = ref(false);

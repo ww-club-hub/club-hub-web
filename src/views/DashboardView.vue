@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue';
 import { RouterLink } from 'vue-router';
 import { auth, db } from '@/firebase';
-import { getCachedProfile } from  "@/profiles";
+import { getCachedProfile } from  "@/stores/profiles";
 import type { Club, ClubMeeting, ClubUpdate } from '@/schema';
 import { type DocWithId, getClaims, typedGetDocs, typedGetDoc } from '@/utils';
 import { collection, doc, limit, orderBy, query, where } from 'firebase/firestore';

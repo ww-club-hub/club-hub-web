@@ -7,7 +7,7 @@ import { api, isTRPCClientError } from "@/api";
 import FormInput from "@/components/form/FormInput.vue";
 import { ref } from "vue";
 import { onMounted } from "vue";
-import { getCachedProfile } from "@/profiles";
+import { getCachedProfile } from "@/stores/profiles";
 
 const { claims } = await getIdTokenResult(auth.currentUser!);
 const isOwner = claims.role === "owner";

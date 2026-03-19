@@ -10,7 +10,7 @@ import 'v-calendar/style.css';
 import { Calendar } from 'v-calendar';
 import TakeAttendanceDialog from '@/components/meetings/TakeAttendanceDialog.vue';
 import { useRoute } from 'vue-router';
-import { useMeetings } from '@/meeting-store';
+import { useMeetings } from '@/stores/meetings';
 import api, { isTRPCClientError } from '@/api';
 
 const route = useRoute();

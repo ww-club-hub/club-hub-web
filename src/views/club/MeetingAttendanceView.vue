@@ -6,7 +6,7 @@ import { useRoute } from 'vue-router';
 import { DocumentReference, doc, setDoc, updateDoc, type DocumentData } from 'firebase/firestore';
 import type { Club, ClubMeetingAttendance, ClubMeeting, ClubRole } from '@/schema';
 import { typedGetDoc, type DocWithId, generateAttendanceCode } from '@/utils';
-import { getCachedProfile } from '@/profiles';
+import { getCachedProfile } from '@/stores/profiles';
 
 const route = useRoute();
 

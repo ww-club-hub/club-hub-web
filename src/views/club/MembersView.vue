@@ -2,7 +2,7 @@
 import api, { isTRPCClientError } from '@/api';
 import FormInput from '@/components/form/FormInput.vue';
 import { db } from '@/firebase';
-import { getCachedProfile } from '@/profiles';
+import { getCachedProfile } from '@/stores/profiles';
 import { type ClubPrivate, type Club, type ClubRole, OfficerPermission, ClubSignupType } from '@/schema';
 import { showErrorToast, showSuccessToast } from '@/toast';
 import { typedGetDoc, type DocWithId } from '@/utils';

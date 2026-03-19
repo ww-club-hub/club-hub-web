@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useMeetings } from '@/meeting-store';
+import { useMeetings } from '@/stores/meetings';
 import router from '@/router';
 import type { Club, ClubMeeting, ClubRole, ClubUpdate } from '@/schema';
 import { type DocWithId, typedGetDocs } from '@/utils';
