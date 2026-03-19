@@ -10,7 +10,7 @@ export default authedProcedure
   .input(SetGradYearReq)
   .mutation(async ({ ctx, input }) => {
     const authToken = await makeServiceAccountToken(ctx.env, AUTH_SCOPE);
-
+    // TODO: maybe restrict updating this? not sure if we're using it for eligibility
     await updateUserRoles(ctx.env, authToken, ctx.user.user_id, ctx.user, {
       gradYear: input.gradYear,
     });

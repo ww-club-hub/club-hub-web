@@ -91,7 +91,7 @@ watch([user, claims], () => {
         <h1 class="text-2xl text-black dark:text-white font-semibold">Welcome, {{ user?.displayName }}</h1>
       </div>
 
-      <p class="text-black dark:text-white mb-2"><strong class="font-bold">Email: </strong> {{ user?.email }}</p>
+      <p class="text-black dark:text-white mb-2"><strong class="font-bold">School Email: </strong> {{ user?.email }}</p>
 
       <p class="text-black dark:text-white mb-2" v-if="claims"><strong class="font-bold">Graduation Year: </strong> {{ claims.gradYear as string }}</p>
 

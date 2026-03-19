@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { auth } from "../firebase";
-import { years } from "../assets/grad-years.json";
 import { topics } from "../assets/club-topics.json";
 import { type ParsedToken, getIdTokenResult, onAuthStateChanged, type User, sendEmailVerification, getIdToken, reload } from "firebase/auth";
 import { computed } from "vue";
@@ -52,6 +51,11 @@ const loading = ref({
 const router = useRouter();
 
 const context = getCurrentInstance()?.appContext;
+
+// Plausible graduation years
+// This year + the next four years
+const currentYear = new Date().getFullYear();
+const years = Array.from({ length: 5 }, (_, i) => (currentYear + i).toString());
 
 // LISTENERS
 
@@ -287,7 +291,6 @@ async function setInterests() {
             </p>
 
             <!-- graduation year dropdown -->
-            <!-- TODO: make list autoupdating, rather than just fixed list of 5 years -->
             <div>
               <div class="flex items-center mb-4" v-for="year in years" :key="year">
                 <input :id="`check-grad-year-${year}`" type="radio" :value="year" name="check-grad-years"
