@@ -1,19 +1,22 @@
 import { z } from "zod";
 import { FIRESTORE_SCOPE, makeFirestoreDocPath, makeFirestoreField, makeServiceAccountToken, parseFirestoreObject } from "../../../firebase";
-import { RequestError, authedJsonRequest, authedProcedure } from "../../../utils";
+import { RequestError, authedJsonRequest, officerProcedure } from "../../../utils";
 import { TRPCError } from "@trpc/server";
-import { FirestoreRestDocument, UserData } from "../../../types";
+import { FirestoreRestDocument, OfficerPermission, UserData } from "../../../types";
 import { exchangeOauthToken, fetchGoogleUserInfo, revokeOauthToken } from "../../../google-oauth";
 
 const AuthorizeGoogleReq = z.object({
+  clubId: z.string(),
   token: z.string()
 });
 
-export default authedProcedure
+// TODO: eventually migrate to dedicated google management permission
+export default officerProcedure(OfficerPermission.Forms | OfficerPermission.Messages)
   .input(AuthorizeGoogleReq)
   .mutation(async ({ ctx, input }) => {
     const firestoreToken = await makeServiceAccountToken(ctx.env, FIRESTORE_SCOPE);
 
+    // Authorize the linked google account
     const token = await exchangeOauthToken(ctx.env, input.token);
 
     if (!token) {
@@ -32,7 +35,6 @@ export default authedProcedure
         message: "Missing email or openid scopes"
       });
     }
-
     const userInfo = await fetchGoogleUserInfo(token.access_token);
     if (!userInfo?.email_verified) {
       throw new TRPCError({
@@ -40,13 +42,16 @@ export default authedProcedure
         message: "Could not fetch Google account email"
       });
     }
+    
+    // Google auth info is stored within clubs_private
+    const docPath = `/schools/${ctx.user.school}/clubs_private/${input.clubId}/?mask.fieldPaths=google`;
 
     try {
       // fetch old token config
       const tokenConfig = await authedJsonRequest<FirestoreRestDocument>(
         null,
         firestoreToken,
-        makeFirestoreDocPath(ctx.env, `/user_data/${ctx.user.user_id}/?mask.fieldPaths=google`),
+        makeFirestoreDocPath(ctx.env, docPath),
         "GET"
       ).then(r => r.name ? parseFirestoreObject(r.fields ?? {}) as unknown as Pick<UserData, "google"> : null);
 
@@ -71,7 +76,7 @@ export default authedProcedure
         }
       }).mapValue,
       firestoreToken,
-      makeFirestoreDocPath(ctx.env, `/user_data/${ctx.user.user_id}?updateMask.fieldPaths=google`),
+      makeFirestoreDocPath(ctx.env, docPath),
       "PATCH"
     );
 

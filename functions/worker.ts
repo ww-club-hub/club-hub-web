@@ -11,9 +11,9 @@ import searchSchools from "./api/school/search";
 import clubMembers from "./api/club/members";
 import clubOfficers from "./api/club/officers";
 import { removeAdmin, addAdmin, transferOwnership } from "./api/school/admin";
-import authorizeGoogle from "./api/user/google/authorize";
-import getGoogleToken from "./api/user/google/getToken";
-import revokeGoogleToken from "./api/user/google/revoke";
+import authorizeGoogle from "./api/club/google/authorize";
+import getGoogleToken from "./api/club/google/getToken";
+import revokeGoogleToken from "./api/club/google/revoke";
 import memberAttendanceStatistics from "./api/club/attendance/member-statistics";
 import clubAttendanceStatistics from "./api/club/attendance/club-statistics";
 import takeAttendance from "./api/club/attendance/take";
@@ -26,11 +26,6 @@ const appRouter = router({
     profile,
     gradYear: userGradYear,
     interests: userInterests,
-    google: router({
-      authorize: authorizeGoogle,
-      getToken: getGoogleToken,
-      revokeToken: revokeGoogleToken
-    })
   }),
   school: router({
     create: createSchool,
@@ -40,7 +35,7 @@ const appRouter = router({
       remove: removeAdmin,
       add: addAdmin,
       transferOwnership
-    })
+    }),
   }),
   club: router({
     members: clubMembers,
@@ -50,7 +45,12 @@ const appRouter = router({
       clubStatistics: clubAttendanceStatistics,
       take: takeAttendance,
       query: queryAttendance
-    })
+    }),
+    google: router({
+      authorize: authorizeGoogle,
+      getToken: getGoogleToken,
+      revokeToken: revokeGoogleToken
+    }),
   })
 });
 
