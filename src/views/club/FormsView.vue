@@ -301,14 +301,15 @@ async function onAddFormSubmit() {
         <form class="p-4 md:p-5 space-y-4 dark:bg-gray-800 rounded-b" @submit.prevent="onAddFormSubmit">
           <!-- authorization prompt -->
           <div v-if="!googleAccessToken" class="flex items-start gap-4 p-4 mb-4 text-sm text-yellow-800 border border-yellow-300 rounded-lg bg-yellow-50 dark:bg-yellow-950/50 dark:text-yellow-300 dark:border-yellow-800" role="alert">
-            <svg class="w-6 h-6 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-6 h-6 shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z"/>
             </svg>
             <span class="sr-only">Info</span>
             <div>
               <h4 class="font-semibold text-yellow-800 dark:text-yellow-200 mb-1">Google Authorization Required</h4>
               <p class="text-yellow-700 dark:text-yellow-100 mb-2">
-                To select a Google Form, you need to authorize access to your Google account. Club Hub will only have access to the specific files which you select.
+                To select a Google Form, you need to authorize access to your Google account. Club Hub will only have access to the specific files which you select. If possible, select 
+                a club-wide Google account, as only one account can be connected per club.
               </p>
               <ButtonLoader :loading="loading.authGoogle" type="button" class="text-white bg-[#4285F4] hover:bg-[#4285F4]/90 focus:ring-4 focus:outline-none focus:ring-[#4285F4]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-[#4285F4]/55" @click="openGoogleAuthorization">
                 <template v-slot:icon>

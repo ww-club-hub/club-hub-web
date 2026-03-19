@@ -162,6 +162,15 @@ const router = createRouter({
           }
         },
         {
+          name: 'club-email',
+          path: 'email',
+          component: () => import("@/views/club/EmailView.vue"),
+          meta: {
+            authRequired: true,
+            title: "Club Email"
+          }
+        },
+        {
           name: 'club-meetings',
           path: 'meetings',
           component: () => import("@/views/club/MeetingsView.vue"),
