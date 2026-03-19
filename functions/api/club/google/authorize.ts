@@ -80,11 +80,18 @@ export default officerProcedure(OfficerPermission.Forms | OfficerPermission.Mess
       "PATCH"
     );
 
-    return {
+    const result: {
+      success: boolean;
+      accessToken: string;
+      scope: string;
+      expiresAt: number;
+      email: string;
+    } = {
       success: true,
       accessToken: token.access_token,
       scope: token.scope,
       expiresAt: Date.now() + token.expires_in * 1000,
       email: userInfo.email
     };
+    return result;
   });

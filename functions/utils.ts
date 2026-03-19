@@ -51,6 +51,11 @@ export const authedProcedure = publicProcedure.use(async({ ctx, next }) => {
   });
 });
 
+/**
+ * Check if the user is an officer of the club and they have _any_ of the permissions in `permission`.
+ * @param allowAdmins whether to return true if the user is an owner/admin of the school. does NOT check if the club is part of this school
+ * @param permission a permission bitmask to check. this is OR rather than AND
+ */
 export function checkOfficerPermission(user: UserClaims, clubId: string, permission: OfficerPermission, allowAdmins = true) {
   // admin access
   if (allowAdmins && (user.role === "owner" || user.role === "admin")) return true;
@@ -59,6 +64,7 @@ export function checkOfficerPermission(user: UserClaims, clubId: string, permiss
   if (!user.officerOf) return false;
 
   const permissions = user.officerOf[clubId];
+  // Important note: we just check for >0, so _any_ permission can match
   return (permissions & permission) !== 0;
 }
 

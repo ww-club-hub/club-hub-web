@@ -46,7 +46,14 @@ export default officerProcedure(OfficerPermission.Forms | OfficerPermission.Mess
         };
       }
 
-      return {
+      const result: {
+        success: true,
+        authorizationNeeded: false,
+        accessToken: string,
+        scope: string,
+        expiresAt: number,
+        email: string
+      } = {
         success: true,
         authorizationNeeded: false as const,
         accessToken: tokenResult.access_token,
@@ -54,6 +61,7 @@ export default officerProcedure(OfficerPermission.Forms | OfficerPermission.Mess
         expiresAt: Date.now() + tokenResult.expires_in * 1000,
         email: tokenConfig.google.email
       };
+      return result;
     } catch (err) {
       if (err instanceof RequestError) {
         // club hasn't authorized
