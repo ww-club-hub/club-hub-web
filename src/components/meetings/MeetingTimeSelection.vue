@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import FormInput from './FormInput.vue';
-import TimeInput from './TimeInput.vue';
+import FormInput from '../form/FormInput.vue';
+import TimeInput from '../form/TimeInput.vue';
 import type { ClubMeeting, ClubMeetingTime } from '@/schema';
 import { Timestamp } from 'firebase/firestore';
 import { dateToISODateString, formatMeetingTime, getNextDayOfWeekDate } from "@/utils";
-import FormSelect from './FormSelect.vue';
+import FormSelect from '../form/FormSelect.vue';
 
 const meeting = defineModel<ClubMeeting>({ required: true });
 

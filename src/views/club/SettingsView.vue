@@ -5,9 +5,9 @@ import { ClubSignupType, OfficerPermission, type Club, type ClubRole } from "@/s
 import { useRoute, useRouter } from "vue-router";
 import { doc, setDoc } from "firebase/firestore";
 import { onMounted } from "vue";
-import FormInput from "@/components/FormInput.vue";
-import GeneralMeetingTimeSelection from "@/components/GeneralMeetingTimeSelection.vue";
-import FormSelect from "@/components/FormSelect.vue";
+import FormInput from "@/components/form/FormInput.vue";
+import GeneralMeetingTimeSelection from "@/components/meetings/GeneralMeetingTimeSelection.vue";
+import FormSelect from "@/components/form/FormSelect.vue";
 import { showSuccessToast } from "@/toast";
 import { getCurrentInstance } from "vue";
 

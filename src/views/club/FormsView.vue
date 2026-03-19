@@ -7,8 +7,8 @@ import { typedGetDocs, type DocWithId, injectScript } from '@/utils';
 import "@googleworkspace/drive-picker-element";
 import { FORMS_CLIENT_ID, API_KEY, DRIVE_APP_ID } from "@/google-drive";
 import api, { isTRPCClientError } from '@/api';
-import ButtonLoader from '@/components/ButtonLoader.vue';
-import DateTimeInput from '@/components/DateTimeInput.vue';
+import ButtonLoader from '@/components/ui/ButtonLoader.vue';
+import DateTimeInput from '@/components/form/DateTimeInput.vue';
 
 const FORM_MIME_TYPE = "application/vnd.google-apps.form";
 

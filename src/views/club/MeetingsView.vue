@@ -3,12 +3,12 @@ import { type ClubRole, type Club, type ClubMeeting, OfficerPermission, type Clu
 import { collection, query, where, orderBy, limit, and, doc, setDoc, updateDoc, DocumentReference, FieldPath, arrayUnion, arrayRemove, serverTimestamp, Timestamp } from "@firebase/firestore";
 import { ref, computed, onMounted } from 'vue';
 import { auth, parseError } from "@/firebase";
-import MeetingCard from '@/components/MeetingCard.vue';
-import CreateMeetingDialog from '@/components/CreateMeetingDialog.vue';
+import MeetingCard from '@/components/meetings/MeetingCard.vue';
+import CreateMeetingDialog from '@/components/meetings/CreateMeetingDialog.vue';
 import { type DocWithId, typedGetDocs, generateAttendanceCode } from '@/utils';
 import 'v-calendar/style.css';
 import { Calendar } from 'v-calendar';
-import TakeAttendanceDialog from '@/components/TakeAttendanceDialog.vue';
+import TakeAttendanceDialog from '@/components/meetings/TakeAttendanceDialog.vue';
 import { useRoute } from 'vue-router';
 import { useMeetings } from '@/meeting-store';
 import api, { isTRPCClientError } from '@/api';

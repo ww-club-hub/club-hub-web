@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import NavbarLink from "./NavbarLink.vue";
-import { auth } from "../firebase";
+import { auth } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { ref, onMounted, onUnmounted } from "vue";
 import { useRoute } from "vue-router";

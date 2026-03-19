@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { ClubMeetingTime } from '@/schema';
 import { watch } from 'vue';
-import FormInput from './FormInput.vue';
-import TimeInput from './TimeInput.vue';
+import FormInput from '../form/FormInput.vue';
+import TimeInput from '../form/TimeInput.vue';
 
 const meeting = defineModel<ClubMeetingTime>({ required: true });
 

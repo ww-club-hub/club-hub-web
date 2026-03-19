@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import FormInput from './FormInput.vue';
+import FormInput from '../form/FormInput.vue';
 import type { ClubMeeting } from '@/schema';
 import { watch } from 'vue';
 

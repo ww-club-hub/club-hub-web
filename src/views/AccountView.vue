@@ -2,11 +2,11 @@
 import { auth, parseError } from "../firebase";
 import { getClaims } from "@/utils";
 import { deleteUser, OAuthCredential, reauthenticateWithCredential, EmailAuthProvider, onAuthStateChanged, updateProfile } from "firebase/auth";
-import AuthForm from "@/components/AuthForm.vue";
+import AuthForm from "@/components/auth/AuthForm.vue";
 import { ref } from "vue";
-import FormInput from "@/components/FormInput.vue";
+import FormInput from "@/components/form/FormInput.vue";
 import { watch } from "vue";
-import ButtonLoader from "@/components/ButtonLoader.vue";
+import ButtonLoader from "@/components/ui/ButtonLoader.vue";
 
 const claims = await getClaims(auth);
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Collapse from '@/components/Collapse.vue';
+import Collapse from '@/components/ui/Collapse.vue';
 import { computedAsync } from "@vueuse/core";
 import { computed, ref, type Ref } from 'vue';
 import { useRoute } from 'vue-router';

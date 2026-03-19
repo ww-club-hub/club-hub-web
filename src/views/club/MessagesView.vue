@@ -4,7 +4,7 @@ import { onMounted } from 'vue';
 import { ref } from 'vue';
 import { collection, doc, setDoc, Timestamp } from "@firebase/firestore";
 import { db, auth } from "@/firebase";
-import FormInput from '@/components/FormInput.vue';
+import FormInput from '@/components/form/FormInput.vue';
 import { computed } from 'vue';
 import { typedGetDocs, type DocWithId } from '@/utils';
 

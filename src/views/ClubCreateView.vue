@@ -7,9 +7,9 @@ import { ClubSignupType, OfficerPermission, type Club } from "@/schema";
 import { useRouter } from "vue-router";
 import { addDoc, collection } from "firebase/firestore";
 import { api, isTRPCClientError } from "@/api";
-import FormInput from "@/components/FormInput.vue";
+import FormInput from "@/components/form/FormInput.vue";
 import { getCachedProfile } from "@/profiles";
-import ButtonLoader from "@/components/ButtonLoader.vue";
+import ButtonLoader from "@/components/ui/ButtonLoader.vue";
 
 const claims = (await getIdTokenResult(auth.currentUser!)).claims as UserClaims;
 const stuco = claims.role == "owner" || claims.role == "admin";

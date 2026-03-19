@@ -5,7 +5,7 @@ import { computed } from "vue";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { api, isTRPCClientError } from "@/api";
-import ButtonLoader from "@/components/ButtonLoader.vue";
+import ButtonLoader from "@/components/ui/ButtonLoader.vue";
 
 const user = ref<User | null>(null);
 const schoolName = ref("");

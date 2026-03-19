@@ -5,13 +5,13 @@ import { years } from "../assets/grad-years.json";
 import { topics } from "../assets/club-topics.json";
 import { type ParsedToken, getIdTokenResult, onAuthStateChanged, type User, sendEmailVerification, getIdToken, reload } from "firebase/auth";
 import { computed } from "vue";
-import OnboardingStep from "../components/OnboardingStep.vue";
+import OnboardingStep from "@/components/auth/OnboardingStep.vue";
 import { useRouter } from "vue-router";
 import { api, isTRPCClientError } from "@/api";
 import { nextTick } from "vue";
 import { showSuccessToast, showWarningToast } from "@/toast";
 import { getCurrentInstance } from "vue";
-import ButtonLoader from "@/components/ButtonLoader.vue";
+import ButtonLoader from "@/components/ui/ButtonLoader.vue";
 
 // TYPES
 

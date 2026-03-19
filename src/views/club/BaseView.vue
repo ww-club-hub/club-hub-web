@@ -3,10 +3,10 @@ import { auth, db } from "@/firebase";
 import { OfficerPermission, type Club, type ClubRole } from "@/schema";
 import { useRoute } from "vue-router";
 import { doc } from "firebase/firestore";
-import ClubTabLink from "@/components/ClubTabLink.vue";
+import ClubTabLink from "@/components/navigation/ClubTabLink.vue";
 import { getClaims, typedGetDoc } from "@/utils";
 import { getIdToken } from "@firebase/auth";
-import Loader from "@/components/Loader.vue";
+import Loader from "@/components/ui/Loader.vue";
 
 const route = useRoute();
 

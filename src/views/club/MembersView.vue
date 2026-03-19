@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import api, { isTRPCClientError } from '@/api';
-import FormInput from '@/components/FormInput.vue';
+import FormInput from '@/components/form/FormInput.vue';
 import { db } from '@/firebase';
 import { getCachedProfile } from '@/profiles';
 import { type ClubPrivate, type Club, type ClubRole, OfficerPermission, ClubSignupType } from '@/schema';

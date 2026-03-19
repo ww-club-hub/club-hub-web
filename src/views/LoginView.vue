@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { auth, parseError } from "../firebase";
-import { signInWithCredential, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, OAuthCredential, signInWithPhoneNumber, signInWithPopup, sendPasswordResetEmail, GoogleAuthProvider } from "firebase/auth";
-import type { FirebaseError } from "firebase/app";
-import AuthForm from "@/components/AuthForm.vue";
+import { signInWithCredential, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, OAuthCredential, signInWithPopup, sendPasswordResetEmail, GoogleAuthProvider } from "firebase/auth";
+import AuthForm from "@/components/auth/AuthForm.vue";
 
 const createAccount = ref(false);
 const errorMessage = ref("");
