@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { OfficerPermission, type Club, type ClubForm, type ClubRole } from '@/schema';
 import { ref, computed, watch } from 'vue';
-import { doc, collection, Timestamp, setDoc } from "@firebase/firestore";
+import { doc, collection, Timestamp, setDoc, type DocumentReference } from "@firebase/firestore";
 import { db, auth, GCP_PROJECT_ID } from "@/firebase";
 import { typedGetDocs, type DocWithId } from '@/utils';
 import "@googleworkspace/drive-picker-element";
@@ -16,14 +16,15 @@ const FORM_MIME_TYPE = "application/vnd.google-apps.form";
 const props = defineProps<{
   role: ClubRole,
   school: string,
-  club: Club
+  club: Club,
+  clubDoc: DocumentReference
 }>();
 
 const scopes = ["openid", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/drive.file"];
 const googleAccountStore = useGoogleAccountStore(props.club.id);
 
 const canManageForms = computed(() => props.role.stuco || (props.role.officer & OfficerPermission.Forms));
-const formsCollection = collection(db, "schools", props.school, "clubs", props.club.id, "forms");
+const formsCollection = collection(props.clubDoc, "forms");
 const forms = ref<DocWithId<ClubForm>[]>(await typedGetDocs<ClubForm>(formsCollection));
 
 const showModal = ref(false);

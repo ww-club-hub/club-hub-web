@@ -3,7 +3,7 @@ import { db } from "@/firebase";
 import { ref } from "vue";
 import { ClubSignupType, OfficerPermission, type Club, type ClubRole } from "@/schema";
 import { useRoute, useRouter } from "vue-router";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, type DocumentReference } from "firebase/firestore";
 import { onMounted } from "vue";
 import FormInput from "@/components/form/FormInput.vue";
 import GeneralMeetingTimeSelection from "@/components/meetings/GeneralMeetingTimeSelection.vue";
@@ -14,7 +14,8 @@ import { getCurrentInstance } from "vue";
 const props = defineProps<{
   role: ClubRole,
   school: string,
-  club: Club
+  club: Club,
+  clubDoc: DocumentReference
 }>();
 
 const router = useRouter();
@@ -31,7 +32,7 @@ const club = ref<Club | null>(null);
 const context = getCurrentInstance()?.appContext;
 
 async function onFormSubmit() {
-  await setDoc(doc(db, "schools", props.school, "clubs", clubId), club.value, {
+  await setDoc(props.clubDoc, club.value, {
     mergeFields: ['name', 'description', 'contact', 'logoUrl', 'signup', 'meetings', 'attendanceRequirements']
   });
 

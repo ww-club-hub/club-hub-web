@@ -2,7 +2,7 @@
 import { OfficerPermission, type Club, type ClubRole, type ClubUpdate } from '@/schema';
 import { onMounted } from 'vue';
 import { ref } from 'vue';
-import { collection, doc, setDoc, Timestamp } from "@firebase/firestore";
+import { collection, doc, setDoc, Timestamp, type DocumentReference } from "@firebase/firestore";
 import { db, auth } from "@/firebase";
 import FormInput from '@/components/form/FormInput.vue';
 import { computed } from 'vue';
@@ -11,7 +11,8 @@ import { typedGetDocs, type DocWithId } from '@/utils';
 const props = defineProps<{
   role: ClubRole,
   school: string,
-  club: Club
+  club: Club,
+  clubDoc: DocumentReference
 }>();
 
 const canCreateUpdate = computed(() => props.role.stuco || (props.role.officer & OfficerPermission.Messages));
@@ -22,7 +23,7 @@ const updateTitle = ref("");
 const updateDescription = ref("");
 const updateLinks = ref<[string, string][]>([]);
 
-const messagesCollection = collection(db, "schools", props.school, "clubs", props.club.id, "messages");
+const messagesCollection = collection(props.clubDoc, "messages");
 
 onMounted(async () => {
   updates.value = await typedGetDocs(messagesCollection);

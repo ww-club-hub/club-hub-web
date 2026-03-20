@@ -22,6 +22,7 @@ const role: ClubRole = {
 };
 
 const clubDoc = doc(db, "schools", claims.school, "clubs", clubId);
+const clubPrivateDoc = doc(db, "schools", claims.school, "clubs_private", clubId);
 
 const club = await typedGetDoc<Club>(clubDoc);
 
@@ -122,7 +123,7 @@ await checkAuthClaimDesync();
     <div class="max-w-screen-2xl mx-auto p-4">
       <router-view v-slot="{ Component }">
         <Suspense>
-          <component :is="Component" :role="role" :school="claims.school" :club="club" :club-doc="clubDoc" />
+          <component :is="Component" :role="role" :school="claims.school" :club="club" :club-doc="clubDoc" :club-private-doc="clubPrivateDoc" />
 
           <template #fallback>
             <Loader/>

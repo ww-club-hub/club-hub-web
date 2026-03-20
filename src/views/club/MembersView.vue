@@ -7,7 +7,7 @@ import { type ClubPrivate, type Club, type ClubRole, OfficerPermission, ClubSign
 import { showErrorToast, showSuccessToast } from '@/toast';
 import { typedGetDoc, type DocWithId } from '@/utils';
 import { computedAsync } from '@vueuse/core';
-import { doc } from 'firebase/firestore';
+import { doc, type DocumentReference } from 'firebase/firestore';
 import { getCurrentInstance } from 'vue';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -17,7 +17,8 @@ const router = useRouter();
 const props = defineProps<{
   role: ClubRole,
   school: string,
-  club: DocWithId<Club>
+  club: DocWithId<Club>,
+  clubPrivateDoc: DocumentReference
 }>();
 
 const context = getCurrentInstance()?.appContext;
@@ -25,7 +26,7 @@ const context = getCurrentInstance()?.appContext;
 const newMemberEmail = ref("");
 
 async function getClubPrivate() {
-  const clubPrivate = await typedGetDoc<ClubPrivate>(doc(db, "schools", props.school, "clubs_private", props.club.id));
+  const clubPrivate = await typedGetDoc<ClubPrivate>(props.clubPrivateDoc);
 
   if (!clubPrivate) {
     await router.push({ name: "club-list" });
