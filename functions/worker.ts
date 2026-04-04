@@ -5,6 +5,7 @@ import { fetchRequestHandler, FetchCreateContextFnOptions } from "@trpc/server/a
 import profile from "./api/user/profile";
 import userGradYear from "./api/user/gradYear";
 import userInterests from "./api/user/interests";
+import userPersonalEmail from "./api/user/personalEmail";
 import createSchool from "./api/school/create";
 import joinSchool from "./api/school/join";
 import searchSchools from "./api/school/search";
@@ -26,6 +27,7 @@ const appRouter = router({
     profile,
     gradYear: userGradYear,
     interests: userInterests,
+    personalEmail: userPersonalEmail
   }),
   school: router({
     create: createSchool,

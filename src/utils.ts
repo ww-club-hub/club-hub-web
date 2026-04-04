@@ -9,7 +9,8 @@ export interface UserClaims extends ParsedToken {
   memberOf: string[],
   // map of club id to permission bitmask
   officerOf: Record<string, OfficerPermission>,
-  gradYear: string
+  gradYear: string,
+  personalEmail: string
 }
 
 export const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];

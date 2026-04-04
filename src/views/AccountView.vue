@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { auth, parseError } from "../firebase";
-import { getClaims } from "@/utils";
-import { deleteUser, OAuthCredential, reauthenticateWithCredential, EmailAuthProvider, onAuthStateChanged, updateProfile } from "firebase/auth";
+import { getClaims, type UserClaims } from "@/utils";
+import { deleteUser, OAuthCredential, reauthenticateWithCredential, EmailAuthProvider, onAuthStateChanged, updateProfile, getIdTokenResult } from "firebase/auth";
 import AuthForm from "@/components/auth/AuthForm.vue";
 import { ref } from "vue";
 import FormInput from "@/components/form/FormInput.vue";
 import { watch } from "vue";
 import ButtonLoader from "@/components/ui/ButtonLoader.vue";
+import { api } from "@/api";
 
-const claims = await getClaims(auth);
+const claims = ref<UserClaims | null>(null);
 
 async function deleteAccount() {
   if (user.value)
@@ -19,6 +20,7 @@ const showModal = ref(false);
 const error = ref("");
 const displayName = ref("");
 const photoUrl = ref("");
+const personalEmail = ref("");
 const user = ref(auth.currentUser);
 const saveProfileLoading = ref(false);
 
@@ -55,18 +57,27 @@ async function saveProfile() {
       displayName: displayName.value,
       photoURL: photoUrl.value
     });
+
+    if (personalEmail.value !== claims.value?.personalEmail && (claims.value?.personalEmail?.length || personalEmail.value?.length)) {
+      await api.user.personalEmail.mutate({
+        personalEmail: personalEmail.value
+      });
+      await getIdTokenResult(user.value, true);
+    }
   } finally {
     saveProfileLoading.value = false;
   }
 }
 
-onAuthStateChanged(auth, newUser => {
+onAuthStateChanged(auth, async newUser => {
   user.value = newUser;
+  claims.value = await getClaims(auth);
 });
 
-watch(user, () => {
+watch([user, claims], () => {
   displayName.value = user.value?.displayName ?? "";
   photoUrl.value = user.value?.photoURL ?? "";
+  personalEmail.value = claims?.value?.personalEmail ?? "";
 }, { immediate: true });
 </script>
 
@@ -75,7 +86,7 @@ watch(user, () => {
     <div class="max-w-(--breakpoint-2xl) mx-auto p-4">
       <div class="flex items-center gap-3 pb-3 mb-3 border-b border-gray-300 dark:border-gray-700">
         <template v-if="user?.photoURL">
-          <img :src="user.photoURL" class="align-self-stretch rounded-full" />
+          <img :src="user.photoURL" class="align-self-stretch rounded-full w-7 h-7" />
         </template>
         <h1 class="text-2xl text-black dark:text-white font-semibold">Welcome, {{ user?.displayName }}</h1>
       </div>
@@ -93,6 +104,7 @@ watch(user, () => {
         <div class="flex gap-3 flex-col md:flex-row md:items-start md:justify-stretch">
           <FormInput class="flex-1" label="Display name" type="text" required v-model="displayName" />
           <FormInput class="flex-1" label="Profile picture URL" type="url" required v-model="photoUrl" placeholder="No profile picture set" />
+          <FormInput class="flex-1" label="Personal Email" type="email" required v-model="personalEmail" placeholder="No personal email set" />
         </div>
 
         <ButtonLoader
