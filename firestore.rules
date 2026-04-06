@@ -18,7 +18,7 @@ service cloud.firestore {
       return admin() || ("officerOf" in request.auth.token && clubId in request.auth.token.officerOf) || clubId in request.auth.token.memberOf;
     }
     function onlyChanged(keys) {
-      return debug(request.resource.data.diff(resource.data)).affectedKeys().hasOnly(keys);
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
     }
     function listDiffHasOnly(list1, list2, targetDiff) {
       let set1 = list1.toSet();
@@ -78,12 +78,20 @@ service cloud.firestore {
           allow delete: if student(school_id) && officer(club_id, 4);
           allow update: if student(school_id) && officer(club_id, 4) && onlyChanged(["description"]);
         }
+        
+        match /emails/{email_list_id} {
+          allow read, delete: if student(school_id) && officer(club_id, 3);
+          allow create: if student(school_id) && officer(club_id, 3) && request.resource.data.keys().toSet() == ["name", "email"].toSet();
+          allow update: if student(school_id) && officer(club_id, 3) && onlyChanged(["name", "email"]);
+        }
       }
 
       match /clubs_private/{club_id} {
         // permission bit 1 - Members
         allow read: if student(school_id) && officer(club_id, 1);
-        // can only be written by backend
+        // permission bit 3 - Messages
+        allow write: if student(school_id) && officer(club_id, 3) && onlyChanged(["email_reminders"]);
+        // other fields can only be written by backend
       }
 
     }

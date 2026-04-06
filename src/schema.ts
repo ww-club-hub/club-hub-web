@@ -82,11 +82,12 @@ export interface ClubPrivate {
 
   // total number of present members across all meetings. this divided by member count * num meetings is the average attendance
   totalAttendance: number,
-  memberAttendance: Record<string, {
+  // unused: we recompute each time
+  /*memberAttendance: Record<string, {
     meetingsAttended: number,
     totalMeetings: number,
     lastComputed: Timestamp
-  }>
+    }>*/
 }
 
 export enum OfficerPermission {
@@ -136,6 +137,15 @@ export interface ClubMeetingAttendance {
   // lists of email
   membersPresent:string[],
   membersAttending: string[]
+}
+
+// emails/{email_list_id}
+// cannot be read by members
+export interface ClubEmailList {
+  // human-readable name
+  name: string,
+  // not necessarily student/CH emails
+  emails: string[]
 }
 
 export interface ClubForm {
