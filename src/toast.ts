@@ -1,5 +1,6 @@
 import { createVNode, type AppContext, render } from "vue";
-import BaseToast from "./components/BaseToast.vue";
+import BaseToast from "./components/ui/BaseToast.vue";
+import ConfirmDialog from "./components/ui/ConfirmDialog.vue";
 
 export function showToast(props: { iconColor: string, iconSrText: string, text: string }, appContext: AppContext | undefined, duration: number) {
   if (!appContext) return;
@@ -40,3 +41,43 @@ export function showErrorToast(text: string, appContext: AppContext | undefined,
 export function showWarningToast(text: string, appContext: AppContext | undefined, duration: number) {
   showToast({ iconColor: "yellow", iconSrText: "Warning", text }, appContext, duration);
 }
+
+export function showConfirmDialog(
+  props: { title: string, message: string, confirmText?: string, cancelText?: string },
+  appContext: AppContext | undefined
+): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (!appContext) {
+      resolve(false);
+      return;
+    }
+
+    const container = document.body.appendChild(document.createElement("div"));
+    
+    const vnode = createVNode(ConfirmDialog, {
+      ...props,
+      show: true,
+      onConfirm: () => {
+        render(null, container);
+        container.remove();
+        resolve(true);
+      },
+      onCancel: () => {
+        render(null, container);
+        container.remove();
+        resolve(false);
+      },
+      "onUpdate:show": (value: boolean) => {
+        if (!value) {
+          render(null, container);
+          container.remove();
+          resolve(false);
+        }
+      }
+    });
+    
+    vnode.appContext = { ...appContext };
+    render(vnode, container);
+  });
+}
+

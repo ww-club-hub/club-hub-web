@@ -68,7 +68,7 @@ await checkAuthClaimDesync();
             <ClubTabLink :active="route.name === 'club-updates'" name="Updates" :to="{ name: 'club-updates', params: { clubId} }">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
             </ClubTabLink>
-            <ClubTabLink :active="route.name === 'club-attendance'" name="Statistics and Requirements" :to="{ name: 'club-attendance', params: { clubId} }">
+            <ClubTabLink :active="route.name === 'club-attendance'" name="Statistics" :to="{ name: 'club-attendance', params: { clubId} }">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/></svg>
             </ClubTabLink>
             <ClubTabLink :active="route.name === 'club-forms'" name="Forms" :to="{ name: 'club-forms', params: { clubId} }">
@@ -97,7 +97,7 @@ await checkAuthClaimDesync();
               <ClubTabLink
                 v-if="(role.officer & OfficerPermission.Messages) > 0"
                 :active="route.name === 'club-email'"
-                name="Email"
+                name="Emails"
                 :to="{ name: 'club-email', params: { clubId } }"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">

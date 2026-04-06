@@ -20,6 +20,7 @@ import clubAttendanceStatistics from "./api/club/attendance/club-statistics";
 import takeAttendance from "./api/club/attendance/take";
 import queryAttendance from "./api/club/attendance/query";
 import handleFormPush from "./api/club/forms/push";
+import clubPersonalEmails from "./api/club/personalEmails";
 import { WorkerEntrypoint } from "cloudflare:workers";
 
 const appRouter = router({
@@ -42,6 +43,7 @@ const appRouter = router({
   club: router({
     members: clubMembers,
     officers: clubOfficers,
+    personalEmails: clubPersonalEmails,
     attendance: router({
       memberStatistics: memberAttendanceStatistics,
       clubStatistics: clubAttendanceStatistics,

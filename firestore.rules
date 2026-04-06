@@ -81,8 +81,8 @@ service cloud.firestore {
         
         match /emails/{email_list_id} {
           allow read, delete: if student(school_id) && officer(club_id, 3);
-          allow create: if student(school_id) && officer(club_id, 3) && request.resource.data.keys().toSet() == ["name", "email"].toSet();
-          allow update: if student(school_id) && officer(club_id, 3) && onlyChanged(["name", "email"]);
+          allow create: if student(school_id) && officer(club_id, 3) && request.resource.data.keys().toSet() == ["name", "emails"].toSet();
+          allow update: if student(school_id) && officer(club_id, 3) && onlyChanged(["name", "emails"]);
         }
       }
 

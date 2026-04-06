@@ -76,9 +76,19 @@ export interface Club {
 }
 
 // only availble to officers
+export interface ClubEmailReminders {
+  enabled: boolean,
+  // email template
+  subject: string,
+  body: string,
+  // list of email list IDs to send to (special IDs: "__students__" for student emails, "__personal__" for personal emails)
+  listIds: string[]
+}
+
 export interface ClubPrivate {
   // emails
   members: string[],
+  email_reminders?: ClubEmailReminders,
 
   // total number of present members across all meetings. this divided by member count * num meetings is the average attendance
   totalAttendance: number,
