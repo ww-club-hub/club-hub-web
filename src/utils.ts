@@ -150,11 +150,43 @@ export function permissionBitmaskToArray(bitmask: number): OfficerPermission[] {
 	return permissions;
 }
 
-
 export function arrayToPermissionBitmask(permissions: OfficerPermission[]): number {
 	let bitmask = 0;
 	for (const perm of permissions) {
 		bitmask |= perm;
 	}
 	return bitmask;
+}
+
+/** helper to download a file, whether by showSaveFilePicker or with an invisible link */
+export async function downloadFile(file: File) {
+  if ("showSaveFilePicker" in window) {
+    // use modern api if possible
+    const parts = file.name.split(".");
+    const extension = parts[parts.length - 1];
+    const [handle]: [FileSystemFileHandle] = await window.showSaveFilePicker({
+      suggestedName: file.name,
+      startIn: "downloads",
+      types: [{
+        description: `${extension.toUpperCase()} Files`,
+        accept: { [file.type]: ["." + extension] }
+      }]
+    });
+    const writable = await handle.createWritable();
+    await writable.write(file);
+    await writable.close();
+  } else {
+    // Fallback to hidden link
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(file);
+    link.setAttribute("href", url);
+    link.setAttribute("download", file.name);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+
+    // cleanup
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
 }

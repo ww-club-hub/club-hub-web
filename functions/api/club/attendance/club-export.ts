@@ -1,25 +1,21 @@
-import { makeServiceAccountToken, FIRESTORE_SCOPE, AUTH_SCOPE, makeFirestoreDocPath, parseFirestoreObject, getFirestoreDocId, lookupUser } from "../../../firebase";
-import { OfficerPermission, ClubMeetingAttendance, type ClubMeeting } from "../../../types";
+import { makeServiceAccountToken, FIRESTORE_SCOPE, AUTH_SCOPE, makeFirestoreDocPath, parseFirestoreObject, getFirestoreDocId, lookupUser, lookupUsers } from "../../../firebase";
+import { OfficerPermission, type ClubMeetingAttendance, type ClubMeeting, FirestoreRestDocument } from "../../../types";
 import { authedJsonRequest, officerProcedure } from "../../../utils";
 import z from "zod";
 
 const ClubExportReq = z.object({
   clubId: z.string(),
-  startDate: z.number().optional(),
-  endDate: z.number().optional()
+  startDate: z.date().optional(),
+  endDate: z.date().optional()
 });
 
+// Individual record stating a member was present at a meeting
 interface AttendanceRecord {
   name: string;
   email: string;
-  meetingTime: string; // ISO 8601 format
+  meetingTime: number;
   code: string;
-  room: string;
-}
-
-// Convert Firebase Timestamp (seconds) to ISO 8601 string
-function timestampToISO8601(seconds: number): string {
-  return new Date(seconds * 1000).toISOString();
+  location: string;
 }
 
 export default officerProcedure(OfficerPermission.Meetings)
@@ -32,142 +28,70 @@ export default officerProcedure(OfficerPermission.Meetings)
 
     // Fetch all meetings for the club
     const meetingsQueryResp = await authedJsonRequest<{
-      document: Array<{
-        name: string;
-        fields: {
-          startTime?: { integerValue: string };
-          location?: { stringValue: string };
-        };
-      }>;
+      documents: FirestoreRestDocument[],
     }>(
-      {
-        structuredQuery: {
-          from: [{ collectionId: "meetings" }],
-          select: {
-            fields: [
-              { fieldPath: "startTime" },
-              { fieldPath: "location" }
-            ]
-          }
-        }
-      },
+      null,
       firestoreToken,
-      makeFirestoreDocPath(ctx.env, `/schools/${school}/clubs/${input.clubId}/meetings:runQuery`),
+      makeFirestoreDocPath(ctx.env, `/schools/${school}/clubs/${input.clubId}/meetings?mask.fieldPaths=startTime&mask.fieldPaths=location`),
+      "GET"
     );
 
     // Create a map of meeting ID -> { startTime (seconds), location/room }
-    const meetingsMap = new Map<string, { startTime: number; room: string }>();
-    for (const doc of (meetingsQueryResp.document || [])) {
-      const parsed = parseFirestoreObject(doc.fields) as any;
-      const startTimeSeconds = parsed.startTime || 0;
-      const room = parsed.location || "Unknown";
-      
+    const meetingsMap = new Map<string, { startTime: Date; location: string }>();
+    for (const doc of meetingsQueryResp.documents) {
+      const parsed = parseFirestoreObject(doc.fields) as { location: string; startTime: Date; };
       const meetingId = getFirestoreDocId(doc);
-      
+
       // Filter by date range if provided
-      if (input.startDate && startTimeSeconds * 1000 < input.startDate) continue;
-      if (input.endDate && startTimeSeconds * 1000 > input.endDate) continue;
-      
-      meetingsMap.set(meetingId, { startTime: startTimeSeconds, room });
+      if (input.startDate && parsed.startTime < input.startDate) continue;
+      if (input.endDate && parsed.startTime > input.endDate) continue;
+
+      meetingsMap.set(meetingId, { startTime: parsed.startTime, location: parsed.location });
     }
 
     // Fetch all meeting attendance records for the club
     const attendanceQueryResp = await authedJsonRequest<{
-      document: Array<{
-        name: string;
-        fields: {
-          membersPresent?: { arrayValue?: { values?: Array<{ stringValue: string }> } };
-          code?: { stringValue: string };
-        };
-      }>;
+      documents: FirestoreRestDocument[],
     }>(
-      {
-        structuredQuery: {
-          from: [{ collectionId: "meeting_attendance" }],
-          select: {
-            fields: [
-              { fieldPath: "membersPresent" },
-              { fieldPath: "code" }
-            ]
-          }
-        }
-      },
+      null,
       firestoreToken,
-      makeFirestoreDocPath(ctx.env, `/schools/${school}/clubs/${input.clubId}/meeting_attendance:runQuery`),
+      makeFirestoreDocPath(ctx.env, `/schools/${school}/clubs/${input.clubId}/meeting_attendance?mask.fieldPaths=code&mask.fieldPaths=membersPresent`),
+      "GET"
     );
 
     // Filter attendance records to only include meetings in the date range
-    const attendanceRecords = (attendanceQueryResp.document || [])
+    const attendanceRecords = attendanceQueryResp.documents
+      .map(doc => ({
+        id: getFirestoreDocId(doc),
+        ...parseFirestoreObject(doc.fields) as { code: string; membersPresent: string[] }
+      }))
       .filter(doc => {
-        const attendanceId = getFirestoreDocId(doc);
-        return meetingsMap.has(attendanceId);
-      })
-      .filter(doc => {
-        const parsed = parseFirestoreObject(doc.fields) as any;
-        const membersPresent = parsed.membersPresent || [];
-        return membersPresent.length > 0;
+        return meetingsMap.has(doc.id) && doc.membersPresent?.length > 0
       });
 
-    // Collect all unique emails from filtered attendance records
-    const uniqueEmails = new Set<string>();
-    for (const record of attendanceRecords) {
-      const parsed = parseFirestoreObject(record.fields) as any;
-      const members = parsed.membersPresent || [];
-      for (const member of members) {
-        if (member) {
-          uniqueEmails.add(member);
-        }
-      }
-    }
+    // Get all unique emails
+    const uniqueEmails = new Set(attendanceRecords.flatMap(r => r.membersPresent ?? []));
 
     // Fetch all unique profiles
-    const profiles = new Map<string, { name: string; email: string }>();
-    for (const email of uniqueEmails) {
-      try {
-        const user = await lookupUser(email, authToken, ctx.env);
-        if (user) {
-          profiles.set(email, {
-            name: user.displayName || email,
-            email: user.email
-          });
-        } else {
-          // If lookup returns null, use email as name
-          profiles.set(email, {
-            name: email,
-            email: email
-          });
-        }
-      } catch {
-        // If lookup fails, use email as name
-        profiles.set(email, {
-          name: email,
-          email: email
-        });
-      }
-    }
+    const rawProfiles = await lookupUsers([...uniqueEmails], authToken, ctx.env);
+    // map email to name for lookup
+    const userNames = new Map(rawProfiles.map(p => [p.email, p.displayName]));
 
     // Build attendance records with meeting info
     const records: AttendanceRecord[] = [];
-    for (const attendance of attendanceRecords) {
-      const attendanceId = getFirestoreDocId(attendance);
-      const meetingData = meetingsMap.get(attendanceId);
+    for (const { code, membersPresent, id } of attendanceRecords) {
+      const meetingData = meetingsMap.get(id);
       if (!meetingData) continue;
 
-      const parsed = parseFirestoreObject(attendance.fields) as any;
-      const code = parsed.code || "";
-      const members = parsed.membersPresent || [];
-
-      for (const email of members) {
-        if (email && profiles.has(email)) {
-          const profile = profiles.get(email)!;
-          records.push({
-            name: profile.name,
-            email: profile.email,
-            meetingTime: timestampToISO8601(meetingData.startTime),
-            code,
-            room: meetingData.room
-          });
-        }
+      for (const email of membersPresent) {
+        const name = userNames.get(email) ?? "Unknown name";
+        records.push({
+          name: name,
+          email: email,
+          meetingTime: meetingData.startTime.getTime(),
+          code,
+          location: meetingData.location
+        });
       }
     }
 

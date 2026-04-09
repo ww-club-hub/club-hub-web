@@ -221,3 +221,25 @@ export async function lookupUser(email: string, authToken: string, env: Env) {
 
   return userResult.users[0];
 }
+
+export async function lookupUsers(emails: string[], authToken: string, env: Env) {
+  const userResult = await authedJsonRequest<{
+    users: {
+      localId: string,
+      email: string,
+      customAttributes: string,
+      displayName: string,
+      photoUrl: string
+    }[]
+  } | {
+    error: { message: string }
+  }>({
+    email: emails
+  }, authToken, `${getIdentityToolkitUrl(env)}/projects/${env.GCP_PROJECT_ID}/accounts:lookup`);
+
+  if ("error" in userResult) {
+    throw new Error(`Firebase user lookup error: ${userResult.error.message}`);
+  }
+
+  return userResult.users;
+}
