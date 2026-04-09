@@ -83,7 +83,7 @@ function generateCSV(records: Array<{ name: string; email: string; meetingTime: 
   // Surround in quotes and escape internal quotes (by using double double quotes)
   const escape = (s: string) => `"${s.replace(/"/g, '""')}"`;
   const rows = records
-    .map(r => [r.name, r.email, new Date(r.meetingTime).toISOString(), r.code, r.location])
+    .map(r => [r.name, r.email, new Date(r.meetingTime).toLocaleString(), r.code, r.location])
     .map(r => r.map(f => escape(f)).join(","));
   return [header, ...rows].join("\n");
 }

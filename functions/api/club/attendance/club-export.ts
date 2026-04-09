@@ -95,5 +95,8 @@ export default officerProcedure(OfficerPermission.Meetings)
       }
     }
 
+    // Sort records by meetingTime
+    records.sort((a, b) => a.meetingTime - b.meetingTime);
+
     return { records };
   });
