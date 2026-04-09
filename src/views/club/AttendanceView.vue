@@ -55,6 +55,11 @@ const attendanceTextColors = [
 const numMeetings = ref(0);
 const totalClubAttendance = ref(0);
 
+// Export state
+const exportStartDate = ref<string>("");
+const exportEndDate = ref<string>("");
+const exportLoading = ref(false);
+
 if (canManageAttendance.value) {
   numMeetings.value = await getCountFromServer(query(
     collection(props.clubDoc, "meetings"),
@@ -64,6 +69,58 @@ if (canManageAttendance.value) {
   const clubsPrivateDocRef = doc(props.clubDoc.parent.parent!, "clubs_private", props.club.id);
   const clubsPrivateDocSnap = await typedGetDoc<ClubPrivate>(clubsPrivateDocRef);
   totalClubAttendance.value = clubsPrivateDocSnap?.totalAttendance ?? 0;
+}
+
+// Helper to convert date input to milliseconds (noon UTC)
+function dateToMillis(dateStr: string): number {
+  if (!dateStr) return 0;
+  const date = new Date(dateStr);
+  date.setUTCHours(12, 0, 0, 0);
+  return date.getTime();
+}
+
+// Helper to generate CSV from records
+function generateCSV(records: Array<{ name: string; email: string; meetingTime: string; code: string; room: string }>): string {
+  const header = "name,email,meetingTime,code,room";
+  const rows = records.map(r => 
+    `"${r.name.replace(/"/g, '""')}","${r.email.replace(/"/g, '""')}","${r.meetingTime}","${r.code.replace(/"/g, '""')}","${r.room.replace(/"/g, '""')}"`
+  );
+  return [header, ...rows].join("\n");
+}
+
+// Export attendance data
+async function exportAttendance() {
+  exportLoading.value = true;
+  try {
+    const startDateMs = dateToMillis(exportStartDate.value);
+    const endDateMs = dateToMillis(exportEndDate.value);
+
+    const result = await api.club.attendance.export.query({
+      clubId: props.club.id,
+      startDate: startDateMs || undefined,
+      endDate: endDateMs || undefined
+    });
+
+    const csv = generateCSV(result.records);
+
+    // Create download
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    const now = new Date();
+    const dateStr = now.toISOString().split("T")[0];
+    link.setAttribute("href", url);
+    link.setAttribute("download", `${props.club.name}-attendance-${dateStr}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (error) {
+    console.error("Export failed:", error);
+    alert("Failed to export attendance data");
+  } finally {
+    exportLoading.value = false;
+  }
 }
 </script>
 
@@ -165,6 +222,68 @@ if (canManageAttendance.value) {
       <div class="text-md text-orange-600 dark:text-orange-300">
         (Total attendance records / total possible attendance)
       </div>
+    </div>
+
+    <!-- Export Section -->
+    <div
+      v-if="canManageAttendance"
+      class="bg-white dark:bg-gray-800 rounded-xl shadow p-6 mt-6 border-2 border-blue-200 dark:border-blue-700"
+    >
+      <div class="mb-4">
+        <h2 class="text-2xl font-semibold text-blue-700 dark:text-blue-200 mb-4">
+          Export Attendance Records
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Start Date (optional)
+            </label>
+            <input
+              v-model="exportStartDate"
+              type="date"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              End Date (optional)
+            </label>
+            <input
+              v-model="exportEndDate"
+              type="date"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+        <button
+          @click="exportAttendance"
+          :disabled="exportLoading"
+          class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 dark:bg-blue-500 dark:hover:bg-blue-600 rounded-lg"
+        >
+          <svg
+            v-if="!exportLoading"
+            class="w-5 h-5 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 19v-7m0 0V5m0 7H5m7 0h7"
+            />
+          </svg>
+          <svg v-else class="w-5 h-5 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+          </svg>
+          {{ exportLoading ? "Exporting..." : "Export as CSV" }}
+        </button>
+      </div>
+      <p class="text-sm text-gray-600 dark:text-gray-400">
+        Downloads attendance records with name, email, meeting time (ISO 8601), attendance code, and room.
+      </p>
     </div>
   </div>
 </template>

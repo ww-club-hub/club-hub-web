@@ -16,7 +16,7 @@ import authorizeGoogle from "./api/club/google/authorize";
 import getGoogleToken from "./api/club/google/getToken";
 import revokeGoogleToken from "./api/club/google/revoke";
 import memberAttendanceStatistics from "./api/club/attendance/member-statistics";
-import clubAttendanceStatistics from "./api/club/attendance/club-statistics";
+import clubAttendanceExport from "./api/club/attendance/club-export";
 import takeAttendance from "./api/club/attendance/take";
 import queryAttendance from "./api/club/attendance/query";
 import handleFormPush from "./api/club/forms/push";
@@ -46,7 +46,7 @@ const appRouter = router({
     personalEmails: clubPersonalEmails,
     attendance: router({
       memberStatistics: memberAttendanceStatistics,
-      clubStatistics: clubAttendanceStatistics,
+      export: clubAttendanceExport,
       take: takeAttendance,
       query: queryAttendance
     }),
