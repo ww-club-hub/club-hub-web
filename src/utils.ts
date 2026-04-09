@@ -64,17 +64,6 @@ export function clubMeetingTimesToString(meetings: ClubMeetingTime[]) {
   }).join(", ") ?? "Unknown";
 }
 
-/**
- * Get the name of the club president
- */
-export function getClubPresidentName(officers: Officers) {
-  // if they have an item called president, return it
-  return Object.entries(officers)
-    .find(el => el[1].role.toLowerCase() === "president")?.[1].name ??
-    // otherwise, return the first item
-    Object.values(officers)[0].name;
-}
-
 export function getClubPresidentEmail(officers: Officers) {
   // if they have an item called president, return it
   return Object.entries(officers)

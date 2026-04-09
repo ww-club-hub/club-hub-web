@@ -3,13 +3,15 @@ import { auth, parseError } from "../firebase";
 import { getClaims, type UserClaims } from "@/utils";
 import { deleteUser, OAuthCredential, reauthenticateWithCredential, EmailAuthProvider, onAuthStateChanged, updateProfile, getIdTokenResult } from "firebase/auth";
 import AuthForm from "@/components/auth/AuthForm.vue";
-import { ref } from "vue";
+import { ref, getCurrentInstance } from "vue";
 import FormInput from "@/components/form/FormInput.vue";
 import { watch } from "vue";
 import ButtonLoader from "@/components/ui/ButtonLoader.vue";
 import { api } from "@/api";
+import { showConfirmDialog } from "@/toast";
 
 const claims = ref<UserClaims | null>(null);
+const appContext = getCurrentInstance()?.appContext;
 
 async function deleteAccount() {
   if (user.value)
@@ -30,6 +32,7 @@ async function reauthCred(cred: OAuthCredential) {
   try {
     await reauthenticateWithCredential(user.value, cred);
     await deleteAccount();
+    showModal.value = false;
   } catch (err) {
     error.value = parseError(err);
   }
@@ -69,6 +72,19 @@ async function saveProfile() {
   }
 }
 
+async function handleDeleteClick() {
+  const confirmed = await showConfirmDialog({
+    title: "Delete account?",
+    message: "This action cannot be undone. All your data will be permanently deleted. Are you sure you want to continue?",
+    confirmText: "Delete",
+    cancelText: "Cancel"
+  }, appContext);
+  
+  if (confirmed) {
+    showModal.value = true;
+  }
+}
+
 onAuthStateChanged(auth, async newUser => {
   user.value = newUser;
   claims.value = await getClaims(auth);
@@ -83,7 +99,7 @@ watch([user, claims], () => {
 
 <template>
   <section class="bg-gray-50 dark:bg-gray-800 grow">
-    <div class="max-w-(--breakpoint-2xl) mx-auto p-4">
+    <div class="max-w-7xl mx-auto p-4">
       <div class="flex items-center gap-3 pb-3 mb-3 border-b border-gray-300 dark:border-gray-700">
         <template v-if="user?.photoURL">
           <img :src="user.photoURL" class="align-self-stretch rounded-full w-7 h-7" />
@@ -95,33 +111,37 @@ watch([user, claims], () => {
 
       <p class="text-black dark:text-white mb-2" v-if="claims"><strong class="font-bold">Graduation Year: </strong> {{ claims.gradYear as string }}</p>
 
-      <p class="text-black dark:text-white mb-3">
+      <p class="text-black dark:text-white mb-4">
         <strong class="font-bold">Account created: </strong>
         {{ new Date(Date.parse(auth.currentUser?.metadata.creationTime!)).toLocaleString() }}
       </p>
 
-      <form @submit.prevent="saveProfile">
-        <div class="flex gap-3 flex-col md:flex-row md:items-start md:justify-stretch">
-          <FormInput class="flex-1" label="Display name" type="text" required v-model="displayName" />
-          <FormInput class="flex-1" label="Profile picture URL" type="url" required v-model="photoUrl" placeholder="No profile picture set" />
-          <FormInput class="flex-1" label="Personal Email" type="email" required v-model="personalEmail" placeholder="No personal email set" />
+      <form @submit.prevent="saveProfile" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <FormInput label="Display name" type="text" required v-model="displayName" />
+          <FormInput label="Profile picture URL" type="url" required v-model="photoUrl" placeholder="No profile picture set" />
+          <FormInput label="Personal Email" type="email" required v-model="personalEmail" placeholder="No personal email set" />
         </div>
 
-        <ButtonLoader
-          :loading="saveProfileLoading" type="submit"
-          class="mt-3 text-white bg-orange-700 hover:bg-orange-800 focus:ring-4 focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 dark:bg-orange-600 dark:hover:bg-orange-700 focus:outline-hidden dark:focus:ring-orange-800"
-          >
-          Save changes
-        </ButtonLoader>
+        <div class="flex gap-3 pt-3">
+          <ButtonLoader
+            :loading="saveProfileLoading" type="submit"
+            class="text-white bg-orange-700 hover:bg-orange-800 focus:ring-4 focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-orange-600 dark:hover:bg-orange-700 focus:outline-hidden dark:focus:ring-orange-800"
+            >
+            Save changes
+          </ButtonLoader>
 
-        <button type="button"
-          class="focus:outline-hidden text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900"
-          @click="showModal = true">Delete account</button>
+          <button type="button"
+            class="focus:outline-hidden text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900"
+            @click="handleDeleteClick">
+            Delete account
+          </button>
+        </div>
       </form>
     </div>
   </section>
 
-  <!-- reauth modal -->
+  <!-- Reauthentication modal for account deletion -->
   <dialog :open="showModal" tabindex="-1" aria-hidden="true"
     class="overflow-y-auto overflow-x-hidden fixed inset-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full bg-gray-300/50 dark:bg-gray-700/50">
     <div class="relative p-4 w-full max-w-2xl max-h-full left-1/2 top-1/2 -translate-1/2">
@@ -131,7 +151,7 @@ watch([user, claims], () => {
         <div
           class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600 border-gray-200">
           <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
-            Reauthenticate in order to delete your account
+            Confirm account deletion
           </h3>
           <button type="button"
             class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
@@ -145,7 +165,7 @@ watch([user, claims], () => {
         </div>
         <!-- Modal body -->
         <div class="p-4 md:p-5 space-y-4">
-          <!-- TODO: only show auth methods that apply to this user (will require changing AuthForm -->
+          <p class="text-gray-700 dark:text-gray-300">Please reauthenticate to confirm the deletion of your account.</p>
           <AuthForm mode="reauth" @login-cred="reauthCred" @reauth-password="reauthPassword" :error="error" />
         </div>
       </div>

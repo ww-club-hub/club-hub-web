@@ -2,14 +2,20 @@
 import NavbarLink from "./NavbarLink.vue";
 import { auth } from "@/firebase";
 import { signOut } from "firebase/auth";
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted, computed } from "vue";
 import { useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
+import { getClaims, type UserClaims } from "@/utils";
 
 const authStore = useAuthStore();
 const navbarExpanded = ref(false);
 const route = useRoute();
 const accountMenuExpanded = ref(false);
+const claims = ref<UserClaims | null>(null);
+
+const showPersonalEmailBanner = computed(() => {
+  return authStore.user && !claims.value?.personalEmail;
+});
 
 async function logOut() {
   await signOut(auth);
@@ -20,8 +26,9 @@ function hideMenus() {
   navbarExpanded.value = false;
 }
 
-onMounted(() => {
+onMounted(async () => {
   document.body.addEventListener("click", hideMenus);
+  claims.value = await getClaims(auth);
 });
 
 onUnmounted(() => {
@@ -79,6 +86,24 @@ onUnmounted(() => {
             <button type="button" class="block py-2 px-4 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white w-full" @click="logOut()">Sign out</button>
           </li>
         </ul>
+      </div>
+    </div>
+    <!-- Personal Email Prompt Banner -->
+    <div v-if="showPersonalEmailBanner" class="bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 px-4 py-3">
+      <div class="max-w-screen-2xl mx-auto flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3 text-amber-800 dark:text-amber-300">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+            <path d="M3.505 2.365A41.369 41.369 0 0 1 9 2c1.863 0 3.697.124 5.495.365 1.247.167 2.18 1.108 2.435 2.268a4.45 4.45 0 0 0-.577-.069 43.141 43.141 0 0 0-4.706 0C9.229 4.696 7.5 6.727 7.5 8.998v2.24c0 1.413.67 2.735 1.76 3.562l-2.98 2.98A.75.75 0 0 1 5 17.25v-3.443c-.501-.048-1-.106-1.495-.172C2.033 13.438 1 12.162 1 10.72V5.28c0-1.441 1.033-2.717 2.505-2.914Z" />
+            <path d="M14 6c-.762 0-1.52.02-2.271.062C10.157 6.148 9 7.472 9 8.998v2.24c0 1.519 1.147 2.839 2.71 2.935.214.013.428.024.642.034.2.009.385.09.518.224l2.35 2.35a.75.75 0 0 0 1.28-.531v-2.07c1.453-.195 2.5-1.463 2.5-2.915V8.998c0-1.526-1.157-2.85-2.729-2.936A41.645 41.645 0 0 0 14 6Z" />
+          </svg>
+
+          <p class="text-sm">
+            Please add your personal email to your account for better communication with clubs.
+          </p>
+        </div>
+        <router-link to="/account" class="shrink-0 inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 dark:bg-amber-600 dark:hover:bg-amber-700 rounded-md">
+          Add Email
+        </router-link>
       </div>
     </div>
   </nav>

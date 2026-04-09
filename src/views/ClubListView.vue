@@ -2,45 +2,111 @@
 import { getIdTokenResult } from "firebase/auth";
 import { auth, db } from "../firebase";
 import { collection, getDocs, or, query, where } from "firebase/firestore";
-import { ref } from "vue";
-import { clubMeetingTimesToString, getClubPresidentName, type UserClaims } from "@/utils";
+import { computed, ref } from "vue";
+import { clubMeetingTimesToString, getClubPresidentEmail, type UserClaims } from "@/utils";
+import { getCachedProfile } from "@/stores/profiles";
 import { type Club } from "@/schema";
 import { onMounted } from "vue";
 import { onUnmounted } from "vue";
 
+// todo: the pagination here is a buns claude implementation; replace with actual firebase pagination (and possibly real search?)
+
 const claims = (await getIdTokenResult(auth.currentUser!)).claims as UserClaims;
 const stuco = claims.role == "owner" || claims.role == "admin";
-//const school = await tryGetDocFromCache(doc(db, "schools", claims.school as string));
 
-// todo: implement some sort of pagination
 const clubs = ref<Club[]>([]);
-
 const searchQuery = ref("");
-const searchFilter = ref(""); // updated upon enter on search field
-const filter = ref([]);
+const searchFilter = ref("");
+const currentPage = ref(1);
+const itemsPerPage = 10;
+
 // ID of the dropdown that is currently shown
 const clubDetailsDropdown = ref<string | null>(null);
 
+// fetch president profiles with club
+const presidentNames = ref<Record<string, string>>({});
+
 function onDocumentClick() {
-  // hide dropdown
   clubDetailsDropdown.value = null;
 }
 
 async function onSearch() {
-  // prob find better way to implement search ops
-  // filter func in ui is very simple rn, just .toLowerCase().includes(searchFilter.value.toLowerCase())
   searchFilter.value = searchQuery.value;
+  currentPage.value = 1;
+}
+
+function matches(club: Club): boolean {
+  const query = searchFilter.value.toLowerCase();
+  if (club.name.toLowerCase().includes(query)) return true;
+  if (club.description.toLowerCase().includes(query)) return true;
+  return false;
+}
+
+function getClubStatus(clubId: string): "member" | "officer" | null {
+  if (claims.officerOf && clubId in claims.officerOf) return "officer";
+  if (claims.memberOf?.includes(clubId)) return "member";
+  return null;
+}
+
+const filteredClubs = computed(() => {
+  return clubs.value.filter(matches);
+});
+
+const paginatedClubs = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage;
+  const end = start + itemsPerPage;
+  return filteredClubs.value.slice(start, end);
+});
+
+const totalPages = computed(() => {
+  return Math.ceil(filteredClubs.value.length / itemsPerPage);
+});
+
+const paginationStart = computed(() => {
+  return Math.min((currentPage.value - 1) * itemsPerPage + 1, filteredClubs.value.length);
+});
+
+const paginationEnd = computed(() => {
+  return Math.min(currentPage.value * itemsPerPage, filteredClubs.value.length);
+});
+
+function previousPage() {
+  if (currentPage.value > 1) {
+    currentPage.value--;
+  }
+}
+
+function nextPage() {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++;
+  }
+}
+
+function goToPage(page: number) {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page;
+  }
 }
 
 onMounted(async () => {
   const col = collection(db, "schools", claims.school, "clubs");
-  // TODO: display clubs for officers (perhaps somewhere else?)
   const clubsQuery = stuco ? col : query(col, where("signup.type", "!=", 0));
   const docs = await getDocs(clubsQuery)
   clubs.value = docs.docs.map(s => ({
     id: s.id,
     ...s.data()
   } as Club));
+
+  // Fetch all president names upfront
+  for (const club of clubs.value) {
+    try {
+      const email = getClubPresidentEmail(club.officers);
+      const profile = await getCachedProfile(email);
+      presidentNames.value[club.id] = profile.displayName || email;
+    } catch {
+      presidentNames.value[club.id] = "Unknown";
+    }
+  }
 
   document.addEventListener("click", onDocumentClick);
 });
@@ -90,31 +156,6 @@ onUnmounted(() => {
               </svg>
               Create club
             </router-link>
-            <div class="flex items-center space-x-3 w-full md:w-auto">
-              <!-- filter by topic -->
-              <button id="filterDropdownButton" data-dropdown-toggle="filterDropdown"
-                class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-hidden bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-orange-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
-                type="button">
-                <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="h-4 w-4 mr-2 text-gray-400"
-                  viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd"
-                    d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z"
-                    clip-rule="evenodd" />
-                </svg>
-                Filter
-                <svg class="-mr-1 ml-1.5 w-5 h-5" fill="currentColor" viewBox="0 0 20 20"
-                  xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                  <path clip-rule="evenodd" fill-rule="evenodd"
-                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                </svg>
-              </button>
-              <div class="z-10 hidden w-48 p-3 bg-white rounded-lg shadow-sm dark:bg-gray-700">
-                <h6 class="mb-3 text-sm font-medium text-gray-900 dark:text-white">Choose topic</h6>
-                <ul class="space-y-2 text-sm" aria-labelledby="filterDropdownButton">
-
-                </ul>
-              </div>
-            </div>
           </div>
         </div>
         <div class="overflow-x-auto">
@@ -132,13 +173,27 @@ onUnmounted(() => {
             </thead>
             <tbody>
               <tr class="border-b dark:border-gray-700"
-                v-for="club in clubs.filter(club => club.name.toLowerCase().includes(searchFilter.toLowerCase()))"
+                v-for="club in paginatedClubs"
                 :key="club.id">
-                <th scope="row" class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">{{
-                  club.name }}</th>
+                <th scope="row" class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white flex items-center gap-2">
+                  <span>{{ club.name }}</span>
+                  <span v-if="getClubStatus(club.id) === 'officer'" class="text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-1 py-0.5 rounded inline-flex gap-2 items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+                      <path fill-rule="evenodd" d="M9.664 1.319a.75.75 0 0 1 .672 0 41.059 41.059 0 0 1 8.198 5.424.75.75 0 0 1-.254 1.285 31.372 31.372 0 0 0-7.86 3.83.75.75 0 0 1-.84 0 31.508 31.508 0 0 0-2.08-1.287V9.394c0-.244.116-.463.302-.592a35.504 35.504 0 0 1 3.305-2.033.75.75 0 0 0-.714-1.319 37 37 0 0 0-3.446 2.12A2.216 2.216 0 0 0 6 9.393v.38a31.293 31.293 0 0 0-4.28-1.746.75.75 0 0 1-.254-1.285 41.059 41.059 0 0 1 8.198-5.424ZM6 11.459a29.848 29.848 0 0 0-2.455-1.158 41.029 41.029 0 0 0-.39 3.114.75.75 0 0 0 .419.74c.528.256 1.046.53 1.554.82-.21.324-.455.63-.739.914a.75.75 0 1 0 1.06 1.06c.37-.369.69-.77.96-1.193a26.61 26.61 0 0 1 3.095 2.348.75.75 0 0 0 .992 0 26.547 26.547 0 0 1 5.93-3.95.75.75 0 0 0 .42-.739 41.053 41.053 0 0 0-.39-3.114 29.925 29.925 0 0 0-5.199 2.801 2.25 2.25 0 0 1-2.514 0c-.41-.275-.826-.541-1.25-.797a6.985 6.985 0 0 1-1.084 3.45 26.503 26.503 0 0 0-1.281-.78A5.487 5.487 0 0 0 6 12v-.54Z" clip-rule="evenodd" />
+                    </svg>
+                    Officer
+                  </span>
+                  <span v-else-if="getClubStatus(club.id) === 'member'" class="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-1 py-0.5 rounded inline-flex gap-2 items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+                      <path d="M10 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM3.465 14.493a1.23 1.23 0 0 0 .41 1.412A9.957 9.957 0 0 0 10 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 0 0-13.074.003Z" />
+                    </svg>
+                    Member
+                  </span>
+                </th>
                 <td class="px-4 py-3">{{ club.description }}</td>
-                <!-- todo: better way of finding president -->
-                <td class="px-4 py-3">{{ getClubPresidentName(club.officers) }}</td>
+                <td class="px-4 py-3">
+                  {{ presidentNames[club.id] || "Unknown" }}
+                </td>
                 <td class="px-4 py-3">{{ clubMeetingTimesToString(club.meetings) }}</td>
                 <td class="px-4 py-3 flex items-center justify-end">
                   <router-link
@@ -197,14 +252,14 @@ onUnmounted(() => {
           aria-label="Table navigation">
           <span class="text-sm font-normal text-gray-500 dark:text-gray-400">
             Showing
-            <span class="font-semibold text-gray-900 dark:text-white">1-10</span>
+            <span class="font-semibold text-gray-900 dark:text-white">{{ paginationStart }}-{{ paginationEnd }}</span>
             of
-            <span class="font-semibold text-gray-900 dark:text-white">1000</span>
+            <span class="font-semibold text-gray-900 dark:text-white">{{ filteredClubs.length }}</span>
           </span>
           <ul class="inline-flex items-stretch -space-x-px">
             <li>
-              <a href="#"
-                class="flex items-center justify-center h-full py-1.5 px-3 ml-0 text-gray-500 bg-white rounded-l-lg border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+              <button @click="previousPage" :disabled="currentPage === 1"
+                class="flex items-center justify-center h-full py-1.5 px-3 ml-0 text-gray-500 bg-white rounded-l-lg border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed">
                 <span class="sr-only">Previous</span>
                 <svg class="w-5 h-5" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"
                   xmlns="http://www.w3.org/2000/svg">
@@ -212,31 +267,22 @@ onUnmounted(() => {
                     d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
                     clip-rule="evenodd" />
                 </svg>
-              </a>
+              </button>
+            </li>
+            <li v-for="page in totalPages" :key="page">
+              <button @click="goToPage(page)"
+                :class="[
+                  'flex items-center justify-center text-sm py-2 px-3 leading-tight border',
+                  currentPage === page
+                    ? 'z-10 text-orange-600 bg-orange-50 border-orange-300 hover:bg-orange-100 dark:border-gray-700 dark:bg-gray-700 dark:text-white'
+                    : 'text-gray-500 bg-white border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'
+                ]">
+                {{ page }}
+              </button>
             </li>
             <li>
-              <a href="#"
-                class="flex items-center justify-center text-sm py-2 px-3 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">1</a>
-            </li>
-            <li>
-              <a href="#"
-                class="flex items-center justify-center text-sm py-2 px-3 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">2</a>
-            </li>
-            <li>
-              <a href="#" aria-current="page"
-                class="flex items-center justify-center text-sm z-10 py-2 px-3 leading-tight text-primary-600 bg-primary-50 border border-primary-300 hover:bg-primary-100 hover:text-primary-700 dark:border-gray-700 dark:bg-gray-700 dark:text-white">3</a>
-            </li>
-            <li>
-              <a href="#"
-                class="flex items-center justify-center text-sm py-2 px-3 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">...</a>
-            </li>
-            <li>
-              <a href="#"
-                class="flex items-center justify-center text-sm py-2 px-3 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">100</a>
-            </li>
-            <li>
-              <a href="#"
-                class="flex items-center justify-center h-full py-1.5 px-3 leading-tight text-gray-500 bg-white rounded-r-lg border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+              <button @click="nextPage" :disabled="currentPage === totalPages"
+                class="flex items-center justify-center h-full py-1.5 px-3 leading-tight text-gray-500 bg-white rounded-r-lg border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed">
                 <span class="sr-only">Next</span>
                 <svg class="w-5 h-5" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"
                   xmlns="http://www.w3.org/2000/svg">
@@ -244,7 +290,7 @@ onUnmounted(() => {
                     d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
                     clip-rule="evenodd" />
                 </svg>
-              </a>
+              </button>
             </li>
           </ul>
         </nav>
