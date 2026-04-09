@@ -71,7 +71,7 @@ if (canManageAttendance.value) {
   <h1 class="text-4xl text-gray-700 dark:text-gray-300 mb-3 font-bold">
     Attendance Statistics:
   </h1>
-  <div class="min-h-screen p-4">
+  <div class="p-4">
     <!-- TODO: prompt for user to _take_ attendance -->
 
     <div class="flex flex-col md:flex-row gap-6">

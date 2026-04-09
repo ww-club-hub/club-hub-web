@@ -1,5 +1,6 @@
 import { type ParsedToken, type Auth, getIdTokenResult } from "firebase/auth";
 import type { ClubMeetingTime, OfficerPermission, Officers } from "./schema";
+import { OfficerPermission as OfficerPermissionEnum } from "./schema";
 import { DocumentReference, getDoc, getDocs, type DocumentData, type Query } from "firebase/firestore";
 
 export interface UserClaims extends ParsedToken {
@@ -131,4 +132,40 @@ export async function injectScript(src: string): Promise<void> {
 			resolve();
 		}
 	});
+}
+
+export const PERMISSION_LABELS: Record<OfficerPermission, string> = {
+	[OfficerPermissionEnum.Officers]: "Manage Officers",
+	[OfficerPermissionEnum.Members]: "Manage Members",
+	[OfficerPermissionEnum.Meetings]: "Manage Meetings",
+	[OfficerPermissionEnum.Messages]: "Send Messages",
+	[OfficerPermissionEnum.Forms]: "Manage Forms",
+	[OfficerPermissionEnum.ClubDetails]: "Edit Club Details",
+	[OfficerPermissionEnum.All]: "All Permissions"
+};
+export function permissionBitmaskToArray(bitmask: number): OfficerPermission[] {
+	const permissions: OfficerPermission[] = [];
+	const allPermissions: OfficerPermission[] = [
+		OfficerPermissionEnum.Officers,
+		OfficerPermissionEnum.Members,
+		OfficerPermissionEnum.Meetings,
+		OfficerPermissionEnum.Messages,
+		OfficerPermissionEnum.Forms,
+		OfficerPermissionEnum.ClubDetails
+	];
+	for (const perm of allPermissions) {
+		if ((bitmask & perm) !== 0) {
+			permissions.push(perm);
+		}
+	}
+	return permissions;
+}
+
+
+export function arrayToPermissionBitmask(permissions: OfficerPermission[]): number {
+	let bitmask = 0;
+	for (const perm of permissions) {
+		bitmask |= perm;
+	}
+	return bitmask;
 }

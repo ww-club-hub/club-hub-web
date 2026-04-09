@@ -2,6 +2,7 @@
 import { useMeetings } from '@/stores/meetings';
 import router from '@/router';
 import type { Club, ClubMeeting, ClubRole, ClubUpdate } from '@/schema';
+import { MeetingCard } from "@/components/meetings/MeetingCard.vue";
 import { type DocWithId, typedGetDocs } from '@/utils';
 import { collection, DocumentReference, limit, orderBy, query, where } from 'firebase/firestore';
 import { useRoute } from 'vue-router';

@@ -31,7 +31,6 @@ export interface ClubMeetingFlex {
 }
 
 export type Officers = Record<string, {
-  name: string,
   role: string,
   permissions: OfficerPermission
 }>;

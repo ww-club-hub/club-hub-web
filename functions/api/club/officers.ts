@@ -7,7 +7,6 @@ import { TRPCError } from "@trpc/server";
 const UpdateOfficersReq = z.object({
   clubId: z.string(),
   officers: z.record(z.email(), z.object({
-    name: z.string(),
     role: z.string(),
     // bitmask
     permissions: z.number()
@@ -25,6 +24,17 @@ export default officerProcedure(OfficerPermission.Officers)
       throw new TRPCError({
         code: "BAD_REQUEST",
         message: "At least one officer must have the Officers permission."
+      });
+    }
+
+    // Ensure all officers have at least one permission
+    const officersWithoutPermission = Object.entries(input.officers).filter(
+      ([_email, officer]) => officer.permissions === 0
+    );
+    if (officersWithoutPermission.length > 0) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: `All officers must have at least one permission.`
       });
     }
 
