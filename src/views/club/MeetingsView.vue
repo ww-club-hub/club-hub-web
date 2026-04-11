@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type ClubRole, type Club, type ClubMeeting, OfficerPermission, type ClubMeetingAttendance } from '@/schema';
-import { collection, query, where, orderBy, limit, and, doc, setDoc, updateDoc, DocumentReference, FieldPath, arrayUnion, arrayRemove, serverTimestamp, Timestamp, deleteDoc, writeBatch } from "@firebase/firestore";
+import { collection, query, where, orderBy, limit, and, doc, setDoc, updateDoc, DocumentReference, FieldPath, arrayUnion, arrayRemove, serverTimestamp, Timestamp, deleteDoc } from "@firebase/firestore";
 import { ref, computed, onMounted, watch, getCurrentInstance } from 'vue';
 import { auth, parseError, db } from "@/firebase";
 import MeetingCard from '@/components/meetings/MeetingCard.vue';
@@ -12,7 +12,7 @@ import TakeAttendanceDialog from '@/components/meetings/TakeAttendanceDialog.vue
 import { useRoute } from 'vue-router';
 import { useMeetings } from '@/stores/meetings';
 import api, { isTRPCClientError } from '@/api';
-import { showConfirmDialog } from '@/toast';
+import { showConfirmDialog, showSuccessToast } from '@/toast';
 
 const route = useRoute();
 
@@ -146,9 +146,22 @@ async function takeAttendance(code: string) {
     attendanceCode.value = "";
     showAttendanceDialog.value = false;
     currentAttendanceMeeting.value = null;
+    showSuccessToast("Attendance recorded!", appContext, 3000);
   } catch (err) {
-    if (isTRPCClientError(err) && err.data?.code === "UNAUTHORIZED") {
-      attendanceError.value = "Incorrect code";
+    if (isTRPCClientError(err)) {
+      if (err.data?.code === "CONFLICT") {
+        // Attendance was already taken (we didn't record it, so record it now)
+        await meetings.setAttendance(currentAttendanceMeeting.value!.id, true);
+        attendanceCode.value = "";
+        showAttendanceDialog.value = false;
+        currentAttendanceMeeting.value = null;
+        showSuccessToast("Attendance recorded!", appContext, 3000);
+      } else if (err.data?.code === "FORBIDDEN") {
+        attendanceError.value = "Incorrect code";
+      } else {
+        attendanceError.value = parseError(err as Error);
+        console.error(err);
+      }
     } else {
       attendanceError.value = parseError(err as Error);
       console.error(err);
@@ -188,14 +201,16 @@ async function handleDeleteMeeting(meeting: DocWithId<ClubMeeting>) {
   if (!confirmed) return;
 
   try {
-    // Delete both meeting and meeting_attendance in a transaction
-    const batch = writeBatch(db);
-    batch.delete(doc(meetingsCollection, meeting.id));
-    batch.delete(doc(props.clubDoc, "meeting_attendance", meeting.id));
-    await batch.commit();
+    await api.club.meetings.delete.mutate({
+      clubId: props.club.id,
+      meetingId: meeting.id
+    });
     
     // Remove from store
-    meetings.removeMeeting(meeting.id, props.club.id);
+    meetings.removeMeeting(meeting.id);
+    // Remove from activeMeetings list
+    activeMeetings.value = activeMeetings.value.filter(m => m.id !== meeting.id);
+
   } catch (err) {
     console.error("Error deleting meeting:", err);
   }
@@ -232,7 +247,7 @@ async function refreshActiveMeetings() {
 // Helper to find a meeting by ID from either source
 function findMeetingById(meetingId: string): DocWithId<ClubMeeting> | null {
   // Try fetchedMeetings first (local active meetings)
-  const fromFetched = fetchedMeetings.value.find(m => m.id === meetingId);
+  const fromFetched = activeMeetings.value.find(m => m.id === meetingId);
   if (fromFetched) return fromFetched;
   
   // Fallback to store (calendar meetings)
@@ -263,15 +278,6 @@ onMounted(async () => {
       currentAttendanceMeeting.value = meeting;
     }
   }
-
-  // Watch for changes to meetingAttendance map to trigger reactivity in calendar dots
-  watch(
-    () => Array.from(meetings.meetingAttendance.entries()),
-    () => {
-      // Force reactivity by triggering a re-render of the calendar
-      // This ensures attendance dots update when status changes
-    }
-  );
 });
 </script>
 
@@ -285,91 +291,118 @@ onMounted(async () => {
         v-for="meeting in activeMeetings" :key="meeting.id" :meeting="meeting"
         :active-meeting="true"
         :can-rsvp="false"
-        :attendance-taken="meetings.meetingAttendance.get(meeting.id)"
+        :can-delete="canManageMeetings"
         :can-manage-attendance="canManageMeetings"
         :club="club"
         @open-attendance-modal="handleMeetingAttendance(meeting)"
+        @delete="handleDeleteMeeting(meeting)"
       />
     </div>
   </div>
 
-  <div class="md:grid grid-cols-3 gap-4 items-start">
+  <!-- Main layout: 2 columns on desktop, 1 on mobile -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <div>
-      <h2 class="text-lg tracking-tight uppercase font-semibold text-gray-800 dark:text-gray-100 mb-2">
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">
         Upcoming in {{ currentMonthDisplay }}:
       </h2>
-      <div v-if="upcomingMeetings.length > 0" class="flex gap-3 flex-row flex-wrap md:flex-col">
+      <div v-if="upcomingMeetings.length > 0" class="space-y-3">
         <MeetingCard
           v-for="meeting in upcomingMeetings" :key="meeting.id" :meeting="meeting"
-          :can-take-attendance="false"
           :can-rsvp="true"
           :can-delete="canManageMeetings"
           :can-manage-attendance="canManageMeetings"
           :club="club"
           @rsvp="canAttend => handleRsvp(meeting, canAttend)"
           @delete="handleDeleteMeeting(meeting)"
-        />
+        >
+          <template #delete-icon>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </template>
+        </MeetingCard>
       </div>
-      <p v-else class="italic text-gray-500 dark:text-gray-400">No upcoming meetings in {{ currentMonthDisplay }}...</p>
+      <div v-else class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg text-gray-500 dark:text-gray-400">
+        No upcoming meetings in {{ currentMonthDisplay }}
+      </div>
     </div>
 
+    <!-- Past meetings -->
     <div>
-      <h2 class="text-lg tracking-tight uppercase font-semibold text-gray-800 dark:text-gray-100 mb-2">Calendar:</h2>
-
-      <div class="bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700 inline-block p-3">
-        <!-- Month view of meetings for the current month using VCalendar -->
-        <Calendar
-          :attributes="meetings.meetingsForClub(club.id).map(meeting => ({
-            key: meeting.id,
-            dates: [meeting.startTime.toDate()],
-            highlight: { fillMode: 'light' },
-            popover: {
-              label: `${meeting.startTime.toDate().toLocaleString(undefined, { timeStyle: 'short' })} - ${meeting.endTime.toDate().toLocaleString(undefined, { timeStyle: 'short' })}\n${meeting.description ?? ''} ${meeting.location}`,
-              visibility: 'hover'
-            },
-            dot: {
-              color: getMeetingAttendanceColor(meeting.id)
-            },
-            customData: meeting,
-          }))"
-          is-dark="system"
-          transparent borderless
-          :show-title="true"
-          :show-arrows="true"
-          :pan="false"
-          title-position="left"
-          trim-weeks
-          color="orange"
-          @did-move="async pages => {
-            const newMonth = pages[0].monthComps.firstDayOfMonth;
-            await meetings.loadSection([club.id, newMonth]);
-            currentCalendarMonth = newMonth;
-          }"
-            />
-      </div>
-      <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
-        <span class="inline-block w-2 h-2 rounded-full bg-green-500 me-1"></span> Attended
-        <span class="inline-block w-2 h-2 rounded-full bg-red-500 me-1 ms-2"></span> Missed
-        <span class="inline-block w-2 h-2 rounded-full bg-gray-400 me-1 ms-2"></span> No data
-      </p>
-    </div>
-
-    <div>
-      <h2 class="text-lg tracking-tight uppercase font-semibold text-gray-800 dark:text-gray-100 mb-2">
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">
         Past in {{ currentMonthDisplay }}:
       </h2>
-      <div v-if="pastMeetings.length > 0" class="flex gap-3 flex-row flex-wrap md:flex-col max-h-screen overflow-y-auto">
+      <div v-if="pastMeetings.length > 0" class="space-y-3 max-h-150 overflow-y-auto">
         <MeetingCard
           v-for="meeting in pastMeetings" :key="meeting.id" :meeting="meeting"
-          is-past
           :can-delete="canManageMeetings"
           :can-manage-attendance="canManageMeetings"
-          :attendance-status="meetings.meetingAttendance.get(meeting.id)"
           :club="club"
           @delete="handleDeleteMeeting(meeting)"
-        />
+        >
+          <template #delete-icon>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </template>
+        </MeetingCard>
       </div>
-      <p v-else class="italic text-gray-500 dark:text-gray-400">No past meetings in {{ currentMonthDisplay }}...</p>
+      <div v-else class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg text-gray-500 dark:text-gray-400">
+        No past meetings in {{ currentMonthDisplay }}
+      </div>
+    </div>
+
+    <!-- Right: Calendar -->
+    <div>
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">Calendar:</h2>
+      <div class="sticky top-4">
+        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm p-3 flex gap-3">
+          <Calendar
+            :attributes="meetings.meetingsForClub(club.id).map(meeting => ({
+              key: meeting.id,
+              dates: [meeting.startTime.toDate()],
+              highlight: { fillMode: 'light' },
+              popover: {
+                label: `${meeting.startTime.toDate().toLocaleString(undefined, { timeStyle: 'short' })} - ${meeting.endTime.toDate().toLocaleString(undefined, { timeStyle: 'short' })}\n${meeting.description ?? ''} ${meeting.location}`,
+                visibility: 'hover'
+              },
+              dot: {
+                color: getMeetingAttendanceColor(meeting.id)
+              },
+              customData: meeting,
+            }))"
+            is-dark="system"
+            transparent
+            borderless
+            :show-title="true"
+            :show-arrows="true"
+            :pan="false"
+            title-position="left"
+            trim-weeks
+            color="orange"
+            @did-move="async pages => {
+              const newMonth = pages[0].monthComps.firstDayOfMonth;
+              await meetings.loadSection([club.id, newMonth]);
+              currentCalendarMonth = newMonth;
+            }"
+          />
+          <div class="flex flex-col gap-2">
+            <span class="bg-emerald-100 text-emerald-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded-full dark:bg-emerald-900 dark:text-emerald-300 inline-flex items-center gap-2">
+              <span class="inline-block w-2 h-2 rounded-full bg-emerald-800 dark:bg-emerald-300"></span>
+              Present
+            </span>
+            <span class="bg-rose-100 text-rose-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded-full dark:bg-rose-900 dark:text-rose-300 inline-flex items-center gap-2">
+              <span class="inline-block w-2 h-2 rounded-full bg-rose-800 dark:bg-rose-300"></span>
+              Absent
+            </span>
+            <span class="bg-gray-100 text-gray-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded-full dark:bg-gray-900 dark:text-gray-300 inline-flex items-center gap-2">
+              <span class="inline-block w-2 h-2 rounded-full bg-gray-800 dark:bg-gray-300"></span>
+              No data
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

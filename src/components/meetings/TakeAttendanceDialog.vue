@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import FormInput from '../form/FormInput.vue';
 import type { ClubMeeting } from '@/schema';
-import { watch } from 'vue';
+import type { Timestamp } from 'firebase/firestore';
 
 defineProps<{
   meeting: ClubMeeting | null,
@@ -24,6 +24,9 @@ function formatCode() {
   code.value = code.value.toUpperCase().trim();
 }
 
+const formatDate = (date: Timestamp) => date.toDate().toLocaleString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+const formatTime = (date: Timestamp) => date.toDate().toLocaleString(undefined, { timeStyle: "short" });
+
 async function tryCode() {
   emit("enter-code", code.value);
 }
@@ -37,7 +40,7 @@ async function tryCode() {
         <!-- Modal header -->
         <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600 border-gray-200">
           <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
-            Take attendance
+            Take Attendance
           </h3>
           <button type="button" :disabled="loading" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed" @click="show = false">
             <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
@@ -46,20 +49,48 @@ async function tryCode() {
             <span class="sr-only">Close modal</span>
           </button>
         </div>
-        <form class="p-4 md:p-5 space-y-4 dark:bg-gray-800 rounded-b" @submit.prevent="tryCode">
-          <p v-if="meeting" class="text-gray-700 dark:text-gray-200">
-            <span class="font-bold">Meeting details: </span>
+        <form class="p-4 md:p-5 space-y-5 dark:bg-gray-800 rounded-b" @submit.prevent="tryCode">
+          <!-- Meeting details -->
+          <div v-if="meeting" class="bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+            <p class="text-sm text-gray-600 dark:text-gray-300 mb-3 font-medium">Meeting Details</p>
+            <div class="space-y-2">
+              <div class="flex justify-between items-start">
+                <span class="text-gray-700 dark:text-gray-300">Date:</span>
+                <span class="font-semibold text-gray-900 dark:text-white">{{ formatDate(meeting.startTime) }}</span>
+              </div>
+              <div class="flex justify-between items-start">
+                <span class="text-gray-700 dark:text-gray-300">Time:</span>
+                <span class="font-semibold text-gray-900 dark:text-white">
+                  {{ formatTime(meeting.startTime) }} 
+                  – 
+                  {{ formatTime(meeting.endTime) }}
+                </span>
+              </div>
+              <div v-if="meeting.location" class="flex justify-between items-start">
+                <span class="text-gray-700 dark:text-gray-300">Location:</span>
+                <span class="font-semibold text-gray-900 dark:text-white">{{ meeting.location }}</span>
+              </div>
+            </div>
+          </div>
 
-            {{ meeting.startTime.toDate().toLocaleTimeString() }} - {{ meeting.endTime.toDate().toLocaleTimeString() }}
-          </p>
+          <!-- Code input -->
+          <div>
+            <FormInput label="Attendance Code:" type="text" required v-model="code" @input-change="formatCode" :disabled="loading" placeholder="Enter code here" />
+          </div>
 
-          <FormInput label="Attendance code:" type="text" required v-model="code" @input-change="formatCode" :disabled="loading" />
+          <!-- Error message -->
+          <p v-if="error" class="text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 p-3 rounded-lg text-sm">{{ error }}</p>
 
-          <p v-if="error" class="text-red-500 mb-3">{{ error }}</p>
-
-          <button :disabled="loading" class="text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800 block disabled:opacity-50 disabled:cursor-not-allowed">
-            <span v-if="loading" class="inline-block">Submitting...</span>
-            <span v-else>Submit</span>
+          <!-- Submit button -->
+          <button :disabled="loading" class="w-full text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+            <span v-if="loading" class="inline-flex items-center gap-2">
+              <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Submitting...
+            </span>
+            <span v-else>Submit Attendance Code</span>
           </button>
         </form>
       </div>

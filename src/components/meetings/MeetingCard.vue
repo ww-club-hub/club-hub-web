@@ -2,16 +2,15 @@
 import { ref, watch, onMounted } from 'vue';
 import type { Club, ClubMeeting } from '@/schema';
 import { computed } from 'vue';
+import { useMeetings } from '@/stores/meetings';
+import type { DocWithId } from '@/utils';
 
 const props = defineProps<{
-  meeting: ClubMeeting & { id: string },
+  meeting: DocWithId<ClubMeeting>,
   activeMeeting?: boolean,
-  isPast?: boolean,
   canManageAttendance?: boolean,
-  attendanceTaken?: boolean,
   canRsvp?: boolean,
   canDelete?: boolean,
-  attendanceStatus?: boolean | null,
   club: Club
 }>();
 
@@ -21,10 +20,14 @@ defineEmits<{
   (e: 'delete'): void
 }>();
 
+const meetings = useMeetings();
+
 const LOCALSTORAGE_KEY = 'meeting-rsvp';
 const rsvpChoice = ref<null | boolean>(null);
 const meetingId = computed(() => props.meeting.id);
-
+const attendanceStatus = computed(() => meetings.meetingAttendance.get(props.meeting.id))
+// null/undefined indicates no data
+const hasAttendance = computed(() => (attendanceStatus.value ?? null) !== null);
 
 function loadRsvp() {
   try {
@@ -61,7 +64,7 @@ onMounted(loadRsvp);
     <button
       v-if="canDelete"
       type="button"
-      class="absolute top-3 right-3 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 transition-colors"
+      class="absolute top-3 right-3 text-gray-500 hover:text-rose-600 dark:text-gray-400 dark:hover:text-rose-400 transition-colors"
       @click="$emit('delete')"
     >
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
@@ -75,19 +78,17 @@ onMounted(loadRsvp);
 
       <p class="font-sm text-gray-500">{{ meeting.startTime.toDate().toLocaleTimeString(undefined, { timeStyle: 'short' }) }} - {{ meeting.endTime.toDate().toLocaleTimeString(undefined, { timeStyle: 'short' }) }}</p>
       
-      <!-- Attendance status pill - only for past meetings -->
-      <div v-if="isPast && attendanceStatus !== undefined" class="mt-3">
+      <!-- Attendance status pill (this nullish coalescing thing takes into account undefined too) -->
+      <div v-if="hasAttendance" class="mt-3">
         <span 
           :class="[
             'inline-block px-3 py-1 text-sm font-semibold rounded-full',
-            attendanceStatus === true 
-              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-              : attendanceStatus === false 
-              ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' 
-              : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+            attendanceStatus 
+              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200' 
+              : 'bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-200' 
           ]"
         >
-          {{ attendanceStatus === true ? 'Marked Present' : attendanceStatus === false ? 'Not Present' : 'No Record' }}
+          {{ attendanceStatus ? 'Present' : 'Absent' }}
         </span>
       </div>
     </div>
@@ -104,14 +105,15 @@ onMounted(loadRsvp);
       :class="{ 'ms-auto rounded-full': activeMeeting, 'rounded-lg': !activeMeeting }"
     >Manage attendance</router-link>
     <button
-      v-if="activeMeeting" type="button" :disabled="attendanceTaken"
-      class="text-white bg-linear-to-r from-orange-400 via-orange-500 to-orange-600 shadow-lg shadow-orange-500/50 dark:shadow-lg dark:shadow-orange-800/80 font-medium rounded-full text-sm px-5 py-2.5 text-center me-2 mb-2 block"
+      v-if="activeMeeting" type="button" :disabled="hasAttendance"
+      class="text-white font-medium rounded-full text-sm px-5 py-2.5 text-center me-2 mb-2 block"
       :class="{
-        'hover:bg-linear-to-br focus:ring-4 focus:outline-none focus:ring-orange-300 dark:focus:ring-orange-800': !attendanceTaken
+        'bg-linear-to-r from-orange-400 via-orange-500 to-orange-600 hover:bg-linear-to-br shadow-lg shadow-orange-500/50 dark:shadow-lg dark:shadow-orange-800/80 focus:ring-4 focus:outline-none focus:ring-orange-300 dark:focus:ring-orange-800': !hasAttendance,
+        'bg-gray-400 dark:bg-gray-600 cursor-not-allowed': hasAttendance
       }"
       @click="$emit('open-attendance-modal')"
     >
-      {{ attendanceTaken ? 'Attendance Taken' : 'Take attendance' }}
+      {{ hasAttendance ? 'Attendance Taken' : 'Take attendance' }}
     </button>
 
     <!-- only for non-active meetings -->

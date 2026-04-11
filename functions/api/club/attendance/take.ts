@@ -14,13 +14,16 @@ export default authedProcedure
   .input(TakeAttendanceReq)
   .mutation(async ({ ctx, input }) => {
     if (!ctx.user.memberOf?.includes(input.clubId)) {
-      throw new Error("User is not a member of this club.");
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "User is not a member of this club."
+      });
     }
 
     // TODO: global take attendance without club id/meeting id
 
     // fetch the meeting attendance document
-    const firestoreToken = await makeServiceAccountToken(ctx.env, FIRESTORE_SCOPE)
+    const firestoreToken = await makeServiceAccountToken(ctx.env, FIRESTORE_SCOPE);
     const attendanceDocPath = makeFirestoreDocPath(ctx.env, `/schools/${ctx.user.school}/clubs/${input.clubId}/meeting_attendance/${input.meetingId}`);
     const attendanceDocResp = await authedJsonRequest<FirestoreRestDocument>(
       null,
@@ -29,19 +32,19 @@ export default authedProcedure
       "GET"
     );
     const doc = parseFirestoreObject(attendanceDocResp.fields) as unknown as ClubMeetingAttendance;
+    
+    if (doc.membersPresent.includes(ctx.user.email)) {
+      throw new TRPCError({
+        message: "Attendance already taken",
+        code: "CONFLICT"
+      });
+    }
 
     // validate code
     if (doc.code !== input.code) {
       throw new TRPCError({
         message: "Invalid attendance code",
-        code: "UNAUTHORIZED"
-      });
-    }
-
-    if (doc.membersPresent.includes(ctx.user.email)) {
-      throw new TRPCError({
-        message: "Attendance already taken",
-        code: "CONFLICT"
+        code: "FORBIDDEN"
       });
     }
 

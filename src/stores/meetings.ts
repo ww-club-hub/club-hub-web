@@ -288,6 +288,7 @@ const meetingStore = defineStore("meetings", {
     async setAttendance(meetingId: string, present: boolean) {
       const db = await getDB();
       await db.put("meetingAttendance", present, meetingId);
+      this.meetingAttendance.set(meetingId, present);
     },
 
     // fetch the attendance for all meetings without a fetched attendance

@@ -21,6 +21,7 @@ import takeAttendance from "./api/club/attendance/take";
 import queryAttendance from "./api/club/attendance/query";
 import handleFormPush from "./api/club/forms/push";
 import clubPersonalEmails from "./api/club/personalEmails";
+import deleteMeeting from "./api/club/meetings/delete";
 import { WorkerEntrypoint } from "cloudflare:workers";
 
 const appRouter = router({
@@ -44,6 +45,9 @@ const appRouter = router({
     members: clubMembers,
     officers: clubOfficers,
     personalEmails: clubPersonalEmails,
+    meetings: router({
+      delete: deleteMeeting
+    }),
     attendance: router({
       memberStatistics: memberAttendanceStatistics,
       export: clubAttendanceExport,
