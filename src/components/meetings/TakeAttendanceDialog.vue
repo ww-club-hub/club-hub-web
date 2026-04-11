@@ -6,7 +6,8 @@ import { watch } from 'vue';
 
 defineProps<{
   meeting: ClubMeeting | null,
-  error: string
+  error: string,
+  loading?: boolean
 }>();
 
 const show = defineModel<boolean>("show", {
@@ -38,7 +39,7 @@ async function tryCode() {
           <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
             Take attendance
           </h3>
-          <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white" @click="show = false">
+          <button type="button" :disabled="loading" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed" @click="show = false">
             <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
               <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
             </svg>
@@ -52,11 +53,14 @@ async function tryCode() {
             {{ meeting.startTime.toDate().toLocaleTimeString() }} - {{ meeting.endTime.toDate().toLocaleTimeString() }}
           </p>
 
-          <FormInput label="Attendance code:" type="text" required v-model="code" @input-change="formatCode" />
+          <FormInput label="Attendance code:" type="text" required v-model="code" @input-change="formatCode" :disabled="loading" />
 
           <p v-if="error" class="text-red-500 mb-3">{{ error }}</p>
 
-          <button class="text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800 block">Submit</button>
+          <button :disabled="loading" class="text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800 block disabled:opacity-50 disabled:cursor-not-allowed">
+            <span v-if="loading" class="inline-block">Submitting...</span>
+            <span v-else>Submit</span>
+          </button>
         </form>
       </div>
     </div>

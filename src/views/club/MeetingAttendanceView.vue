@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import Collapse from '@/components/ui/Collapse.vue';
 import { computedAsync } from "@vueuse/core";
-import { computed, ref, type Ref } from 'vue';
+import { computed, ref, type Ref, onUnmounted, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
-import { DocumentReference, doc, setDoc, updateDoc, type DocumentData } from 'firebase/firestore';
+import { DocumentReference, doc, setDoc, updateDoc, type DocumentData, onSnapshot } from 'firebase/firestore';
 import type { Club, ClubMeetingAttendance, ClubMeeting, ClubRole } from '@/schema';
 import { typedGetDoc, type DocWithId, generateAttendanceCode } from '@/utils';
 import { getCachedProfile } from '@/stores/profiles';
@@ -20,7 +20,7 @@ const props = defineProps<{
 }>();
 
 const docRef = doc(props.clubDoc, "meeting_attendance", meetingId);
-const meetingAttendance: Ref<DocWithId<ClubMeetingAttendance> | null> = ref(await typedGetDoc<ClubMeetingAttendance>(docRef));
+const meetingAttendance: Ref<DocWithId<ClubMeetingAttendance> | null> = ref(null);
 const meeting: Ref<DocWithId<ClubMeeting> | null> = ref(await typedGetDoc<ClubMeeting>(doc(props.clubDoc, "meetings", meetingId)));
 
 enum MeetingStatus {
@@ -72,6 +72,29 @@ const membersPresent = computedAsync(async () => {
   return profiles;
 }, []);
 
+// Set up real-time listener for meeting_attendance document
+let unsubscribe: (() => void) | null = null;
+
+onMounted(() => {
+  unsubscribe = onSnapshot(docRef, (docSnapshot) => {
+    if (docSnapshot.exists()) {
+      meetingAttendance.value = {
+        ...docSnapshot.data() as ClubMeetingAttendance,
+        id: docSnapshot.id
+      };
+    }
+  }, (error) => {
+    console.error("Error listening to meeting attendance:", error);
+  });
+});
+
+// Clean up listener on unmount
+onUnmounted(() => {
+  if (unsubscribe) {
+    unsubscribe();
+  }
+});
+
 async function regenCode() {
   if (!meetingAttendance.value) return;
   const code = generateAttendanceCode();
@@ -86,7 +109,7 @@ async function initAttendance() {
     membersPresent: [],
     membersAttending: []
   };
-  const result = await setDoc(docRef, doc);
+  await setDoc(docRef, doc);
 
   meetingAttendance.value = {
     ...doc,

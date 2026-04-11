@@ -7,6 +7,7 @@ import { auth, db } from "@/firebase";
 import { Timestamp, collection, query, where } from "firebase/firestore";
 import api from "@/api";
 import { unref } from "vue";
+import { toRaw } from "vue";
 
 type MeetingSection = [clubId: string, month: Date];
 type ClubMeetingWithId = DocWithId<ClubMeeting> & { clubId: string };
@@ -83,6 +84,13 @@ function fixMeetingTimestamps(meeting: ClubMeeting) {
   meeting.lastUpdated = new Timestamp(meeting.lastUpdated.seconds, meeting.lastUpdated.nanoseconds);
 }
 
+/**
+ * Serialize meeting to plain object for IDB storage (handles Vue refs)
+ */
+function serializeMeetingForIDB(meeting: ClubMeetingWithId): ClubMeetingWithId {
+  return JSON.parse(JSON.stringify(meeting));
+}
+
 const meetingStore = defineStore("meetings", {
   state: () => ({
     _initialized: false,
@@ -94,6 +102,19 @@ const meetingStore = defineStore("meetings", {
     meetingsForClub: state => (clubId: string) => state.meetings.filter(el => el.clubId == clubId)
   },
   actions: {
+    /**
+     * Private helper: Add or update a meeting in the array to prevent duplicates
+     */
+    _upsertMeeting(meeting: ClubMeetingWithId) {
+      const existingIndex = this.meetings.findIndex(m => m.id === meeting.id);
+      if (existingIndex >= 0) {
+        // Update existing meeting
+        this.meetings[existingIndex] = meeting;
+      } else {
+        // Add new meeting
+        this.meetings.push(meeting);
+      }
+    },
     // clear loaded meetings and also wipe idb
     async clear() {
       this.loadedSections.clear();
@@ -116,13 +137,25 @@ const meetingStore = defineStore("meetings", {
       const tx = db.transaction("meetings", "readwrite");
       const store = tx.objectStore("meetings");
       const nowSeconds = Math.floor(Date.now() / 1000);
-      // records older than one year ago
-      const range = IDBKeyRange.upperBound(nowSeconds - 365 * 24 * 60 * 60);
-      const lastUpdatedIndex = store.index("lastUpdated");
-
+      
       // Delete meetings updated more than a year ago
-      const oldMeetings = await lastUpdatedIndex.getAll(range);
+      const oneYearAgoSeconds = nowSeconds - 365 * 24 * 60 * 60;
+      const lastUpdatedIndex = store.index("lastUpdated");
+      const rangeOldUpdates = IDBKeyRange.upperBound(oneYearAgoSeconds);
+      const oldMeetings = await lastUpdatedIndex.getAll(rangeOldUpdates);
       for (const meeting of oldMeetings) {
+        await store.delete(meeting.id);
+      }
+
+      // Also delete meetings that ended in previous calendar years (keep current + previous year)
+      const currentYear = new Date().getFullYear();
+      const previousYear = currentYear - 1;
+      const startOfPreviousYear = new Date(previousYear, 0, 1).getTime() / 1000;
+      
+      const endTimeIndex = store.index("endTime");
+      const rangeOldYears = IDBKeyRange.upperBound(Math.floor(startOfPreviousYear));
+      const meetingsFromOldYears = await endTimeIndex.getAll(rangeOldYears);
+      for (const meeting of meetingsFromOldYears) {
         await store.delete(meeting.id);
       }
 
@@ -158,8 +191,7 @@ const meetingStore = defineStore("meetings", {
       // Get last sync times for all sections to load
       for (const section of sectionsToLoad) {
         let lastSync = await syncTimes.get(section);
-        // TODO: temporarily disabled to force fetch
-        if (true || !lastSync) lastSync = new Date(0);
+        if (!lastSync) lastSync = new Date(0);
 
         // more than two days ago
         if (lastSync < twoDaysAgo) {
@@ -176,11 +208,8 @@ const meetingStore = defineStore("meetings", {
 
           // update sync time
           await syncTimes.put(now, section);
-        }
-        
-        // TODO: temporarily disabled to force fetch
-        if (false) {
-          // load old meetings
+        } else  {
+          // load old meetings from IDB cache (within 2 day window)
           const monthStart = new Date(section[1].getFullYear(), section[1].getMonth()).getTime() / 1000;
           // start of the next month
           const monthEnd = new Date(section[1].getFullYear(), section[1].getMonth() + 1).getTime() / 1000;
@@ -188,7 +217,9 @@ const meetingStore = defineStore("meetings", {
           const range = IDBKeyRange.bound(monthStart, monthEnd, false, true);
           const oldMeetings = await meetings.index("endTime").getAll(range);
           oldMeetings.forEach(fixMeetingTimestamps);
-          this.meetings.push(...oldMeetings);
+          for (const meeting of oldMeetings) {
+            this._upsertMeeting(meeting);
+          }
         }
 
         // Mark all loaded sections as loaded
@@ -201,10 +232,11 @@ const meetingStore = defineStore("meetings", {
 
       // Add new meetings to db and append to meetings
       for (const meeting of newMeetings) {
+        // newMeetings come from API, guaranteed to be plain objects
         await db.put("meetings", meeting);
         // fix timestamp functions
         fixMeetingTimestamps(meeting);
-        this.meetings.push(meeting);
+        this._upsertMeeting(meeting);
       }
 
       // fetch and load attendance
@@ -235,9 +267,21 @@ const meetingStore = defineStore("meetings", {
         ...meeting,
         clubId
       };
-      this.meetings.push(unref(meetingWithId));
+      this._upsertMeeting(meetingWithId);
       const db = await getDB();
-      await db.put("meetings", meetingWithId);
+      await db.put("meetings", serializeMeetingForIDB(meetingWithId));
+    },
+
+    // remove a meeting from the store and IDB
+    async removeMeeting(meetingId: string) {
+      this.meetings = this.meetings.filter(m => m.id !== meetingId);
+      const db = await getDB();
+      await db.delete("meetings", meetingId);
+      // Also remove attendance record
+      const tx = db.transaction("meetingAttendance", "readwrite");
+      await tx.objectStore("meetingAttendance").delete(meetingId);
+      await tx.done;
+      this.meetingAttendance.delete(meetingId);
     },
 
     // set the attendance for a specific meeting (used when succesfully entering code)
