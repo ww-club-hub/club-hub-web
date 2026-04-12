@@ -38,7 +38,7 @@ export default authedProcedure
 
     const applicationDocPath = makeFirestoreDocPath(
       ctx.env,
-      `/schools/${school}/clubs/${input.clubId}/elections/${email}?mask.fieldPaths=roles`
+      `/schools/${school}/clubs/${input.clubId}/elections/${email}`
     );
     
     // Make sure the roles they selected are valid

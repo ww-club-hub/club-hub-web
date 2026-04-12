@@ -162,6 +162,42 @@ const router = createRouter({
           }
         },
         {
+          name: 'club-elections',
+          path: 'elections',
+          component: () => import("@/views/club/election/ElectionsView.vue"),
+          meta: {
+            authRequired: true,
+            title: "Club Elections"
+          }
+        },
+        {
+          name: 'club-elections-apply',
+          path: 'elections/apply',
+          component: () => import("@/views/club/election/ElectionsApplyEditView.vue"),
+          meta: {
+            authRequired: true,
+            title: "Election Application"
+          }
+        },
+        {
+          name: 'club-elections-vote',
+          path: 'elections/vote',
+          component: () => import("@/views/club/election/ElectionsVoteView.vue"),
+          meta: {
+            authRequired: true,
+            title: "Election Voting"
+          }
+        },
+        {
+          name: 'club-elections-settings',
+          path: 'elections/settings',
+          component: () => import("@/views/club/election/ElectionsSettingsView.vue"),
+          meta: {
+            authRequired: true,
+            title: "Election Settings"
+          }
+        },
+        {
           name: 'club-email',
           path: 'email',
           component: () => import("@/views/club/EmailView.vue"),

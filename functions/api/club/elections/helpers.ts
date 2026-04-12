@@ -28,8 +28,8 @@ export function ensureMemberAccess(user: Pick<UserClaims, "role" | "memberOf" | 
 
 export function ensureElectionWindowOpen(settings: ClubElectionSettings) {
   const now = Date.now();
-  const start = settings.window.start.toMillis();
-  const end = settings.window.end.toMillis();
+  const start = (settings.window.start as unknown as Date).getTime();
+  const end = (settings.window.end as unknown as Date).getTime();
   if (now < start || now > end) {
     throw new TRPCError({
       code: "FORBIDDEN",
@@ -74,7 +74,7 @@ export async function getElectionSettings(
       firestoreToken,
       makeFirestoreDocPath(
         env,
-        `/schools/${schoolId}/clubs/${clubId}/elections/__settings__`,
+        `/schools/${schoolId}/clubs/${clubId}/elections/_settings`,
       ),
       "GET"
     );

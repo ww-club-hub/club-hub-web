@@ -172,7 +172,7 @@ export interface ClubForm {
 export interface ClubElectionQuestion {
   question: string;
   required: boolean;
-  type: "text" | "link" | "checkbox" | "radio",
+  type: "text" | "url" | "checkbox" | "radio",
   options?: string[],
   id: string
 }
@@ -193,7 +193,7 @@ export interface ClubElectionApplication {
   responses: Record<string, string | number>;
 }
 
-// elections/__settings__
+// elections/_settings
 export interface ClubElectionSettings {
   window: {
     // date when elections open

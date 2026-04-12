@@ -132,8 +132,8 @@ export const PERMISSION_LABELS: Record<OfficerPermission, string> = {
 	[OfficerPermissionEnum.ClubDetails]: "Edit Club Details",
 	[OfficerPermissionEnum.All]: "All Permissions"
 };
-export function permissionBitmaskToArray(bitmask: number): OfficerPermission[] {
-	const permissions: OfficerPermission[] = [];
+export function permissionBitmaskToArray(bitmask: number) {
+	const permissions: Set<OfficerPermission> = new Set();
 	const allPermissions: OfficerPermission[] = [
 		OfficerPermissionEnum.Officers,
 		OfficerPermissionEnum.Members,
@@ -144,13 +144,13 @@ export function permissionBitmaskToArray(bitmask: number): OfficerPermission[] {
 	];
 	for (const perm of allPermissions) {
 		if ((bitmask & perm) !== 0) {
-			permissions.push(perm);
+			permissions.add(perm);
 		}
 	}
 	return permissions;
 }
 
-export function arrayToPermissionBitmask(permissions: OfficerPermission[]): number {
+export function arrayToPermissionBitmask(permissions: Set<OfficerPermission>): number {
 	let bitmask = 0;
 	for (const perm of permissions) {
 		bitmask |= perm;
@@ -164,6 +164,7 @@ export async function downloadFile(file: File) {
     // use modern api if possible
     const parts = file.name.split(".");
     const extension = parts[parts.length - 1];
+    // @ts-expect-error showSaveFilePicker
     const [handle]: [FileSystemFileHandle] = await window.showSaveFilePicker({
       suggestedName: file.name,
       startIn: "downloads",

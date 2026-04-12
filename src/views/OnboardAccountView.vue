@@ -295,7 +295,7 @@ async function setInterests() {
               <div class="flex items-center mb-4" v-for="year in years" :key="year">
                 <input :id="`check-grad-year-${year}`" type="radio" :value="year" name="check-grad-years"
                   v-model="gradYear"
-                  class="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 round-sm focus:ring-orange-500 dark:focus:ring-orange-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                  class="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-orange-500 dark:focus:ring-orange-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
                 <label :for="`check-grad-year-${year}`"
                   class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">{{ year }}</label>
               </div>

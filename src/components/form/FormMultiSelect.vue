@@ -4,7 +4,9 @@
 defineProps<{
   label: string,
   options: { value: TItem, label: string }[],
-  disabled?: boolean
+  disabled?: boolean,
+  maxItems?: number,
+  required?: boolean
 }>();
 
 const model = defineModel<Set<TItem>>({ default: [] });
@@ -24,7 +26,8 @@ const id = `multi-select-${crypto.randomUUID()}`;
           :id="`${id}-${option.value}`"
           type="checkbox"
           v-model="model"
-          :disabled="disabled"
+          :disabled="disabled || (maxItems !== undefined && !model.has(option.value) && model.size === maxItems)"
+          :required="required && model.size === 0"
           :value="option.value"
           class="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 dark:focus:ring-orange-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
         />
