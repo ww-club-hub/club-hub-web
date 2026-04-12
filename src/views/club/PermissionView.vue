@@ -11,7 +11,6 @@ import type { DocumentReference } from 'firebase/firestore';
 import { getCurrentInstance, ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 
-const router = useRouter();
 const context = getCurrentInstance()?.appContext;
 
 const props = defineProps<{
@@ -70,7 +69,7 @@ async function addOfficer(email: string) {
   officers.value.push({
     email,
     role: "",
-    permissions: []
+    permissions: new Set()
   });
   searchInput.value = "";
 }
