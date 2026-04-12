@@ -22,6 +22,9 @@ import queryAttendance from "./api/club/attendance/query";
 import handleFormPush from "./api/club/forms/push";
 import clubPersonalEmails from "./api/club/personalEmails";
 import deleteMeeting from "./api/club/meetings/delete";
+import createElectionApplication from "./api/club/elections/create";
+import submitElectionApplication from "./api/club/elections/submit";
+import submitElectionVote from "./api/club/elections/vote";
 import { WorkerEntrypoint } from "cloudflare:workers";
 
 const appRouter = router({
@@ -58,6 +61,11 @@ const appRouter = router({
       authorize: authorizeGoogle,
       getToken: getGoogleToken,
       revokeToken: revokeGoogleToken
+    }),
+    elections: router({
+      create: createElectionApplication,
+      submit: submitElectionApplication,
+      vote: submitElectionVote,
     }),
   })
 });

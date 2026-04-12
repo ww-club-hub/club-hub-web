@@ -84,6 +84,27 @@ service cloud.firestore {
           allow create: if student(school_id) && officer(club_id, 3) && request.resource.data.keys().toSet() == ["name", "emails"].toSet();
           allow update: if student(school_id) && officer(club_id, 3) && onlyChanged(["name", "emails"]);
         }
+
+        match /elections/{application_id} {
+          // permission bit 0 - officers - for special __settings__ document
+          allow create: if student(school_id) && (admin() || officer(club_id, 0)) && application_id == "__settings__" && request.resource.data.keys().toSet() == ["window", "description", "roles", "questions", "voting"];
+          allow update: if student(school_id) && (admin() || officer(club_id, 0)) && application_id == "__settings__" && onlyChanged(["window", "description", "roles", "questions", "voting"]); 
+          // can read either settings or own doc
+          allow read: if student(school_id) && member(club_id) && ((application_id == "__settings__") || (string(application_id) == string(request.auth.token.email)));
+          // status cannot be changed by member
+          allow update: if student(school_id) && member(club_id) && string(application_id) == string(request.auth.token.email) && onlyChanged(["roles", "responses"]);
+          allow delete: if student(school_id) && member(club_id) && string(application_id) == string(request.auth.token.email);
+          // officers/stuco can read, delete submitted member applications (status >= 1)
+          allow read, delete: if student(school_id) && (admin() || officer(club_id, 0)) && resource.data.status >= 1;
+          // officers/stuco can approve/reject submitted applications by changing status only
+          allow update: if student(school_id) && (admin() || officer(club_id, 0)) &&
+            application_id != "__settings__" &&
+            resource.data.status >= 1 &&
+            onlyChanged(["status"]) &&
+            request.resource.data.status in [0, 2];
+          // members can read all approved responses
+          allow read: if student(school_id) && member(club_id) && resource.data.status >= 2;
+        }
       }
 
       match /clubs_private/{club_id} {

@@ -2,7 +2,19 @@ import { JWTPayload } from "jose";
 // imports from frontend
 import type { UserClaims } from "../src/utils";
 export type { UserClaims };
-export { type Club, ClubSignupType, OfficerPermission, type ClubMeeting, type ClubMeetingAttendance, type UserData, type ClubForm } from "../src/schema";
+export {
+  type Club,
+  ClubSignupType,
+  OfficerPermission,
+  type ClubMeeting,
+  type ClubMeetingAttendance,
+  type UserData,
+  type ClubForm,
+  ClubElectionApplicationStatus,
+  type ClubElectionApplication,
+  type ClubElectionQuestion,
+  type ClubElectionSettings,
+} from "../src/schema";
 export interface Env {
   SERVICE_ACCOUNT_EMAIL: string;
   SERVICE_ACCOUNT_KEY: string;
@@ -11,6 +23,13 @@ export interface Env {
   OAUTH_CLIENT_SECRET: string;
   GCP_PROJECT_ID: string;
   USE_EMULATOR: string;
+}
+
+export class Reference {
+  referenceValue: string;
+  constructor(value: string) {
+    this.referenceValue = value;
+  }
 }
 
 export type AtLeastOne<T, U = { [K in keyof T]: Pick<T, K> }> = Partial<T> & U[keyof U];
@@ -30,7 +49,7 @@ export type RawFirestoreField = AtLeastOne<{
 
 export type RawFirestoreFieldObject = { [key: string]: RawFirestoreField };
 
-export type FirestoreField = null | number | boolean | string | Date | FirestoreField[] | FirestoreFieldObject;
+export type FirestoreField = null | number | boolean | string | Date | FirestoreField[] | FirestoreFieldObject | Reference;
 
 export type FirestoreFieldObject = { [key: string]: FirestoreField };
 

@@ -1,4 +1,15 @@
-import type { Env, FirestoreRestDocument, FirestoreField, FirestoreFieldObject, RawFirestoreField, RawFirestoreFieldObject, FirestoreUser, UserClaims } from "./types";
+import {
+  type AggregationQueryResponse,
+  type Env,
+  type FirestoreRestDocument,
+  type FirestoreField,
+  type FirestoreFieldObject,
+  type RawFirestoreField,
+  type RawFirestoreFieldObject,
+  type FirestoreUser,
+  type UserClaims,
+  Reference
+} from "./types";
 import { decodeJwt, jwtVerify, importX509, importPKCS8, SignJWT } from "jose";
 import { authedJsonRequest, getBearerToken } from "./utils";
 
@@ -142,7 +153,7 @@ export function parseFirestoreField(field: RawFirestoreField): FirestoreField {
   } else if ("booleanValue" in field && typeof field.booleanValue === "boolean") {
     return field.booleanValue;
   } else if ("referenceValue" in field && typeof field.referenceValue === "string") {
-    return field.referenceValue;
+    return new Reference(field.referenceValue);
   } else if ("nullValue" in field) {
     return null;
   } else if ("timestampValue" in field && typeof field.timestampValue === "string") {
@@ -162,6 +173,13 @@ export function parseFirestoreObject(object: RawFirestoreFieldObject): Firestore
   return Object.fromEntries(Object.entries(object).map(([k, v]) => [k, parseFirestoreField(v)]));
 }
 
+export function parseAggregationCount(response: AggregationQueryResponse, alias: string) {
+  const rawValue = response[0]?.result?.aggregateFields?.[alias];
+  if (!rawValue) return 0;
+  const parsedValue = parseFirestoreField(rawValue);
+  return typeof parsedValue === "number" ? parsedValue : 0;
+}
+
 export function makeFirestoreField(field: FirestoreField): RawFirestoreField {
   switch (typeof field) {
     case "number":
@@ -172,6 +190,7 @@ export function makeFirestoreField(field: FirestoreField): RawFirestoreField {
       return { booleanValue: field };
     case "object":
       if (field instanceof Date) return { timestampValue: field.toISOString() };
+      else if (field instanceof Reference) return { referenceValue: field.referenceValue };
       else if (Array.isArray(field)) return {
         arrayValue: {
           values: field.map(makeFirestoreField)

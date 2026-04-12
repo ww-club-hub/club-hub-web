@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { makeServiceAccountToken, FIRESTORE_SCOPE, makeFirestoreDocPath } from "../../../firebase";
+import { makeServiceAccountToken, FIRESTORE_SCOPE, makeFirestoreDocPath, parseAggregationCount } from "../../../firebase";
 import { AggregationQueryResponse, FirestoreRestDocument, OfficerPermission, QueryResponse } from "../../../types";
 import { authedJsonRequest, authedProcedure } from "../../../utils";
 import { z } from "zod";
@@ -85,19 +85,8 @@ export default authedProcedure
       makeFirestoreDocPath(ctx.env, `/schools/${ctx.user.school}/clubs/${input.clubId}:runAggregationQuery`)
     ) as AggregationQueryResponse;
 
-    // Extract numPresent from presentQueryResponse
-    let numPresent = 0;
-    const numPresentValue = presentQueryResponse[0]?.result?.aggregateFields?.numPresent?.integerValue;
-    if (numPresentValue) {
-      numPresent = parseInt(numPresentValue);
-    }
-
-    // Extract numMeetings from allQueryResponse
-    let numMeetings = 0;
-    const numMeetingsValue = allQueryResponse[0]?.result?.aggregateFields?.numTotal?.integerValue;
-    if (numMeetingsValue) {
-      numMeetings = parseInt(numMeetingsValue);
-    }
+    const numPresent = parseAggregationCount(presentQueryResponse, "numPresent");
+    const numMeetings = parseAggregationCount(allQueryResponse, "numTotal");
 
     // update the cached member statistics
 

@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { makeServiceAccountToken, FIRESTORE_SCOPE, getFirestoreUrl, updateUserRoles, AUTH_SCOPE, getFirestoreDocId, makeFirestoreField, makeFirestoreDocPath } from "../../firebase";
+import { makeServiceAccountToken, FIRESTORE_SCOPE, updateUserRoles, AUTH_SCOPE, getFirestoreDocId, makeFirestoreField, makeFirestoreDocPath, parseAggregationCount } from "../../firebase";
 import { AggregationQueryResponse, FirestoreRestDocument } from "../../types";
 import { authedJsonRequest, authedProcedure } from "../../utils";
 import { z } from "zod";
@@ -56,7 +56,7 @@ export default authedProcedure
         firestoreToken,
         makeFirestoreDocPath(ctx.env, `:runAggregationQuery`)
       ) as AggregationQueryResponse;
-      if (parseInt(queryResponse[0]?.result.aggregateFields.count.integerValue!) > 0) {
+      if (parseAggregationCount(queryResponse, "count") > 0) {
         // this school already exists
         throw new TRPCError({
           code: "CONFLICT",

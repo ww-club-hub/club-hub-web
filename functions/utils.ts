@@ -96,3 +96,10 @@ export function getBearerToken(req: Request) {
   if (!token) return null;
   return token;
 }
+
+/**
+ * Check if an error is a 404 Not Found from a RequestError
+ */
+export function isNotFoundError(error: unknown) {
+  return error instanceof RequestError && error.response.status === 404;
+}

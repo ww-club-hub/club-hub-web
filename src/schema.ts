@@ -168,6 +168,58 @@ export interface ClubForm {
   dueDate: Timestamp
 }
 
+// budget pollerr
+export interface ClubElectionQuestion {
+  question: string;
+  required: boolean;
+  type: "text" | "link" | "checkbox" | "radio",
+  options?: string[],
+  id: string
+}
+
+export enum ClubElectionApplicationStatus {
+  Draft = 0,
+  Submitted = 1,
+  Approved = 2 // Approved for voting
+}
+
+// elections/{email}
+export interface ClubElectionApplication {
+  // backend-only
+  status: ClubElectionApplicationStatus,
+  // member can edit
+  roles: string[],
+  // question id -> response
+  responses: Record<string, string | number>;
+}
+
+// elections/__settings__
+export interface ClubElectionSettings {
+  window: {
+    // date when elections open
+    start: Timestamp,
+    // date when they close
+    end: Timestamp,
+  },
+  // markdown, could link to constitution
+  description: string,
+  roles: {
+    // TODO: eventually (not now) do some syncing with permissions, predetermined roles, etc
+    names: string[],
+    // max number of positions each member can select
+    maxApply: number,
+  }
+  questions: ClubElectionQuestion[],
+  
+  voting: {
+    // vote for yourself
+    allowSelf: boolean,
+    // some clubs let you vote for multiple people
+    numVotes: number
+  }
+  
+}
+
 // Private user data
 export interface UserData {
   google?: {
