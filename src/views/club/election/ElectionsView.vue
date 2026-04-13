@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import api, { isTRPCClientError } from "@/api";
 import ButtonLoader from "@/components/ui/ButtonLoader.vue";
+import MarkdownContent from "@/components/ui/MarkdownContent.vue";
 import { auth } from "@/firebase";
 import {
   ClubElectionApplicationStatus,
@@ -105,8 +106,9 @@ async function createApplication() {
   <div class="max-w-(--breakpoint-2xl) mx-auto p-4 space-y-6">
     <section>
       <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Club Elections</h1>
-      <p v-if="settings" class="text-sm text-gray-600 dark:text-gray-300">
-        {{ settings.description || "No election description provided." }}
+      <MarkdownContent v-if="settings && settings.description" :content="settings.description" />
+      <p v-else-if="settings" class="text-sm text-gray-600 dark:text-gray-300">
+        No election description provided.
       </p>
       <p v-else class="text-sm text-gray-600 dark:text-gray-300 italic">
         Elections are not configured yet.

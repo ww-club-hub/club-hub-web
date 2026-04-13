@@ -3,6 +3,7 @@ import api, { isTRPCClientError } from "@/api";
 import FormInput from "@/components/form/FormInput.vue";
 import FormMultiSelect from "@/components/form/FormMultiSelect.vue";
 import ButtonLoader from "@/components/ui/ButtonLoader.vue";
+import MarkdownContent from "@/components/ui/MarkdownContent.vue";
 import { auth } from "@/firebase";
 import {
   ClubElectionApplicationStatus,
@@ -112,6 +113,7 @@ async function submitDraft() {
           {{ hasWindowOpen ? "Open" : "Closed" }}
         </span>
       </p>
+      <MarkdownContent v-if="settings && settings.description" :content="settings.description" class="mt-3" />
     </section>
 
     <section class="p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg space-y-4">

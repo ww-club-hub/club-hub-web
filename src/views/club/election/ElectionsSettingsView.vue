@@ -222,7 +222,15 @@ async function setApplicationStatus(applicantEmail: string, action: "approve" | 
         <DateTimeInput v-model="endTime" label="Window end" required />
       </div>
 
-      <FormInput v-model="description" label="Description" type="text" />
+      <div>
+        <label class="block mb-2 text-sm font-semibold text-gray-900 dark:text-white">Description (Markdown)</label>
+        <textarea
+          v-model="description"
+          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          placeholder="Enter election description (supports markdown)"
+          rows="4"
+        />
+      </div>
 
       <div>
         <label class="block mb-2 text-sm font-semibold text-gray-900 dark:text-white">Roles</label>
