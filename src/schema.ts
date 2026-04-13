@@ -220,6 +220,12 @@ export interface ClubElectionSettings {
   
 }
 
+// elections/_votes
+export interface ClubElectionVotes {
+  // voter email -> list of candidate emails they voted for
+  votes: Record<string, string[]>;
+}
+
 // Private user data
 export interface UserData {
   google?: {

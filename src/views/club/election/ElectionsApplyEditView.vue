@@ -144,6 +144,7 @@ async function submitDraft() {
               v-model="selectedRoles"
               label="Select roles"
               :options="settings.roles.names.map(name => ({ value: name, label: name }))"
+              :max-items="settings.roles.maxApply"
               required
             />
             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">

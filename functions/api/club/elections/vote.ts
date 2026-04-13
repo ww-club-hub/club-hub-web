@@ -10,20 +10,10 @@ import {
   getElectionSettings,
 } from "./helpers";
 
-const voteStore = new Map<string, Map<string, string[]>>();
-
 const SubmitElectionVoteReq = z.object({
   clubId: z.string(),
   votes: z.array(z.email()),
 });
-
-function getVoteMap(schoolId: string, clubId: string) {
-  const key = `${schoolId}:${clubId}`;
-  if (!voteStore.has(key)) {
-    voteStore.set(key, new Map<string, string[]>());
-  }
-  return voteStore.get(key)!;
-}
 
 export default authedProcedure
   .input(SubmitElectionVoteReq)
@@ -119,8 +109,30 @@ export default authedProcedure
       }
     }
 
-    const voteMap = getVoteMap(school, input.clubId);
-    voteMap.set(email, uniqueVotes);
+    // Store votes in Firestore _votes document
+    // Field names with special characters (dots in email) need to be escaped
+    const fieldPath = `votes.\`${email}\``;
+    const votesDocPath = new URL(makeFirestoreDocPath(
+      ctx.env,
+      `/schools/${school}/clubs/${input.clubId}/elections/_votes`
+    ));
+    votesDocPath.searchParams.set("updateMask.fieldPaths", fieldPath);
+
+    const votesData = {
+      votes: {
+        [email]: uniqueVotes
+      }
+    };
+    
+    console.log(votesData, votesDocPath);
+
+    // Use PATCH to merge the voter's votes into the existing document
+    await authedJsonRequest(
+      makeFirestoreField(votesData).mapValue,
+      firestoreToken,
+      votesDocPath.href,
+      "PATCH"
+    );
 
     return { success: true, votes: uniqueVotes };
   });
