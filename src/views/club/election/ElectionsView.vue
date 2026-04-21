@@ -49,33 +49,54 @@ const approvedCandidates = await typedGetDocs<ClubElectionApplication>(
 );
 const votesData = canManageElections.value ? await typedGetDoc<ClubElectionVotes>(votesDocRef) : null;
 
-const hasWindowOpen = computed(() => {
+const haswindowOpen = computed(() => {
   if (!settings) return false;
   const now = Date.now();
   return now >= settings.window.start.toMillis() && now <= settings.window.end.toMillis();
 });
 
+const hasVotingWindowOpen = computed(() => {
+  if (!settings?.votingWindow) return false;
+  const now = Date.now();
+  return now >= settings.votingWindow.start.toMillis() && now <= settings.votingWindow.end.toMillis();
+});
+
 const creatingApplication = ref(false);
 const showVoteDetails = ref(false);
 
-// Calculate vote counts per candidate
-const voteCountsPerCandidate = computed(() => {
-  if (!votesData?.votes) return new Map<string, number>();
-  const counts = new Map<string, number>();
+// Calculate vote counts per candidate per position
+// Structure: { position: { candidateEmail: count } }
+const voteCountsPerPosition = computed(() => {
+  if (!votesData?.votes) return new Map<string, Map<string, number>>();
+  const counts = new Map<string, Map<string, number>>();
+  
   for (const voterVotes of Object.values(votesData.votes)) {
-    for (const candidateEmail of voterVotes) {
-      counts.set(candidateEmail, (counts.get(candidateEmail) ?? 0) + 1);
+    // voterVotes is { position: [candidateEmails] }
+    for (const [position, candidateEmails] of Object.entries(voterVotes)) {
+      if (!counts.has(position)) {
+        counts.set(position, new Map());
+      }
+      const positionCounts = counts.get(position)!;
+      for (const candidateEmail of candidateEmails) {
+        positionCounts.set(candidateEmail, (positionCounts.get(candidateEmail) ?? 0) + 1);
+      }
     }
   }
   return counts;
 });
 
-// Get list of voters for a candidate when details are shown
-function getVotersForCandidate(candidateEmail: string): string[] {
+// Get vote count for a candidate in a specific position
+function getVotesForCandidateInPosition(candidateEmail: string, position: string): number {
+  return voteCountsPerPosition.value.get(position)?.get(candidateEmail) ?? 0;
+}
+
+// Get list of voters for a candidate in a specific position
+function getVotersForCandidateInPosition(candidateEmail: string, position: string): string[] {
   if (!votesData?.votes) return [];
   const voters: string[] = [];
-  for (const [voterEmail, candidateVotes] of Object.entries(votesData.votes)) {
-    if (candidateVotes.includes(candidateEmail)) {
+  for (const [voterEmail, positionVotes] of Object.entries(votesData.votes)) {
+    const candidateEmails = positionVotes[position] ?? [];
+    if (candidateEmails.includes(candidateEmail)) {
       voters.push(voterEmail);
     }
   }
@@ -118,12 +139,23 @@ async function createApplication() {
     <section class="p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg space-y-2">
       <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Current Status</h2>
       <p v-if="settings" class="text-sm text-gray-700 dark:text-gray-300">
-        Window:
+        Application Window:
         {{ settings.window.start.toDate().toLocaleString(undefined, { timeStyle: "short", dateStyle: "short" }) }}
         –
         {{ settings.window.end.toDate().toLocaleString(undefined, { timeStyle: "short", dateStyle: "short" }) }}
-        <span class="ml-2 font-semibold" :class="hasWindowOpen ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'">
-          {{ hasWindowOpen ? "Open" : "Closed" }}
+        <span class="ml-2 font-semibold" :class="haswindowOpen ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300'">
+          {{ haswindowOpen ? "Open" : "Closed" }}
+        </span>
+      </p>
+      <p v-if="settings" class="text-sm text-gray-700 dark:text-gray-300">
+        Voting Window:
+        <template v-if="settings.votingWindow">
+          {{ settings.votingWindow.start.toDate().toLocaleString(undefined, { timeStyle: "short", dateStyle: "short" }) }}
+          –
+          {{ settings.votingWindow.end.toDate().toLocaleString(undefined, { timeStyle: "short", dateStyle: "short" }) }}
+        </template>
+        <span class="ml-2 font-semibold" :class="hasVotingWindowOpen ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300'">
+          {{ hasVotingWindowOpen ? "Open" : "Closed" }}
         </span>
       </p>
       <p class="text-sm text-gray-700 dark:text-gray-300">
@@ -148,7 +180,7 @@ async function createApplication() {
         <ButtonLoader
           v-if="!myApplication"
           :loading="creatingApplication"
-          :disabled="!hasWindowOpen"
+          :disabled="!haswindowOpen"
           class=" text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-hidden focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800"
           @click="createApplication"
         >
@@ -198,29 +230,36 @@ async function createApplication() {
         No votes have been submitted yet.
       </p>
 
-      <div v-else class="space-y-3">
-        <div v-for="candidate of approvedCandidates" :key="candidate.id" class="p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="font-semibold text-gray-900 dark:text-white">{{ candidate.id }}</p>
-              <p class="text-sm text-gray-600 dark:text-gray-400">Roles: {{ candidate.roles.join(", ") || "None" }}</p>
-            </div>
-            <div class="text-right">
-              <p class="text-2xl font-bold text-orange-600 dark:text-orange-400">{{ voteCountsPerCandidate.get(candidate.id) ?? 0 }}</p>
-              <p class="text-xs text-gray-500 dark:text-gray-400">{{ (voteCountsPerCandidate.get(candidate.id) ?? 0) === 1 ? "vote" : "votes" }}</p>
-            </div>
+      <div v-else class="space-y-6">
+        <div v-for="position in settings?.roles.names ?? []" :key="position" class="space-y-3">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ position }}</h3>
+          
+          <div v-if="(voteCountsPerPosition.get(position)?.size ?? 0) === 0" class="text-sm italic text-gray-600 dark:text-gray-300">
+            No votes for this position yet.
           </div>
+          
+          <div v-else class="space-y-3">
+            <div v-for="candidate of approvedCandidates" :key="candidate.id" class="p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="font-semibold text-gray-900 dark:text-white">{{ candidate.id }}</p>
+                  <p class="text-sm text-gray-600 dark:text-gray-400">Roles: {{ candidate.roles.join(", ") || "None" }}</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-2xl font-bold text-orange-600 dark:text-orange-400">{{ getVotesForCandidateInPosition(candidate.id, position) }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">{{ getVotesForCandidateInPosition(candidate.id, position) === 1 ? "vote" : "votes" }}</p>
+                </div>
+              </div>
 
-          <div v-if="showVoteDetails" class="mt-3 pt-3 border-t border-gray-300 dark:border-gray-600">
-            <p class="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Voters:</p>
-            <div v-if="getVotersForCandidate(candidate.id).length === 0" class="text-xs text-gray-500 dark:text-gray-400 italic">
-              No votes for this candidate
+              <div v-if="showVoteDetails && getVotesForCandidateInPosition(candidate.id, position) > 0" class="mt-3 pt-3 border-t border-gray-300 dark:border-gray-600">
+                <p class="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Voters:</p>
+                <ul class="space-y-1">
+                  <li v-for="voter of getVotersForCandidateInPosition(candidate.id, position)" :key="voter" class="text-sm text-gray-700 dark:text-gray-300">
+                    {{ voter }}
+                  </li>
+                </ul>
+              </div>
             </div>
-            <ul v-else class="space-y-1">
-              <li v-for="voter of getVotersForCandidate(candidate.id)" :key="voter" class="text-sm text-gray-700 dark:text-gray-300">
-                {{ voter }}
-              </li>
-            </ul>
           </div>
         </div>
       </div>

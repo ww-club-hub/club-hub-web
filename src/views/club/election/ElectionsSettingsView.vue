@@ -2,6 +2,7 @@
 import DateTimeInput from "@/components/form/DateTimeInput.vue";
 import FormInput from "@/components/form/FormInput.vue";
 import ButtonLoader from "@/components/ui/ButtonLoader.vue";
+import CandidateResponseDisplay from "@/components/elections/CandidateResponseDisplay.vue";
 import {
   ClubElectionApplicationStatus,
   type Club,
@@ -26,9 +27,6 @@ import { computed, getCurrentInstance, ref } from "vue";
 import { useRouter } from "vue-router";
 
 type ElectionApplicationWithApplicant = ClubElectionApplication & { applicantEmail: string };
-type FirestoreElectionSettings = Omit<ClubElectionSettings, "window"> & {
-  window: { start: Timestamp, end: Timestamp }
-};
 
 const props = defineProps<{
   role: ClubRole,
@@ -47,10 +45,13 @@ if (!canManageElections.value) {
 const electionsCollection = collection(props.clubDoc, "elections");
 const settingsDocRef = doc(electionsCollection, "_settings");
 
-const settingsDoc = await typedGetDoc<FirestoreElectionSettings>(settingsDocRef);
-const startTime = ref<Date>(settingsDoc?.window.start.toDate() ?? new Date());
-// 7 days in the future
-const endTime = ref<Date>(settingsDoc?.window.end.toDate() ?? new Date(Date.now() + 7 * 3600 * 24 * 1000));
+const settingsDoc = await typedGetDoc<ClubElectionSettings>(settingsDocRef);
+const ONE_DAY = 3600 * 24 * 1000;
+const appStartTime = ref<Date>(settingsDoc?.window.start.toDate() ?? new Date());
+const appEndTime = ref<Date>(settingsDoc?.window.end.toDate() ?? new Date(Date.now() + 3 * ONE_DAY));
+const voteStartTime = ref<Date>(settingsDoc?.votingWindow?.start.toDate() ?? new Date(Date.now() + 3 * ONE_DAY));
+// 7 days in the future (or 10 from now if no settings)
+const voteEndTime = ref<Date>(settingsDoc?.votingWindow?.end.toDate() ?? new Date(Date.now() + 7 * ONE_DAY));
 const description = ref(settingsDoc?.description ?? "");
 const roles = ref(settingsDoc?.roles ?? { names: [], maxApply: 1 });
 const questions = ref(settingsDoc?.questions ?? []);
@@ -76,10 +77,6 @@ const loading = ref({
 });
 
 const roleNameInput = ref("");
-
-function getQuestionText(questionId: string): string {
-  return questions.value.find(q => q.id === questionId)?.question ?? questionId;
-}
 
 function addRoleName() {
   const role = roleNameInput.value.trim();
@@ -155,7 +152,8 @@ async function saveSettings() {
   loading.value.settings = true;
   try {
     await setDoc(settingsDocRef, toFirestoreSettings({
-      window: { start: startTime.value, end: endTime.value },
+      window: { start: appStartTime.value, end: appEndTime.value },
+      votingWindow: { start: voteStartTime.value, end: voteEndTime.value },
       description: description.value,
       roles: roles.value,
       questions: questions.value,
@@ -171,15 +169,20 @@ async function saveSettings() {
 
 function toFirestoreSettings(settings: {
   window: { start: Date, end: Date },
+  votingWindow: { start: Date, end: Date },
   description: string,
   roles: { names: string[], maxApply: number },
   questions: ClubElectionQuestion[],
   voting: { allowSelf: boolean, numVotes: number }
-}): FirestoreElectionSettings {
+}): ClubElectionSettings {
   return {
     window: {
       start: Timestamp.fromDate(settings.window.start),
       end: Timestamp.fromDate(settings.window.end),
+    },
+    votingWindow: {
+      start: Timestamp.fromDate(settings.votingWindow.start),
+      end: Timestamp.fromDate(settings.votingWindow.end),
     },
     description: settings.description,
     roles: settings.roles,
@@ -218,10 +221,11 @@ async function setApplicationStatus(applicantEmail: string, action: "approve" | 
       <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Election Settings</h1>
 
       <div class="grid md:grid-cols-2 gap-4">
-        <DateTimeInput v-model="startTime" label="Window start" required />
-        <DateTimeInput v-model="endTime" label="Window end" required />
+        <DateTimeInput v-model="appStartTime" label="Application window start" required />
+        <DateTimeInput v-model="appEndTime" label="Application window end" required />
+        <DateTimeInput v-model="voteStartTime" label="Voting window start" required />
+        <DateTimeInput v-model="voteEndTime" label="Voting window end" required />
       </div>
-
       <div>
         <label class="block mb-2 text-sm font-semibold text-gray-900 dark:text-white">Description (Markdown)</label>
         <textarea
@@ -353,49 +357,15 @@ async function setApplicationStatus(applicantEmail: string, action: "approve" | 
         No submitted applications yet.
       </p>
 
-      <div v-for="app in submittedApplications" :key="app.applicantEmail" class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 space-y-3">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="font-semibold text-gray-900 dark:text-white">{{ app.applicantEmail }}</p>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Roles: {{ app.roles.join(', ') || 'None selected' }}</p>
-          </div>
-          <div class="text-right">
-            <span class="inline-block px-2 py-1 rounded text-xs font-medium" :class="app.status === ClubElectionApplicationStatus.Submitted ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'">
-              {{ app.status === ClubElectionApplicationStatus.Submitted ? 'Submitted' : 'Approved' }}
-            </span>
-          </div>
-        </div>
-
-        <div class="space-y-2 bg-white dark:bg-gray-800 rounded p-3">
-          <div v-for="(value, questionId) in app.responses" :key="questionId" class="pb-2 last:pb-0 border-b border-gray-200 dark:border-gray-700 last:border-0">
-            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">{{ getQuestionText(String(questionId)) }}</p>
-            <p class="text-sm text-gray-900 dark:text-gray-100 mt-1">
-              <template v-if="Array.isArray(value)">
-                {{ (value as string[]).join(', ') }}
-              </template>
-              <template v-else>
-                {{ value }}
-              </template>
-            </p>
-          </div>
-        </div>
-
-        <div class="flex gap-2 pt-2">
-          <ButtonLoader 
-            :loading="loading.review" 
-            class="flex-1 px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium transition-colors" 
-            @click="setApplicationStatus(app.applicantEmail, 'approve')"
-          >
-            Approve
-          </ButtonLoader>
-          <ButtonLoader 
-            :loading="loading.review" 
-            class="flex-1 px-4 py-2.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-medium transition-colors" 
-            @click="setApplicationStatus(app.applicantEmail, 'reject')"
-          >
-            Return to draft
-          </ButtonLoader>
-        </div>
+      <div v-for="app in submittedApplications" :key="app.applicantEmail">
+        <CandidateResponseDisplay 
+          :candidate="{ ...app, email: app.applicantEmail }" 
+          :questions="questions"
+          :show-approvals="true"
+          :loading="loading.review"
+          :on-approve="() => setApplicationStatus(app.applicantEmail, 'approve')"
+          :on-reject="() => setApplicationStatus(app.applicantEmail, 'reject')"
+        />
       </div>
     </section>
   </div>

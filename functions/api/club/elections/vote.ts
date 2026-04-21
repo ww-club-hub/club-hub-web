@@ -5,14 +5,15 @@ import { authedJsonRequest, authedProcedure } from "../../../utils";
 import { FIRESTORE_SCOPE, makeFirestoreDocPath, makeFirestoreField, makeServiceAccountToken, parseAggregationCount } from "../../../firebase";
 import {
   ensureAttendanceRequirement,
-  ensureElectionWindowOpen,
+  ensureVotingWindowOpen,
   ensureMemberAccess,
   getElectionSettings,
 } from "./helpers";
 
 const SubmitElectionVoteReq = z.object({
   clubId: z.string(),
-  votes: z.array(z.email()),
+  // votes: position name -> array of candidate emails for that position
+  votes: z.record(z.string(), z.array(z.email())),
 });
 
 export default authedProcedure
@@ -24,7 +25,7 @@ export default authedProcedure
     const email = ctx.user.email;
 
     const settings = await getElectionSettings(ctx.env, firestoreToken, school, input.clubId);
-    ensureElectionWindowOpen(settings);
+    ensureVotingWindowOpen(settings);
 
     await ensureAttendanceRequirement(
       ctx.env,
@@ -36,77 +37,100 @@ export default authedProcedure
       "voting"
     );
     
-    // remove duplicates
-    const uniqueVotes = [...new Set(input.votes)];
-    if (uniqueVotes.length > settings.voting.numVotes) {
+    // Validate that at least one vote is submitted
+    const uniqueVotes = new Set(Object.values(input.votes).flat());
+    if (uniqueVotes.size === 0) {
       throw new TRPCError({
         code: "BAD_REQUEST",
-        message: `You can vote for at most ${settings.voting.numVotes} candidate(s)`,
+        message: "You must submit at least one vote",
       });
     }
-    if (!settings.voting.allowSelf && uniqueVotes.includes(email)) {
+    
+    if (!settings.voting.allowSelf && uniqueVotes.has(email)) {
       throw new TRPCError({
         code: "BAD_REQUEST",
         message: "Voting for yourself is not allowed",
       });
     }
 
-    if (uniqueVotes.length > 0) {
-      // list all doc references for voting
-      const voteDocRefs = uniqueVotes.map(voteEmail => new Reference(makeFirestoreDocPath(
-        ctx.env,
-        `/schools/${school}/clubs/${input.clubId}/elections/${voteEmail}`,
-        false
-      )));
+    const candidateSet = new Set<string>();
+
+    // Validate per-position vote limits and allowSelf
+    for (const allPositionVotes of Object.values(input.votes)) {
+      const positionVotes = new Set(allPositionVotes);
       
-      // Count how many valid votes they have (votes for an approved user)
-      const approvedVoteCountQuery = await authedJsonRequest<AggregationQueryResponse>(
-        {
-          structuredAggregationQuery: {
-            aggregations: [{
-              count: {},
-              alias: "numApprovedVotes"
+      // Validate no candidate appears in multiple positions
+      for (const candidateEmail of positionVotes) {
+        if (candidateSet.has(candidateEmail)) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `You cannot vote for the same person (${candidateEmail}) in multiple positions`,
+          });
+        }
+        candidateSet.add(candidateEmail);
+      }
+      
+      if (positionVotes.size > settings.voting.numVotes) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `You can vote for at most ${settings.voting.numVotes} candidate(s) per position`,
+        });
+      }
+    }
+    
+    // Validate all votes are for approved candidates
+    const voteDocRefs = [...uniqueVotes].map(voteEmail => new Reference(makeFirestoreDocPath(
+      ctx.env,
+      `/schools/${school}/clubs/${input.clubId}/elections/${voteEmail}`,
+      false
+    )));
+    
+    const approvedVoteCountQuery = await authedJsonRequest<AggregationQueryResponse>(
+      {
+        structuredAggregationQuery: {
+          aggregations: [{
+            count: {},
+            alias: "numApprovedVotes"
+          }],
+          structuredQuery: {
+            from: [{
+              collectionId: "elections"
             }],
-            structuredQuery: {
-              from: [{
-                collectionId: "elections"
-              }],
-              where: {
-                compositeFilter: {
-                  op: "AND",
-                  filters: [
-                    {
-                      fieldFilter: {
-                        field: { fieldPath: "status" },
-                        op: "EQUAL",
-                        value: makeFirestoreField(ClubElectionApplicationStatus.Approved)
-                      }
-                    },
-                    {
-                      fieldFilter: {
-                        field: { fieldPath: "__name__" },
-                        op: "IN",
-                        value: makeFirestoreField(voteDocRefs)
-                      }
+            where: {
+              compositeFilter: {
+                op: "AND",
+                filters: [
+                  {
+                    fieldFilter: {
+                      field: { fieldPath: "status" },
+                      op: "EQUAL",
+                      value: makeFirestoreField(ClubElectionApplicationStatus.Approved)
                     }
-                  ]
-                }
+                  },
+                  {
+                    fieldFilter: {
+                      field: { fieldPath: "__name__" },
+                      op: "IN",
+                      value: makeFirestoreField(voteDocRefs)
+                    }
+                  }
+                ]
               }
             }
           }
-        },
-        firestoreToken,
-        makeFirestoreDocPath(ctx.env, `/schools/${school}/clubs/${input.clubId}:runAggregationQuery`)
-      );
+        }
+      },
+      firestoreToken,
+      makeFirestoreDocPath(ctx.env, `/schools/${school}/clubs/${input.clubId}:runAggregationQuery`)
+    );
 
-      const approvedVotesCount = parseAggregationCount(approvedVoteCountQuery, "numApprovedVotes");
+    const approvedVotesCount = parseAggregationCount(approvedVoteCountQuery, "numApprovedVotes");
 
-      if (approvedVotesCount !== uniqueVotes.length) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "One or more selected candidates are invalid or not approved",
-        });
-      }
+    if (approvedVotesCount !== uniqueVotes.size) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "One or more selected candidates are invalid or not approved",
+      });
     }
 
     // Store votes in Firestore _votes document
@@ -120,11 +144,9 @@ export default authedProcedure
 
     const votesData = {
       votes: {
-        [email]: uniqueVotes
+        [email]: input.votes
       }
     };
-    
-    console.log(votesData, votesDocPath);
 
     // Use PATCH to merge the voter's votes into the existing document
     await authedJsonRequest(
@@ -134,5 +156,5 @@ export default authedProcedure
       "PATCH"
     );
 
-    return { success: true, votes: uniqueVotes };
+    return { success: true, votes: input.votes };
   });

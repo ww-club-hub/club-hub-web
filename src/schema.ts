@@ -196,9 +196,15 @@ export interface ClubElectionApplication {
 // elections/_settings
 export interface ClubElectionSettings {
   window: {
-    // date when elections open
+    // date when applications open
     start: Timestamp,
     // date when they close
+    end: Timestamp,
+  },
+  votingWindow?: {
+    // date when voting opens
+    start: Timestamp,
+    // date when voting closes
     end: Timestamp,
   },
   // markdown, could link to constitution
@@ -214,16 +220,16 @@ export interface ClubElectionSettings {
   voting: {
     // vote for yourself
     allowSelf: boolean,
-    // some clubs let you vote for multiple people
+    // votes per position (e.g., 1 = 1 vote per position, 2 = up to 2 per position)
     numVotes: number
   }
   
 }
 
 // elections/_votes
+// Voter email -> position name -> array of candidate emails voted for that position
 export interface ClubElectionVotes {
-  // voter email -> list of candidate emails they voted for
-  votes: Record<string, string[]>;
+  votes: Record<string, Record<string, string[]>>;
 }
 
 // Private user data

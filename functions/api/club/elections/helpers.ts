@@ -38,6 +38,24 @@ export function ensureElectionWindowOpen(settings: ClubElectionSettings) {
   }
 }
 
+export function ensureVotingWindowOpen(settings: ClubElectionSettings) {
+  if (!settings.votingWindow) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Voting is not currently open",
+    });
+  }
+  const now = Date.now();
+  const start = (settings.votingWindow.start as unknown as Date).getTime();
+  const end = (settings.votingWindow.end as unknown as Date).getTime();
+  if (now < start || now > end) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Voting is not currently open",
+    });
+  }
+}
+
 /** Make sure the selected roles are valid according to settings */
 export function ensureRolesValid(roles: string[], settings: ClubElectionSettings) {
   if (roles.length > settings.roles.maxApply) {
