@@ -34,7 +34,7 @@ const myApplicationDocRef = doc(electionsCollection, userEmail);
 
 const settings = await typedGetDoc<ClubElectionSettings>(settingsDocRef);
 const myApplication = ref(await typedGetDoc<ClubElectionApplication>(myApplicationDocRef));
-const selectedRoles = ref<Set<string>>(new Set(myApplication.value?.roles ?? []));
+const selectedRoles = ref<Set<string>>(new Set((myApplication.value?.roles ?? []).filter(r => settings?.roles?.names.includes(r))));
 const responses = ref<Record<string, string | number | Set<string>>>(myApplication.value?.responses ? { ...myApplication.value.responses } : {});
 
 const loading = ref({
@@ -62,7 +62,7 @@ async function saveDraft(showSuccess = true) {
     await setDoc(
       myApplicationDocRef,
       {
-        roles: Array.from(selectedRoles.value),
+        roles: Array.from(selectedRoles.value).filter(r => settings?.roles?.names.includes(r)),
         responses: processedResponses,
       },
       { mergeFields: ["roles", "responses"] }

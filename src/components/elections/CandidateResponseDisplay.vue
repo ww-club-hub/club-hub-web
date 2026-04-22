@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import ButtonLoader from "@/components/ui/ButtonLoader.vue";
 import { computed, onMounted, ref } from "vue";
-import type { ClubElectionApplication, ClubElectionQuestion } from "@/schema";
+import { ClubElectionApplicationStatus, type ClubElectionApplication, type ClubElectionQuestion } from "@/schema";
 import { getCachedProfile } from "@/stores/profiles";
 
 const props = defineProps<{
@@ -21,6 +21,32 @@ onMounted(async () => {
 
 function getQuestionText(questionId: string): string {
   return props.questions.find(q => q.id === questionId)?.question ?? questionId;
+}
+
+function getStatusLabel(): string {
+  switch (props.candidate.status) {
+    case ClubElectionApplicationStatus.Draft:
+      return "Draft";
+    case ClubElectionApplicationStatus.Submitted:
+      return "Submitted";
+    case ClubElectionApplicationStatus.Approved:
+      return "Approved";
+    default:
+      return "Unknown";
+  }
+}
+
+function getStatusClass(): string {
+  switch (props.candidate.status) {
+    case ClubElectionApplicationStatus.Draft:
+      return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200";
+    case ClubElectionApplicationStatus.Submitted:
+      return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
+    case ClubElectionApplicationStatus.Approved:
+      return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
+    default:
+      return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200";
+  }
 }
 
 // Sort responses by question order
@@ -51,8 +77,8 @@ const sortedResponses = computed(() => {
         </div>
       </div>
       <div v-if="showApprovals" class="text-right">
-        <span class="inline-block px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-          Approved
+        <span :class="['inline-block px-2 py-1 rounded text-xs font-medium', getStatusClass()]">
+          {{ getStatusLabel() }}
         </span>
       </div>
     </div>
