@@ -20,7 +20,7 @@ const firebaseAuthReady = new Promise<void>(resolve => {
       if (route.query.next) {
         return router.push(route.query.next as string);
       } else {
-        return router.push({ name: "account" });
+        return router.push({ name: 'dashboard' });
       }
     }
   });
@@ -32,7 +32,10 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: HomeView
+      component: HomeView,
+      meta: {
+        authProhibited: true
+      },
     },
     {
       path: '/login',

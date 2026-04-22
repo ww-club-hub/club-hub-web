@@ -11,10 +11,9 @@ const authStore = useAuthStore();
 const navbarExpanded = ref(false);
 const route = useRoute();
 const accountMenuExpanded = ref(false);
-const claims = ref<UserClaims | null>(null);
 
 const showPersonalEmailBanner = computed(() => {
-  return authStore.user && !claims.value?.personalEmail;
+  return authStore.user && !authStore.claims?.personalEmail;
 });
 
 async function logOut() {
@@ -28,7 +27,6 @@ function hideMenus() {
 
 onMounted(async () => {
   document.body.addEventListener("click", hideMenus);
-  claims.value = await getClaims(auth);
 });
 
 onUnmounted(() => {
