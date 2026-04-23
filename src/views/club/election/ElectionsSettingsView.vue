@@ -13,7 +13,7 @@ import {
   OfficerPermission,
 } from "@/schema";
 import { showErrorToast, showSuccessToast } from "@/toast";
-import { typedGetDoc, typedGetDocs } from "@/utils";
+import { typedGetDoc, typedGetDocs, type DocWithId } from "@/utils";
 import {
   Timestamp,
   collection,
@@ -25,8 +25,6 @@ import {
 } from "firebase/firestore";
 import { computed, getCurrentInstance, ref } from "vue";
 import { useRouter } from "vue-router";
-
-type ElectionApplicationWithApplicant = ClubElectionApplication & { applicantEmail: string };
 
 const props = defineProps<{
   role: ClubRole,
@@ -60,11 +58,11 @@ const voting = ref(settingsDoc?.voting ?? { allowSelf: false, numVotes: 1 });
 const submittedDocs = await typedGetDocs<ClubElectionApplication>(
   query(electionsCollection, where("status", ">=", ClubElectionApplicationStatus.Submitted))
 );
-const submittedApplications = ref<ElectionApplicationWithApplicant[]>(
+const submittedApplications = ref<DocWithId<ClubElectionApplication>[]>(
   submittedDocs
     .filter(d => d.id !== "_settings")
     .map(d => ({
-      applicantEmail: d.id,
+      id: d.id,
       status: d.status,
       roles: d.roles ?? [],
       responses: d.responses ?? {},
@@ -141,7 +139,7 @@ async function loadSubmittedApplications() {
   submittedApplications.value = docs
     .filter(d => d.id !== "_settings")
     .map(d => ({
-      applicantEmail: d.id,
+      id: d.id,
       status: d.status,
       roles: d.roles ?? [],
       responses: d.responses ?? {},
@@ -357,14 +355,14 @@ async function setApplicationStatus(applicantEmail: string, action: "approve" | 
         No submitted applications yet.
       </p>
 
-      <div v-for="app in submittedApplications" :key="app.applicantEmail">
-        <CandidateResponseDisplay 
-          :candidate="{ ...app, email: app.applicantEmail }" 
+      <div v-for="app in submittedApplications" :key="app.id">
+        <CandidateResponseDisplay
+          :candidate="app"
           :questions="questions"
           :show-approvals="true"
           :loading="loading.review"
-          :on-approve="() => setApplicationStatus(app.applicantEmail, 'approve')"
-          :on-reject="() => setApplicationStatus(app.applicantEmail, 'reject')"
+          :on-approve="() => setApplicationStatus(app.id, 'approve')"
+          :on-reject="() => setApplicationStatus(app.id, 'reject')"
         />
       </div>
     </section>

@@ -3,9 +3,10 @@ import ButtonLoader from "@/components/ui/ButtonLoader.vue";
 import { computed, onMounted, ref } from "vue";
 import { ClubElectionApplicationStatus, type ClubElectionApplication, type ClubElectionQuestion } from "@/schema";
 import { getCachedProfile } from "@/stores/profiles";
+import type { DocWithId } from "@/utils";
 
 const props = defineProps<{
-  candidate: ClubElectionApplication & { email: string };
+  candidate: DocWithId<ClubElectionApplication>;
   questions: ClubElectionQuestion[];
   showApprovals?: boolean;
   loading: boolean;
@@ -16,7 +17,7 @@ const props = defineProps<{
 const profile = ref<{ displayName: string; photoUrl: string } | null>(null);
 
 onMounted(async () => {
-  profile.value = await getCachedProfile(props.candidate.email);
+  profile.value = await getCachedProfile(props.candidate.id);
 });
 
 function getQuestionText(questionId: string): string {
@@ -71,8 +72,8 @@ const sortedResponses = computed(() => {
           class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700"
         />
         <div>
-          <p class="font-semibold text-gray-900 dark:text-white">{{ profile?.displayName ?? candidate.email }}</p>
-          <p class="text-xs text-gray-500 dark:text-gray-400">{{ candidate.email }}</p>
+          <p class="font-semibold text-gray-900 dark:text-white">{{ profile?.displayName ?? candidate.id }}</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">{{ candidate.id }}</p>
           <p class="text-sm text-gray-600 dark:text-gray-400">Applying for: {{ candidate.roles.join(', ') || 'No roles listed' }}</p>
         </div>
       </div>

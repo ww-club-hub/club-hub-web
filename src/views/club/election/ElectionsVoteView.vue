@@ -11,7 +11,8 @@ import {
   type ClubRole,
 } from "@/schema";
 import { showErrorToast, showSuccessToast } from "@/toast";
-import { typedGetDoc, typedGetDocs } from "@/utils";
+import { typedGetDoc, typedGetDocs, type DocWithId } from "@/utils";
+import { getCachedProfile } from "@/stores/profiles";
 import {
   Timestamp,
   collection,
@@ -21,8 +22,9 @@ import {
   type DocumentReference,
 } from "firebase/firestore";
 import { computed, getCurrentInstance, ref } from "vue";
+import { computedAsync } from "@vueuse/core";
 
-type ElectionApplicationWithApplicant = ClubElectionApplication & { applicantEmail: string };
+type ElectionApplicationWithApplicant = DocWithId<ClubElectionApplication>;
 
 const props = defineProps<{
   role: ClubRole,
@@ -36,19 +38,9 @@ const electionsCollection = collection(props.clubDoc, "elections");
 const settingsDocRef = doc(electionsCollection, "_settings");
 
 const settings = await typedGetDoc<ClubElectionSettings>(settingsDocRef);
-const docs = await typedGetDocs<ClubElectionApplication>(
+const candidates = (await typedGetDocs<ClubElectionApplication>(
   query(electionsCollection, where("status", ">=", ClubElectionApplicationStatus.Approved))
-);
-const candidates = ref<ElectionApplicationWithApplicant[]>(
-  docs
-    .filter(d => d.id !== "_settings")
-    .map(d => ({
-      applicantEmail: d.id,
-      status: d.status,
-      roles: d.roles ?? [],
-      responses: d.responses ?? {},
-    }))
-);
+)).filter(d => d.id !== "_settings");
 
 const loading = ref({ vote: false });
 // votes: position name -> set of candidate emails
@@ -68,8 +60,32 @@ const hasVotingWindowOpen = computed(() => {
 const votingAvailabilityMessage = computed(() => {
   if (!settings) return "Voting is unavailable until officers configure elections.";
   if (!hasVotingWindowOpen.value) return "Voting is only available during the voting window.";
-  if (candidates.value.length === 0) return "No approved candidates are available yet.";
+  if (candidates.length === 0) return "No approved candidates are available yet.";
   return "Voting availability may still depend on attendance requirements set by officers.";
+});
+
+// Group candidates by position and fetch profiles
+const candidatesByPosition = computedAsync(async () => {
+  const positions: Map<string, {
+    value: string; // email
+    label: string; // name
+  }[]> = new Map();
+
+  for (const candidate of candidates) {
+    // doc ID is email
+    const profile = await getCachedProfile(candidate.id);
+    const name = profile?.displayName ?? candidate.id;
+    const entry = {
+      value: candidate.id,
+      label: name
+    };
+    // map to roles
+    for (const role of candidate.roles) {
+      if (!positions.has(role)) positions.set(role, []);
+      positions.get(role)!.push(entry);
+    }
+  }
+  return positions;
 });
 
 // Check if all positions have at least one vote
@@ -110,12 +126,12 @@ async function submitVotes() {
       clubId: props.club.id,
       votes,
     });
-    
+
     // Update local state with returned votes
     for (const [position, emails] of Object.entries(res.votes)) {
       myVotes.value[position] = new Set(emails);
     }
-    
+
     showSuccessToast("Votes submitted", context, 3000);
   } catch (error) {
     if (isTRPCClientError(error)) {
@@ -141,9 +157,9 @@ async function submitVotes() {
       <div class="space-y-4">
         <CandidateResponseDisplay
           v-for="candidate in candidates"
-          :key="candidate.applicantEmail"
+          :key="candidate.id"
           :loading="false"
-          :candidate="{ ...candidate, email: candidate.applicantEmail }"
+          :candidate
           :questions="settings.questions"
         />
       </div>
@@ -157,10 +173,10 @@ async function submitVotes() {
           v-model="myVotes[position]"
           :label="`Votes for ${position}`"
           :max-items="settings.voting.numVotes"
-          :options="candidates.map(c => ({ value: c.applicantEmail, label: c.applicantEmail }))"
+          :options="candidatesByPosition?.get(position) ?? []"
         />
         <p class="text-xs text-gray-500 dark:text-gray-400">
-          Select up to {{ settings.voting.numVotes }} candidate(s) for this position.
+          Select up to {{ Math.min(candidatesByPosition?.get(position)?.length ?? 0, settings.voting.numVotes) }} candidate(s) for this position.
         </p>
       </div>
 
