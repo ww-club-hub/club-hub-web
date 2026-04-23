@@ -14,6 +14,7 @@ import {
 } from "@/schema";
 import { showErrorToast, showSuccessToast } from "@/toast";
 import { typedGetDoc, typedGetDocs } from "@/utils";
+import { getCachedProfile } from "@/stores/profiles";
 import {
   collection,
   doc,
@@ -23,6 +24,7 @@ import {
 } from "firebase/firestore";
 import { computed, getCurrentInstance, ref } from "vue";
 import { useRouter } from "vue-router";
+import { computedAsync } from "@vueuse/core";
 
 const props = defineProps<{
   role: ClubRole,
@@ -102,6 +104,32 @@ function getVotersForCandidateInPosition(candidateEmail: string, position: strin
   }
   return voters;
 }
+
+// Group candidates by position and fetch profiles
+const candidatesByPosition = computedAsync(async () => {
+  const positions: Map<string, {
+    id: string; // email
+    name: string; // display name
+    roles: string[];
+  }[]> = new Map();
+
+  for (const candidate of approvedCandidates) {
+    // doc ID is email
+    const profile = await getCachedProfile(candidate.id);
+    const name = profile?.displayName ?? candidate.id;
+    
+    // map to roles
+    for (const role of candidate.roles) {
+      if (!positions.has(role)) positions.set(role, []);
+      positions.get(role)!.push({
+        id: candidate.id,
+        name,
+        roles: candidate.roles
+      });
+    }
+  }
+  return positions;
+});
 
 async function createApplication() {
   creatingApplication.value = true;
@@ -239,11 +267,11 @@ async function createApplication() {
           </div>
           
           <div v-else class="space-y-3">
-            <div v-for="candidate of approvedCandidates" :key="candidate.id" class="p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900">
+            <div v-for="candidate of candidatesByPosition?.get(position) ?? []" :key="candidate.id" class="p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900">
               <div class="flex items-center justify-between">
                 <div>
-                  <p class="font-semibold text-gray-900 dark:text-white">{{ candidate.id }}</p>
-                  <p class="text-sm text-gray-600 dark:text-gray-400">Roles: {{ candidate.roles.join(", ") || "None" }}</p>
+                  <p class="font-semibold text-gray-900 dark:text-white">{{ candidate.name }}</p>
+                  <p class="text-xs text-gray-600 dark:text-gray-400">{{ candidate.id }}</p>
                 </div>
                 <div class="text-right">
                   <p class="text-2xl font-bold text-orange-600 dark:text-orange-400">{{ getVotesForCandidateInPosition(candidate.id, position) }}</p>
