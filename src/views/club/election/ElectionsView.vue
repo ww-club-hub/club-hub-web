@@ -25,6 +25,7 @@ import {
 import { computed, getCurrentInstance, ref } from "vue";
 import { useRouter } from "vue-router";
 import { computedAsync } from "@vueuse/core";
+import UserProfile from "@/components/ui/UserProfile.vue";
 
 const props = defineProps<{
   role: ClubRole,
@@ -71,7 +72,7 @@ const showVoteDetails = ref(false);
 const voteCountsPerPosition = computed(() => {
   if (!votesData?.votes) return new Map<string, Map<string, number>>();
   const counts = new Map<string, Map<string, number>>();
-  
+
   for (const voterVotes of Object.values(votesData.votes)) {
     // voterVotes is { position: [candidateEmails] }
     for (const [position, candidateEmails] of Object.entries(voterVotes)) {
@@ -117,7 +118,7 @@ const candidatesByPosition = computedAsync(async () => {
     // doc ID is email
     const profile = await getCachedProfile(candidate.id);
     const name = profile?.displayName ?? candidate.id;
-    
+
     // map to roles
     for (const role of candidate.roles) {
       if (!positions.has(role)) positions.set(role, []);
@@ -261,11 +262,11 @@ async function createApplication() {
       <div v-else class="space-y-6">
         <div v-for="position in settings?.roles.names ?? []" :key="position" class="space-y-3">
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ position }}</h3>
-          
+
           <div v-if="(voteCountsPerPosition.get(position)?.size ?? 0) === 0" class="text-sm italic text-gray-600 dark:text-gray-300">
             No votes for this position yet.
           </div>
-          
+
           <div v-else class="space-y-3">
             <div v-for="candidate of candidatesByPosition?.get(position) ?? []" :key="candidate.id" class="p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900">
               <div class="flex items-center justify-between">
@@ -283,7 +284,9 @@ async function createApplication() {
                 <p class="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Voters:</p>
                 <ul class="space-y-1">
                   <li v-for="voter of getVotersForCandidateInPosition(candidate.id, position)" :key="voter" class="text-sm text-gray-700 dark:text-gray-300">
-                    {{ voter }}
+                    <Suspense>
+                      <UserProfile :email="voter" />
+                    </Suspense>
                   </li>
                 </ul>
               </div>
