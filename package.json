@@ -18,7 +18,7 @@
     "vue-router": "^4.6.3"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.25.6",
+    "@cloudflare/vite-plugin": "^1.42.1",
     "@cloudflare/workers-types": "^4.20260305.0",
     "@googleworkspace/drive-picker-element": "^0.4.4",
     "@popperjs/core": "^2.11.8",
@@ -51,7 +51,7 @@
     "vite-plugin-vue-devtools": "^8.0.6",
     "vue-tsc": "^2.2.12",
     "vue3-google-signin": "^2.1.1",
-    "wrangler": "^4.69.0",
+    "wrangler": "^4.103.0",
     "zod": "^4.3.6"
   }
 }
