@@ -20,7 +20,7 @@
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.25.6",
     "@cloudflare/workers-types": "^4.20260305.0",
-    "@googleworkspace/drive-picker-element": "^0.4.4",
+    "@googleworkspace/drive-picker-element": "^0.7.3",
     "@popperjs/core": "^2.11.8",
     "@tailwindcss/forms": "^0.5.11",
     "@tailwindcss/typography": "^0.5.19",
@@ -29,8 +29,8 @@
     "@trpc/server": "^11.10.0",
     "@tsconfig/node20": "^20.1.9",
     "@types/gapi": "^0.0.47",
-    "@types/google.accounts": "^0.0.15",
-    "@types/google.picker": "^0.0.50",
+    "@types/google.accounts": "^0.0.18",
+    "@types/google.picker": "^0.0.52",
     "@types/node": "^20.19.35",
     "@types/spark-md5": "^3.0.5",
     "@vitejs/plugin-vue": "^5.2.4",
@@ -38,7 +38,7 @@
     "@vue/typescript-plugin": "^2.2.12",
     "@vueuse/core": "^13.5.0",
     "dompurify": "^3.3.3",
-    "esbuild": "^0.25.12",
+    "esbuild": "^0.28.2",
     "firebase": "^11.10.0",
     "idb": "^8.0.3",
     "jose": "^5.10.0",
@@ -51,7 +51,13 @@
     "vite-plugin-vue-devtools": "^8.0.6",
     "vue-tsc": "^2.2.12",
     "vue3-google-signin": "^2.1.1",
-    "wrangler": "^4.69.0",
     "zod": "^4.3.6"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "esbuild@0.25.12": true,
+    "protobufjs@7.6.6": true,
+    "workerd@1.20261006.1": true,
+    "@firebase/util@1.12.1": true
   }
 }
